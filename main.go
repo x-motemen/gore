@@ -56,11 +56,15 @@ func main() {
 	in := ""
 	prompt := promptDefault
 
+	// TODO: set up completion for:
+	// - imports
+	// - methods/fields using gocode?
+
 	for {
 		line, err := rl.Prompt(prompt)
 		if err == io.EOF {
 			if in != "" {
-				// cancel continue
+				// cancel line continuation
 				in = ""
 				prompt = promptDefault
 				fmt.Println()
@@ -104,10 +108,12 @@ type Session struct {
 const initialSource = `
 package main
 
-import "github.com/k0kubun/pp"
+import "fmt"
 
 func p(xx ...interface{}) {
-	pp.Println(xx...)
+	for _, x := range xx {
+		fmt.Printf("%#v\n", x)
+	}
 }
 
 func main() {
