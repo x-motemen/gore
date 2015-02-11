@@ -1,16 +1,20 @@
 package main
 
 import (
+	"bytes"
 	"fmt"
 	"go/ast"
 	"go/parser"
 	"go/printer"
+	"go/scanner"
 	"go/token"
 	"io"
 	"io/ioutil"
 	"os"
 	"os/exec"
 	"path/filepath"
+	"runtime"
+	"strings"
 	"syscall"
 
 	"github.com/bobappleyard/readline"
@@ -19,11 +23,15 @@ import (
 const appName = "gore"
 
 func debugf(format string, args ...interface{}) {
+	_, file, line, ok := runtime.Caller(1)
+	if ok {
+		format = fmt.Sprintf("%s:%d %s", filepath.Base(file), line, format)
+	}
+
 	fmt.Fprintf(os.Stderr, format+"\n", args...)
 }
 
 func main() {
-	prompt := "> "
 	readline.Completer = func(q, ctx string) []string {
 		debugf("q=%q ctx=%q", q, ctx)
 		return []string{}
@@ -31,8 +39,12 @@ func main() {
 
 	s := NewSession()
 
+	rl := readline.NewReader()
+	line := ""
+
 	for {
-		line, err := readline.String(prompt)
+		buf := make([]byte, 8192)
+		_, err := rl.Read(buf) // TODO: check n
 		if err == io.EOF {
 			break
 		} else if err != nil {
@@ -40,13 +52,23 @@ func main() {
 			os.Exit(1)
 		}
 
-		readline.AddHistory(line)
+		p := bytes.IndexByte(buf, '\x00')
+		if line == "" {
+			line = string(buf[0:p])
+		} else {
+			line = line + "\n" + string(buf[0:p])
+		}
 
 		v, err := s.Eval(line)
 		if err != nil {
 			fmt.Println(err)
-		} else {
+		}
+
+		if err == nil || err != ErrContinue {
 			fmt.Printf("%#v\n", v)
+			readline.AddHistory(line)
+			rl = readline.NewReader()
+			line = ""
 		}
 	}
 }
@@ -56,6 +78,8 @@ type Session struct {
 	File     *ast.File
 	Fset     *token.FileSet
 	MainBody *ast.BlockStmt
+
+	Source *bytes.Buffer
 }
 
 const initialSource = `
@@ -76,6 +100,7 @@ func NewSession() *Session {
 
 	s := &Session{}
 	s.Fset = token.NewFileSet()
+	s.Source = bytes.NewBufferString(initialSource)
 
 	// s.FilePath, err = tempFile()
 	s.FilePath = "_tmp/session.go"
@@ -83,7 +108,7 @@ func NewSession() *Session {
 		panic(err)
 	}
 
-	s.File, err = parser.ParseFile(s.Fset, "session.go", initialSource, parser.ParseComments)
+	s.File, err = parser.ParseFile(s.Fset, "session.go", initialSource, parser.Mode(0))
 	if err != nil {
 		panic(err)
 	}
@@ -94,12 +119,23 @@ func NewSession() *Session {
 	return s
 }
 
-func (s *Session) RunFile() error {
+func (s *Session) BuildRunFile() error {
+	s.Source = new(bytes.Buffer)
+	printer.Fprint(s.Source, s.Fset, s.File)
+
 	f, err := os.Create(s.FilePath)
 	if err != nil {
 		return err
 	}
-	printer.Fprint(f, s.Fset, s.File)
+
+	_, err = f.Write(s.Source.Bytes())
+	if err != nil {
+		return err
+	}
+
+	var buf bytes.Buffer
+	printer.Fprint(&buf, s.Fset, s.MainBody.List)
+	debugf("%q", buf.String())
 
 	return goRun(s.FilePath)
 }
@@ -128,31 +164,76 @@ func goRun(file string) error {
 	return cmd.Run()
 }
 
-func (s *Session) Eval(in string) (interface{}, error) {
-	debugf("eval %q", in)
-
+func (s *Session) injectExpr(in string) error {
 	expr, err := parser.ParseExpr(in)
-	if err == nil {
-		normalizeNode(expr)
-		stmt := &ast.ExprStmt{
-			X: &ast.CallExpr{
-				Fun:  ast.NewIdent("p"),
-				Args: []ast.Expr{expr},
-			},
-		}
-		s.MainBody.List = append(s.MainBody.List, stmt)
-	} else {
-		debugf("%s", err)
+	if err != nil {
+		return err
 	}
 
-	err = s.RunFile()
+	normalizeNode(expr)
+	stmt := &ast.ExprStmt{
+		X: &ast.CallExpr{
+			Fun:  ast.NewIdent("p"),
+			Args: []ast.Expr{expr},
+		},
+	}
+	s.MainBody.List = append(s.MainBody.List, stmt)
+	return nil
+}
+
+func (s *Session) injectStmt(in string) error {
+	src := s.Source.String()
+	pos := strings.LastIndex(src, "}") // FIXME
+
+	src = src[0:pos-1] + "\n" + in + "\n" + src[pos:]
+
+	f, err := parser.ParseFile(s.Fset, "session.go", src, parser.Mode(0))
+	if err != nil {
+		debugf("%#v", f.Decls[len(f.Decls)-1].(*ast.FuncDecl).Body.List[0])
+		return err
+	}
+
+	s.File = f
+
+	return nil
+}
+
+type Error string
+
+const (
+	ErrContinue Error = "continue"
+)
+
+func (e Error) Error() string {
+	return string(e)
+}
+
+func (s *Session) Eval(in string) (interface{}, error) {
+	debugf("eval >>> %q", in)
+
+	if err := s.injectExpr(in); err != nil {
+		debugf("expr err = %s", err)
+
+		err := s.injectStmt(in)
+		if err != nil {
+			if _, ok := err.(scanner.ErrorList); ok {
+				return nil, ErrContinue
+			}
+			debugf("stmt err = %s", err)
+		}
+	} else {
+	}
+
+	err := s.BuildRunFile()
 
 	if err != nil {
 		if exitErr, ok := err.(*exec.ExitError); ok {
 			// if failed with status 2, remove the last statement
 			if st, ok := exitErr.ProcessState.Sys().(syscall.WaitStatus); ok {
 				if st.ExitStatus() == 2 {
-					s.MainBody.List = s.MainBody.List[0 : len(s.MainBody.List)-1]
+					debugf("got exit status 2, popping out last input")
+					// FIXME lastBodyLength?
+					// s.MainBody.List = s.MainBody.List[0 : len(s.MainBody.List)-1]
 				}
 			}
 		}
