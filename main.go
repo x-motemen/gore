@@ -12,6 +12,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"regexp"
 	"runtime"
 	"strings"
 	"syscall"
@@ -22,6 +23,8 @@ import (
 	"go/scanner"
 	"go/token"
 	"golang.org/x/tools/go/ast/astutil"
+	_ "golang.org/x/tools/go/gcimporter"
+	"golang.org/x/tools/go/types"
 
 	"github.com/bobappleyard/readline"
 )
@@ -145,7 +148,6 @@ func (s *Session) BuildRunFile() error {
 
 	var buf bytes.Buffer
 	printer.Fprint(&buf, s.Fset, s.MainBody.List)
-	debugf("%q", buf.String())
 
 	return goRun(s.FilePath)
 }
@@ -228,29 +230,96 @@ func (s *Session) handleImport(in string) bool {
 	path := in[len("import "):]
 	path = strings.Trim(path, `"`)
 
-	astutil.AddNamedImport(s.Fset, s.File, "_", path)
+	astutil.AddImport(s.Fset, s.File, path)
 
 	return true
+}
+
+var (
+	rxDeclaredNotUsed = regexp.MustCompile(`^([a-zA-Z0-9_]+) declared but not used`)
+	rxImportedNotUsed = regexp.MustCompile(`^(".+") imported but not used`)
+)
+
+// quickFixFile tries to fix the source AST so that it compiles well.
+func (s *Session) quickFixFile() error {
+	const maxAttempts = 10
+
+	for i := 0; i < maxAttempts; i++ {
+		_, err := types.Check("_quickfix", s.Fset, []*ast.File{s.File})
+		if err == nil {
+			break
+		}
+
+		debugf("quickFix :: err = %#v", err)
+
+		if err, ok := err.(types.Error); ok && err.Soft {
+			// Handle these situations:
+			// - "%s declared but not used"
+			// - "%q imported but not used"
+			if m := rxDeclaredNotUsed.FindStringSubmatch(err.Msg); m != nil {
+				ident := m[1]
+				debugf("quickFix :: declared but not used -> %s", ident)
+				// insert "_ = x" to supress "declared but not used" error
+				stmt := &ast.AssignStmt{
+					Lhs: []ast.Expr{ast.NewIdent("_")},
+					Tok: token.ASSIGN,
+					Rhs: []ast.Expr{ast.NewIdent(ident)},
+				}
+				s.MainBody.List = append(s.MainBody.List, stmt)
+			} else if m := rxImportedNotUsed.FindStringSubmatch(err.Msg); m != nil {
+				path := m[1] // quoted string, but it's okay because this will be compared to ast.BasicLit.Value.
+				debugf("quickFix :: imported but not used -> %s", path)
+
+				for _, imp := range s.File.Imports {
+					debugf("%s vs %s", imp.Path.Value, path)
+					if imp.Path.Value == path {
+						// make this import spec anonymous one
+						imp.Name = ast.NewIdent("_")
+						break
+					}
+				}
+			} else {
+				debugf("quickFix :: give up")
+				break
+			}
+		} else {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (s *Session) clearQuickFix() {
+	// make all import specs explicit (i.e. no "_").
+	for _, imp := range s.File.Imports {
+		imp.Name = nil
+	}
 }
 
 func (s *Session) Eval(in string) (interface{}, error) {
 	debugf("eval >>> %q", in)
 
+	s.clearQuickFix()
+
 	imported := s.handleImport(in)
 
 	if !imported {
 		if err := s.injectExpr(in); err != nil {
-			debugf("expr err = %s", err)
+			debugf("expr :: err = %s", err)
 
 			err := s.injectStmt(in)
 			if err != nil {
+				debugf("stmt :: err = %s", err)
+
 				if _, ok := err.(scanner.ErrorList); ok {
 					return nil, ErrContinue
 				}
-				debugf("stmt err = %s", err)
 			}
 		}
 	}
+
+	s.quickFixFile()
 
 	err := s.BuildRunFile()
 
