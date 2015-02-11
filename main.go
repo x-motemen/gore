@@ -65,6 +65,7 @@ func main() {
 		if err == io.EOF {
 			if in != "" {
 				// cancel line continuation
+				rl.AppendHistory(in)
 				in = ""
 				prompt = promptDefault
 				fmt.Println()
@@ -77,19 +78,21 @@ func main() {
 			os.Exit(1)
 		}
 
-		in = in + "\n" + line
+		if in != "" {
+			in = in + "\n" + line
+		} else {
+			in = line
+		}
 
 		err = s.Run(in)
 		if err == ErrContinue {
 			prompt = promptContinue
 		} else {
+			rl.AppendHistory(in)
 			in = ""
 			prompt = promptDefault
 			if err != nil {
 				fmt.Println(err)
-			} else {
-				rl.AppendHistory(line)
-				line = ""
 			}
 		}
 	}
@@ -99,10 +102,11 @@ type Session struct {
 	FilePath string
 	File     *ast.File
 	Fset     *token.FileSet
-	MainBody *ast.BlockStmt
 
-	Source         *bytes.Buffer
-	LastBodyLength int
+	Source *bytes.Buffer
+
+	mainBody         *ast.BlockStmt
+	storedBodyLength int
 }
 
 const initialSource = `
@@ -138,15 +142,14 @@ func NewSession() *Session {
 		panic(err)
 	}
 
-	mainFunc := s.File.Decls[len(s.File.Decls)-1].(*ast.FuncDecl)
-	s.MainBody = mainFunc.Body
+	mainFunc := s.File.Scope.Lookup("main").Decl.(*ast.FuncDecl)
+	s.mainBody = mainFunc.Body
 
 	return s
 }
 
 func (s *Session) BuildRunFile() error {
 	s.Source = new(bytes.Buffer)
-	debugf("specs :: %#v", s.File.Decls[0])
 	printer.Fprint(s.Source, s.Fset, s.File)
 
 	f, err := os.Create(s.FilePath)
@@ -158,9 +161,6 @@ func (s *Session) BuildRunFile() error {
 	if err != nil {
 		return err
 	}
-
-	var buf bytes.Buffer
-	printer.Fprint(&buf, s.Fset, s.MainBody.List)
 
 	return goRun(s.FilePath)
 }
@@ -196,33 +196,34 @@ func (s *Session) injectExpr(in string) error {
 	}
 
 	normalizeNode(expr)
+
 	stmt := &ast.ExprStmt{
 		X: &ast.CallExpr{
-			Fun:  ast.NewIdent("p"),
+			Fun:  ast.NewIdent("p"), // TODO remove this after evaluation
 			Args: []ast.Expr{expr},
 		},
 	}
-	s.MainBody.List = append(s.MainBody.List, stmt)
+
+	s.appendStatements(stmt)
+
 	return nil
 }
 
 func (s *Session) injectStmt(in string) error {
-	src := fmt.Sprintf("package X; func X() { %s }", in)
+	src := fmt.Sprintf("package P; func F() { %s }", in)
 	f, err := parser.ParseFile(s.Fset, "stmt.go", src, parser.Mode(0))
-
-	var enclosingFunc *ast.FuncDecl
-	if f != nil {
-		enclosingFunc = f.Decls[0].(*ast.FuncDecl)
-	}
-
 	if err != nil {
-		debugf("%#v", enclosingFunc.Body.List[0])
 		return err
 	}
 
-	s.MainBody.List = append(s.MainBody.List, enclosingFunc.Body.List...)
+	enclosingFunc := f.Scope.Lookup("F").Decl.(*ast.FuncDecl)
+	s.appendStatements(enclosingFunc.Body.List...)
 
 	return nil
+}
+
+func (s *Session) appendStatements(stmts ...ast.Stmt) {
+	s.mainBody.List = append(s.mainBody.List, stmts...)
 }
 
 type Error string
@@ -236,6 +237,7 @@ func (e Error) Error() string {
 }
 
 func (s *Session) handleImport(in string) bool {
+	// TODO make this ":import "?
 	if !strings.HasPrefix(in, "import ") {
 		return false
 	}
@@ -273,12 +275,13 @@ func (s *Session) quickFixFile() error {
 				ident := m[1]
 				debugf("quickFix :: declared but not used -> %s", ident)
 				// insert "_ = x" to supress "declared but not used" error
+				// TODO: remove this statement after evaluation
 				stmt := &ast.AssignStmt{
 					Lhs: []ast.Expr{ast.NewIdent("_")},
 					Tok: token.ASSIGN,
 					Rhs: []ast.Expr{ast.NewIdent(ident)},
 				}
-				s.MainBody.List = append(s.MainBody.List, stmt)
+				s.appendStatements(stmt)
 			} else if m := rxImportedNotUsed.FindStringSubmatch(err.Msg); m != nil {
 				path := m[1] // quoted string, but it's okay because this will be compared to ast.BasicLit.Value.
 				debugf("quickFix :: imported but not used -> %s", path)
@@ -342,15 +345,25 @@ func (s *Session) Run(in string) error {
 			if st, ok := exitErr.ProcessState.Sys().(syscall.WaitStatus); ok {
 				if st.ExitStatus() == 2 {
 					debugf("got exit status 2, popping out last input")
-					s.MainBody.List = s.MainBody.List[0:s.LastBodyLength]
+					s.RecallCode()
 				}
 			}
 		}
 	} else {
-		s.LastBodyLength = len(s.MainBody.List)
+		s.RememberCode()
 	}
 
 	return err
+}
+
+// RememberCode stores current state of code so that it can be restored
+// actually it saves the length of statements inside main()
+func (s *Session) RememberCode() {
+	s.storedBodyLength = len(s.mainBody.List)
+}
+
+func (s *Session) RecallCode() {
+	s.mainBody.List = s.mainBody.List[0:s.storedBodyLength]
 }
 
 func normalizeNode(node ast.Node) {
