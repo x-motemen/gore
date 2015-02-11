@@ -1,7 +1,6 @@
 package main
 
 import (
-	"bytes"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -103,8 +102,6 @@ type Session struct {
 	File     *ast.File
 	Fset     *token.FileSet
 
-	Source *bytes.Buffer
-
 	mainBody         *ast.BlockStmt
 	storedBodyLength int
 }
@@ -129,7 +126,6 @@ func NewSession() *Session {
 
 	s := &Session{}
 	s.Fset = token.NewFileSet()
-	s.Source = bytes.NewBufferString(initialSource)
 
 	// s.FilePath, err = tempFile()
 	s.FilePath = "_tmp/session.go"
@@ -149,15 +145,12 @@ func NewSession() *Session {
 }
 
 func (s *Session) BuildRunFile() error {
-	s.Source = new(bytes.Buffer)
-	printer.Fprint(s.Source, s.Fset, s.File)
-
 	f, err := os.Create(s.FilePath)
 	if err != nil {
 		return err
 	}
 
-	_, err = f.Write(s.Source.Bytes())
+	err = printer.Fprint(f, s.Fset, s.File)
 	if err != nil {
 		return err
 	}
