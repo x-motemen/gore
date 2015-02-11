@@ -1,13 +1,12 @@
 package main
 
+// TODO:
+// - "declared and not used" error
+// - import
+
 import (
 	"bytes"
 	"fmt"
-	"go/ast"
-	"go/parser"
-	"go/printer"
-	"go/scanner"
-	"go/token"
 	"io"
 	"io/ioutil"
 	"os"
@@ -16,6 +15,13 @@ import (
 	"runtime"
 	"strings"
 	"syscall"
+
+	"go/ast"
+	"go/parser"
+	"go/printer"
+	"go/scanner"
+	"go/token"
+	"golang.org/x/tools/go/ast/astutil"
 
 	"github.com/bobappleyard/readline"
 )
@@ -74,12 +80,14 @@ func main() {
 }
 
 type Session struct {
-	FilePath string
-	File     *ast.File
-	Fset     *token.FileSet
-	MainBody *ast.BlockStmt
+	FilePath   string
+	File       *ast.File
+	Fset       *token.FileSet
+	MainBody   *ast.BlockStmt
+	ImportDecl *ast.GenDecl
 
-	Source *bytes.Buffer
+	Source         *bytes.Buffer
+	LastBodyLength int
 }
 
 const initialSource = `
@@ -115,12 +123,14 @@ func NewSession() *Session {
 
 	mainFunc := s.File.Decls[len(s.File.Decls)-1].(*ast.FuncDecl)
 	s.MainBody = mainFunc.Body
+	s.ImportDecl = s.File.Decls[0].(*ast.GenDecl)
 
 	return s
 }
 
 func (s *Session) BuildRunFile() error {
 	s.Source = new(bytes.Buffer)
+	debugf("specs :: %#v", s.File.Decls[0])
 	printer.Fprint(s.Source, s.Fset, s.File)
 
 	f, err := os.Create(s.FilePath)
@@ -182,18 +192,20 @@ func (s *Session) injectExpr(in string) error {
 }
 
 func (s *Session) injectStmt(in string) error {
-	src := s.Source.String()
-	pos := strings.LastIndex(src, "}") // FIXME
+	src := fmt.Sprintf("package X; func X() { %s }", in)
+	f, err := parser.ParseFile(s.Fset, "stmt.go", src, parser.Mode(0))
 
-	src = src[0:pos-1] + "\n" + in + "\n" + src[pos:]
+	var enclosingFunc *ast.FuncDecl
+	if f != nil {
+		enclosingFunc = f.Decls[0].(*ast.FuncDecl)
+	}
 
-	f, err := parser.ParseFile(s.Fset, "session.go", src, parser.Mode(0))
 	if err != nil {
-		debugf("%#v", f.Decls[len(f.Decls)-1].(*ast.FuncDecl).Body.List[0])
+		debugf("%#v", enclosingFunc.Body.List[0])
 		return err
 	}
 
-	s.File = f
+	s.MainBody.List = append(s.MainBody.List, enclosingFunc.Body.List...)
 
 	return nil
 }
@@ -201,27 +213,43 @@ func (s *Session) injectStmt(in string) error {
 type Error string
 
 const (
-	ErrContinue Error = "continue"
+	ErrContinue Error = "<continue input>"
 )
 
 func (e Error) Error() string {
 	return string(e)
 }
 
+func (s *Session) handleImport(in string) bool {
+	if !strings.HasPrefix(in, "import ") {
+		return false
+	}
+
+	path := in[len("import "):]
+	path = strings.Trim(path, `"`)
+
+	astutil.AddNamedImport(s.Fset, s.File, "_", path)
+
+	return true
+}
+
 func (s *Session) Eval(in string) (interface{}, error) {
 	debugf("eval >>> %q", in)
 
-	if err := s.injectExpr(in); err != nil {
-		debugf("expr err = %s", err)
+	imported := s.handleImport(in)
 
-		err := s.injectStmt(in)
-		if err != nil {
-			if _, ok := err.(scanner.ErrorList); ok {
-				return nil, ErrContinue
+	if !imported {
+		if err := s.injectExpr(in); err != nil {
+			debugf("expr err = %s", err)
+
+			err := s.injectStmt(in)
+			if err != nil {
+				if _, ok := err.(scanner.ErrorList); ok {
+					return nil, ErrContinue
+				}
+				debugf("stmt err = %s", err)
 			}
-			debugf("stmt err = %s", err)
 		}
-	} else {
 	}
 
 	err := s.BuildRunFile()
@@ -232,11 +260,12 @@ func (s *Session) Eval(in string) (interface{}, error) {
 			if st, ok := exitErr.ProcessState.Sys().(syscall.WaitStatus); ok {
 				if st.ExitStatus() == 2 {
 					debugf("got exit status 2, popping out last input")
-					// FIXME lastBodyLength?
-					// s.MainBody.List = s.MainBody.List[0 : len(s.MainBody.List)-1]
+					s.MainBody.List = s.MainBody.List[0:s.LastBodyLength]
 				}
 			}
 		}
+	} else {
+		s.LastBodyLength = len(s.MainBody.List)
 	}
 
 	return nil, err
