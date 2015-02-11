@@ -27,12 +27,18 @@ import (
 
 const appName = "gore"
 
+var debug = false
+
 const (
 	promptDefault  = "gore> "
 	promptContinue = "..... "
 )
 
 func debugf(format string, args ...interface{}) {
+	if !debug {
+		return
+	}
+
 	_, file, line, ok := runtime.Caller(1)
 	if ok {
 		format = fmt.Sprintf("%s:%d %s", filepath.Base(file), line, format)
@@ -47,27 +53,30 @@ func main() {
 	rl := liner.NewLiner()
 	defer rl.Close()
 
-	// rl.SetCompleter(func(line string) []string {
-	// 	return nil
-	// })
-
 	in := ""
 	prompt := promptDefault
 
 	for {
 		line, err := rl.Prompt(prompt)
 		if err == io.EOF {
-			break
+			if in != "" {
+				// cancel continue
+				in = ""
+				prompt = promptDefault
+				fmt.Println()
+				continue
+			} else {
+				break
+			}
 		} else if err != nil {
 			fmt.Fprintf(os.Stderr, "fatal: %s", err)
 			os.Exit(1)
 		}
 
-		in = in + line
+		in = in + "\n" + line
 
-		v, err := s.Eval(in)
+		err = s.Run(in)
 		if err == ErrContinue {
-			// TODO make cancellable
 			prompt = promptContinue
 		} else {
 			in = ""
@@ -75,7 +84,6 @@ func main() {
 			if err != nil {
 				fmt.Println(err)
 			} else {
-				fmt.Printf("%#v\n", v)
 				rl.AppendHistory(line)
 				line = ""
 			}
@@ -84,11 +92,10 @@ func main() {
 }
 
 type Session struct {
-	FilePath   string
-	File       *ast.File
-	Fset       *token.FileSet
-	MainBody   *ast.BlockStmt
-	ImportDecl *ast.GenDecl
+	FilePath string
+	File     *ast.File
+	Fset     *token.FileSet
+	MainBody *ast.BlockStmt
 
 	Source         *bytes.Buffer
 	LastBodyLength int
@@ -127,7 +134,6 @@ func NewSession() *Session {
 
 	mainFunc := s.File.Decls[len(s.File.Decls)-1].(*ast.FuncDecl)
 	s.MainBody = mainFunc.Body
-	s.ImportDecl = s.File.Decls[0].(*ast.GenDecl)
 
 	return s
 }
@@ -298,8 +304,8 @@ func (s *Session) clearQuickFix() {
 	}
 }
 
-func (s *Session) Eval(in string) (interface{}, error) {
-	debugf("eval >>> %q", in)
+func (s *Session) Run(in string) error {
+	debugf("run >>> %q", in)
 
 	s.clearQuickFix()
 
@@ -314,7 +320,7 @@ func (s *Session) Eval(in string) (interface{}, error) {
 				debugf("stmt :: err = %s", err)
 
 				if _, ok := err.(scanner.ErrorList); ok {
-					return nil, ErrContinue
+					return ErrContinue
 				}
 			}
 		}
@@ -338,7 +344,7 @@ func (s *Session) Eval(in string) (interface{}, error) {
 		s.LastBodyLength = len(s.MainBody.List)
 	}
 
-	return nil, err
+	return err
 }
 
 func normalizeNode(node ast.Node) {
