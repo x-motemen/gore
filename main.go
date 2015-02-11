@@ -1,9 +1,5 @@
 package main
 
-// TODO:
-// - "declared and not used" error
-// - import
-
 import (
 	"bytes"
 	"fmt"
@@ -26,10 +22,15 @@ import (
 	_ "golang.org/x/tools/go/gcimporter"
 	"golang.org/x/tools/go/types"
 
-	"github.com/bobappleyard/readline"
+	"github.com/peterh/liner"
 )
 
 const appName = "gore"
+
+const (
+	promptDefault  = "gore> "
+	promptContinue = "..... "
+)
 
 func debugf(format string, args ...interface{}) {
 	_, file, line, ok := runtime.Caller(1)
@@ -41,19 +42,20 @@ func debugf(format string, args ...interface{}) {
 }
 
 func main() {
-	readline.Completer = func(q, ctx string) []string {
-		debugf("q=%q ctx=%q", q, ctx)
-		return []string{}
-	}
-
 	s := NewSession()
 
-	rl := readline.NewReader()
-	line := ""
+	rl := liner.NewLiner()
+	defer rl.Close()
+
+	// rl.SetCompleter(func(line string) []string {
+	// 	return nil
+	// })
+
+	in := ""
+	prompt := promptDefault
 
 	for {
-		buf := make([]byte, 8192)
-		_, err := rl.Read(buf) // TODO: check n
+		line, err := rl.Prompt(prompt)
 		if err == io.EOF {
 			break
 		} else if err != nil {
@@ -61,23 +63,22 @@ func main() {
 			os.Exit(1)
 		}
 
-		p := bytes.IndexByte(buf, '\x00')
-		if line == "" {
-			line = string(buf[0:p])
+		in = in + line
+
+		v, err := s.Eval(in)
+		if err == ErrContinue {
+			// TODO make cancellable
+			prompt = promptContinue
 		} else {
-			line = line + "\n" + string(buf[0:p])
-		}
-
-		v, err := s.Eval(line)
-		if err != nil {
-			fmt.Println(err)
-		}
-
-		if err == nil || err != ErrContinue {
-			fmt.Printf("%#v\n", v)
-			readline.AddHistory(line)
-			rl = readline.NewReader()
-			line = ""
+			in = ""
+			prompt = promptDefault
+			if err != nil {
+				fmt.Println(err)
+			} else {
+				fmt.Printf("%#v\n", v)
+				rl.AppendHistory(line)
+				line = ""
+			}
 		}
 	}
 }
