@@ -24,8 +24,6 @@ import (
 	"github.com/peterh/liner"
 )
 
-const appName = "gore"
-
 var debug = false
 
 const (
@@ -159,7 +157,7 @@ func (s *Session) BuildRunFile() error {
 }
 
 func tempFile() (string, error) {
-	dir, err := ioutil.TempDir("", appName)
+	dir, err := ioutil.TempDir("", "")
 	if err != nil {
 		return "", err
 	}
@@ -169,7 +167,7 @@ func tempFile() (string, error) {
 		return "", err
 	}
 
-	return filepath.Join(dir, "session.go"), nil
+	return filepath.Join(dir, "gore.go"), nil
 }
 
 func goRun(file string) error {
