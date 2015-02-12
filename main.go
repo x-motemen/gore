@@ -112,14 +112,54 @@ func completeImport(prefix string) []string {
 	return result
 }
 
+type contLiner struct {
+	*liner.State
+	buffer string
+}
+
+func newContLiner() *contLiner {
+	rl := liner.NewLiner()
+	return &contLiner{State: rl}
+}
+
+func (cl *contLiner) promptString() string {
+	if cl.buffer != "" {
+		return promptContinue
+	}
+
+	return promptDefault
+}
+
+func (cl *contLiner) Prompt() (string, error) {
+	line, err := cl.State.Prompt(cl.promptString())
+	if err == io.EOF {
+		if cl.buffer != "" {
+			// cancel line continuation
+			cl.Accepted()
+			fmt.Println()
+			err = nil
+		}
+	} else {
+		if cl.buffer != "" {
+			cl.buffer = cl.buffer + "\n" + line
+		} else {
+			cl.buffer = line
+		}
+	}
+
+	return cl.buffer, err
+}
+
+func (cl *contLiner) Accepted() {
+	cl.State.AppendHistory(cl.buffer)
+	cl.buffer = ""
+}
+
 func main() {
 	s := NewSession()
 
-	rl := liner.NewLiner()
+	rl := newContLiner()
 	defer rl.Close()
-
-	in := ""
-	prompt := promptDefault
 
 	// TODO: set up completion for:
 	// - methods/fields using gocode?
@@ -145,40 +185,27 @@ func main() {
 	})
 
 	for {
-		line, err := rl.Prompt(prompt)
-		if err == io.EOF {
-			if in != "" {
-				// cancel line continuation
-				rl.AppendHistory(in)
-				in = ""
-				prompt = promptDefault
-				fmt.Println()
-				continue
-			} else {
+		in, err := rl.Prompt()
+		if err != nil {
+			if err == io.EOF {
 				break
 			}
-		} else if err != nil {
 			fmt.Fprintf(os.Stderr, "fatal: %s", err)
 			os.Exit(1)
 		}
 
-		if in != "" {
-			in = in + "\n" + line
-		} else {
-			in = line
+		if in == "" {
+			continue
 		}
 
 		err = s.Run(in)
-		if err == ErrContinue {
-			prompt = promptContinue
-		} else {
-			rl.AppendHistory(in)
-			in = ""
-			prompt = promptDefault
-			if err != nil {
-				fmt.Println(err)
+		if err != nil {
+			if err == ErrContinue {
+				continue
 			}
+			fmt.Println(err)
 		}
+		rl.Accepted()
 	}
 }
 
