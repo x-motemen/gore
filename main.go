@@ -6,6 +6,7 @@ import (
 	"io/ioutil"
 	"os"
 	"os/exec"
+	"path"
 	"path/filepath"
 	"regexp"
 	"runtime"
@@ -13,6 +14,7 @@ import (
 	"syscall"
 
 	"go/ast"
+	"go/build"
 	"go/parser"
 	"go/printer"
 	"go/scanner"
@@ -44,6 +46,72 @@ func debugf(format string, args ...interface{}) {
 	fmt.Fprintf(os.Stderr, format+"\n", args...)
 }
 
+func errorf(format string, args ...interface{}) {
+	fmt.Fprintf(os.Stderr, "error: "+format+"\n", args...)
+}
+
+var gorootSrc = filepath.Join(filepath.Clean(runtime.GOROOT()), "src")
+
+func completeImport(prefix string) []string {
+	result := []string{}
+	seen := map[string]bool{}
+
+	d, fn := path.Split(prefix)
+	for _, srcDir := range build.Default.SrcDirs() {
+		dir := filepath.Join(srcDir, d)
+
+		if fi, err := os.Stat(dir); err != nil || !fi.IsDir() {
+			if err != nil && !os.IsNotExist(err) {
+				errorf("Stat %s: %s", dir, err)
+			}
+			continue
+		}
+
+		entries, err := ioutil.ReadDir(dir)
+		if err != nil {
+			errorf("ReadDir %s: %s", dir, err)
+			continue
+		}
+		for _, fi := range entries {
+			if !fi.IsDir() {
+				continue
+			}
+
+			name := fi.Name()
+			if strings.HasPrefix(name, ".") || strings.HasPrefix(name, "_") || name == "testdata" {
+				continue
+			}
+
+			if strings.HasPrefix(name, fn) {
+				r := path.Join(d, name)
+				if srcDir != gorootSrc {
+					// append "/" if this directory is not a repository
+					// e.g. does not have VCS directory such as .git or .hg
+					// TODO do not append "/" to subdirectories of repos
+					var isRepo bool
+					for _, vcsDir := range []string{".git", ".hg", ".svn", ".bzr"} {
+						_, err := os.Stat(filepath.Join(srcDir, filepath.FromSlash(r), vcsDir))
+						if err == nil {
+							isRepo = true
+							break
+						}
+					}
+					if !isRepo {
+						r = r + "/"
+					}
+				}
+
+				if !seen[r] {
+					result = append(result, r)
+					seen[r] = true
+				}
+			}
+		}
+	}
+
+	return result
+}
+
 func main() {
 	s := NewSession()
 
@@ -54,8 +122,27 @@ func main() {
 	prompt := promptDefault
 
 	// TODO: set up completion for:
-	// - imports
 	// - methods/fields using gocode?
+	rl.SetWordCompleter(func(line string, pos int) (string, []string, string) {
+		if strings.HasPrefix(line, ":") && !strings.Contains(line[0:pos], " ") {
+			pre, post := line[0:pos], line[pos:]
+
+			result := []string{}
+			for _, command := range []string{":import"} {
+				if strings.HasPrefix(command, pre) {
+					if !strings.HasPrefix(post, " ") {
+						command = command + " "
+					}
+					result = append(result, command)
+				}
+			}
+			return "", result, post
+		} else if strings.HasPrefix(line, ":import ") && pos >= len(":import ") {
+			return ":import ", completeImport(line[len(":import "):pos]), ""
+		}
+
+		return "", nil, ""
+	})
 
 	for {
 		line, err := rl.Prompt(prompt)
@@ -228,12 +315,11 @@ func (e Error) Error() string {
 }
 
 func (s *Session) handleImport(in string) bool {
-	// TODO make this ":import "?
-	if !strings.HasPrefix(in, "import ") {
+	if !strings.HasPrefix(in, ":import ") {
 		return false
 	}
 
-	path := in[len("import "):]
+	path := in[len(":import "):]
 	path = strings.Trim(path, `"`)
 
 	astutil.AddImport(s.Fset, s.File, path)
