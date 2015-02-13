@@ -27,6 +27,8 @@ import (
 	"github.com/peterh/liner"
 )
 
+const printerName = "__gore_p"
+
 var debug = false
 
 func debugf(format string, args ...interface{}) {
@@ -271,7 +273,7 @@ package main
 
 import "fmt"
 
-func p(xx ...interface{}) {
+func ` + printerName + `(xx ...interface{}) {
 	for _, x := range xx {
 		fmt.Printf("%#v\n", x)
 	}
@@ -352,7 +354,7 @@ func (s *Session) injectExpr(in string) error {
 	// TODO "... used as value" error
 	stmt := &ast.ExprStmt{
 		X: &ast.CallExpr{
-			Fun:  ast.NewIdent("p"),
+			Fun:  ast.NewIdent(printerName),
 			Args: []ast.Expr{expr},
 		},
 	}
@@ -390,7 +392,7 @@ func (s *Session) injectStmt(in string) error {
 			if len(vs) > 0 {
 				printLastValues := &ast.ExprStmt{
 					X: &ast.CallExpr{
-						Fun:  ast.NewIdent("p"),
+						Fun:  ast.NewIdent(printerName),
 						Args: vs,
 					},
 				}
@@ -547,7 +549,7 @@ func printedExprs(stmt ast.Stmt) []ast.Expr {
 		return nil
 	}
 
-	if !isNamedIdent(expr.Fun, "p") {
+	if !isNamedIdent(expr.Fun, printerName) {
 		return nil
 	}
 
