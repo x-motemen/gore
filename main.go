@@ -385,7 +385,7 @@ func (s *Session) handleImport(in string) bool {
 }
 
 // TODO after :print do not run
-// TODO complete :print with not trailing space
+// TODO complete :print without trailing space
 func (s *Session) handlePrint(in string) bool {
 	if strings.TrimSpace(in) != ":print" {
 		return false
@@ -427,7 +427,6 @@ func (s *Session) quickFixFile() error {
 				ident := m[1]
 				debugf("quickFix :: declared but not used -> %s", ident)
 				// insert "_ = x" to supress "declared but not used" error
-				// TODO: remove this statement after evaluation
 				stmt := &ast.AssignStmt{
 					Lhs: []ast.Expr{ast.NewIdent("_")},
 					Tok: token.ASSIGN,
@@ -463,6 +462,118 @@ func (s *Session) clearQuickFix() {
 	for _, imp := range s.File.Imports {
 		imp.Name = nil
 	}
+
+	for i := 0; i < len(s.mainBody.List); {
+		stmt := s.mainBody.List[i]
+
+		// remove "_ = x" stmt
+		if assign, ok := stmt.(*ast.AssignStmt); ok && len(assign.Lhs) == 1 {
+			if isNamedIdent(assign.Lhs[0], "_") {
+				s.mainBody.List = append(s.mainBody.List[0:i], s.mainBody.List[i+1:]...)
+				continue
+			}
+		}
+
+		// remove expressions just for printing out
+		// i.e. what causes "evaluated but not used."
+		if isPurePrintingStmt(stmt) {
+			s.mainBody.List = append(s.mainBody.List[0:i], s.mainBody.List[i+1:]...)
+			continue
+		}
+
+		i++
+	}
+}
+
+// isPurePrintingStmt checks if a statement stmt is an expression statement of
+// printing ("p(x)") of "pure" expression, which means removing this expression
+// will no affect the entire program.
+func isPurePrintingStmt(stmt ast.Stmt) bool {
+	st, ok := stmt.(*ast.ExprStmt)
+	if !ok {
+		return false
+	}
+
+	// first check whether the expr is p(_) form
+	expr, ok := st.X.(*ast.CallExpr)
+	if !ok {
+		return false
+	}
+
+	if !isNamedIdent(expr.Fun, "p") {
+		return false
+	}
+
+	for _, arg := range expr.Args {
+		if !isPureExpr(arg) {
+			return false
+		}
+	}
+
+	return true
+}
+
+var pureBuiltinFuncs = map[string]bool{
+	"len":    true,
+	"make":   true,
+	"cap":    true,
+	"append": true,
+	"imag":   true,
+	"real":   true,
+}
+
+// - identifiers ("x")
+// - selectors ("x.y")
+// - slices ("a[n:m]")
+// - literals ("1")
+// - type conversion ("int(1)")
+// - type assertion ("x.(int)")
+// - call of some built-in functions: len, make, cap, append, imag, real
+func isPureExpr(expr ast.Expr) bool {
+	if expr == nil {
+		return true
+	}
+
+	switch expr := expr.(type) {
+	case *ast.Ident:
+		return true
+	case *ast.BasicLit:
+		return true
+	case *ast.BinaryExpr:
+		return isPureExpr(expr.X) && isPureExpr(expr.Y)
+	case *ast.CallExpr:
+		ident, ok := expr.Fun.(*ast.Ident)
+		if !ok {
+			return false
+		}
+		if !pureBuiltinFuncs[ident.Name] {
+			return false
+		}
+		for _, arg := range expr.Args {
+			if !isPureExpr(arg) {
+				return false
+			}
+		}
+		return true
+	case *ast.CompositeLit:
+		return true
+	case *ast.FuncLit:
+		return true
+	case *ast.IndexExpr:
+		return isPureExpr(expr.X) && isPureExpr(expr.Index)
+	case *ast.SelectorExpr:
+		return isPureExpr(expr.X)
+	case *ast.SliceExpr:
+		return isPureExpr(expr.Low) && isPureExpr(expr.High) && isPureExpr(expr.Max)
+	case *ast.StarExpr:
+		return isPureExpr(expr.X)
+	case *ast.TypeAssertExpr:
+		return true
+	case *ast.UnaryExpr:
+		return isPureExpr(expr.X)
+	}
+
+	return false
 }
 
 func (s *Session) Run(in string) error {
