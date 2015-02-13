@@ -423,7 +423,11 @@ func (e Error) Error() string {
 // TODO after :print do not run
 func actionPrint(s *Session, _ string) error {
 	var buf bytes.Buffer
-	err := printer.Fprint(&buf, s.Fset, s.File)
+	config := &printer.Config{
+		Mode:     printer.UseSpaces,
+		Tabwidth: 4,
+	}
+	err := config.Fprint(&buf, s.Fset, s.File)
 	if err != nil {
 		return err
 	}
