@@ -239,13 +239,12 @@ func NewSession() *Session {
 	s := &Session{}
 	s.Fset = token.NewFileSet()
 
-	// s.FilePath, err = tempFile()
-	s.FilePath = "_tmp/session.go"
+	s.FilePath, err = tempFile()
 	if err != nil {
 		panic(err)
 	}
 
-	s.File, err = parser.ParseFile(s.Fset, "session.go", initialSource, parser.Mode(0))
+	s.File, err = parser.ParseFile(s.Fset, "gore_session.go", initialSource, parser.Mode(0))
 	if err != nil {
 		panic(err)
 	}
@@ -281,7 +280,7 @@ func tempFile() (string, error) {
 		return "", err
 	}
 
-	return filepath.Join(dir, "gore.go"), nil
+	return filepath.Join(dir, "gore_session.go"), nil
 }
 
 func goRun(file string) error {
