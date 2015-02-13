@@ -233,9 +233,54 @@ func main() {
 					return cmdPrefix, command.complete(line[len(cmdPrefix):pos]), ""
 				}
 			}
+
+			return "", nil, ""
 		}
 
-		return "", nil, ""
+		// code completion
+		source, err := s.source()
+		if err != nil {
+			errorf("source: %s", err)
+			return "", nil, ""
+		}
+
+		p := strings.LastIndex(source, "}")
+		editSource := source[0:p] + line + source[p:]
+		cursor := len(source[0:p]) + pos
+
+		gocode := exec.Command("gocode", "-f=csv", "autocomplete", fmt.Sprintf("%d", cursor))
+		in, err := gocode.StdinPipe()
+		if err != nil {
+			errorf("gocode: %s", err)
+			return "", nil, ""
+		}
+		_, err = in.Write([]byte(editSource))
+		if err != nil {
+			errorf("gocode: %s", err)
+			return "", nil, ""
+		}
+		err = in.Close()
+		if err != nil {
+			errorf("gocode: %s", err)
+			return "", nil, ""
+		}
+		out, err := gocode.Output()
+		if err != nil {
+			errorf("gocode: %s", err)
+			return "", nil, ""
+		}
+		debugf("gocode :: %s", out)
+
+		result := []string{}
+		rows := strings.Split(string(out), "\n")
+		for _, row := range rows {
+			cols := strings.Split(row, ",")
+			if len(cols) > 2 {
+				result = append(result, cols[2])
+			}
+		}
+
+		return line[0:pos], result, ""
 	})
 
 	for {
@@ -424,19 +469,24 @@ func (e Error) Error() string {
 	return string(e)
 }
 
-// TODO after :print do not run
-func actionPrint(s *Session, _ string) error {
+func (s *Session) source() (string, error) {
 	var buf bytes.Buffer
 	config := &printer.Config{
 		Mode:     printer.UseSpaces,
 		Tabwidth: 4,
 	}
 	err := config.Fprint(&buf, s.Fset, s.File)
+	return buf.String(), err
+}
+
+// TODO after :print do not run
+func actionPrint(s *Session, _ string) error {
+	source, err := s.source()
 	if err != nil {
 		return err
 	}
 
-	fmt.Println(buf.String())
+	fmt.Println(source)
 
 	return nil
 }
