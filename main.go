@@ -490,7 +490,7 @@ func (s *Session) quickFixFile() error {
 					lastStmt := s.mainBody.List[mainLen-1]
 					if es, ok := lastStmt.(*ast.ExprStmt); ok {
 						if call, ok := es.X.(*ast.CallExpr); ok && isNamedIdent(call.Fun, printerName) {
-							s.RecallCode()
+							s.restoreMainBody()
 							for _, expr := range call.Args {
 								s.appendStatements(&ast.ExprStmt{X: expr})
 							}
@@ -649,7 +649,7 @@ func (s *Session) Run(in string) error {
 	debugf("run >>> %q", in)
 
 	s.clearQuickFix()
-	s.RememberCode()
+	s.storeMainBody()
 
 	var commandRan bool
 	for _, command := range commands {
@@ -693,7 +693,7 @@ func (s *Session) Run(in string) error {
 			if st, ok := exitErr.ProcessState.Sys().(syscall.WaitStatus); ok {
 				if st.ExitStatus() == 2 {
 					debugf("got exit status 2, popping out last input")
-					s.RecallCode()
+					s.restoreMainBody()
 				}
 			}
 		}
@@ -702,13 +702,13 @@ func (s *Session) Run(in string) error {
 	return err
 }
 
-// RememberCode stores current state of code so that it can be restored
+// storeMainBody stores current state of code so that it can be restored
 // actually it saves the length of statements inside main()
-func (s *Session) RememberCode() {
+func (s *Session) storeMainBody() {
 	s.storedBodyLength = len(s.mainBody.List)
 }
 
-func (s *Session) RecallCode() {
+func (s *Session) restoreMainBody() {
 	s.mainBody.List = s.mainBody.List[0:s.storedBodyLength]
 }
 
