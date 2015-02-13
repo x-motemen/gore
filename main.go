@@ -203,31 +203,35 @@ func main() {
 	// TODO: set up completion for:
 	// - methods/fields using gocode?
 	rl.SetWordCompleter(func(line string, pos int) (string, []string, string) {
-		if strings.HasPrefix(line, ":") && !strings.Contains(line[0:pos], " ") {
-			pre, post := line[0:pos], line[pos:]
+		if strings.HasPrefix(line, ":") {
+			// complete commands
+			if !strings.Contains(line[0:pos], " ") {
+				pre, post := line[0:pos], line[pos:]
 
-			result := []string{}
-			for _, command := range commands {
-				name := ":" + command.name
-				if strings.HasPrefix(name, pre) {
-					// having complete means that this command takes an argument (for now)
-					if !strings.HasPrefix(post, " ") && command.complete != nil {
-						name = name + " "
+				result := []string{}
+				for _, command := range commands {
+					name := ":" + command.name
+					if strings.HasPrefix(name, pre) {
+						// having complete means that this command takes an argument (for now)
+						if !strings.HasPrefix(post, " ") && command.complete != nil {
+							name = name + " "
+						}
+						result = append(result, name)
 					}
-					result = append(result, name)
 				}
-			}
-			return "", result, post
-		}
-
-		for _, command := range commands {
-			if command.complete == nil {
-				continue
+				return "", result, post
 			}
 
-			cmdPrefix := ":" + command.name + " "
-			if strings.HasPrefix(line, cmdPrefix) && pos >= len(cmdPrefix) {
-				return cmdPrefix, command.complete(line[len(cmdPrefix):pos]), ""
+			// complete command arguments
+			for _, command := range commands {
+				if command.complete == nil {
+					continue
+				}
+
+				cmdPrefix := ":" + command.name + " "
+				if strings.HasPrefix(line, cmdPrefix) && pos >= len(cmdPrefix) {
+					return cmdPrefix, command.complete(line[len(cmdPrefix):pos]), ""
+				}
 			}
 		}
 
@@ -443,6 +447,7 @@ var (
 )
 
 // quickFixFile tries to fix the source AST so that it compiles well.
+// TODO "could not import ..."
 func (s *Session) quickFixFile() error {
 	const maxAttempts = 10
 
