@@ -454,10 +454,11 @@ func (s *Session) quickFixFile() error {
 
 		debugf("quickFix :: err = %#v", err)
 
-		if err, ok := err.(types.Error); ok && err.Soft {
+		if err, ok := err.(types.Error); ok {
 			// Handle these situations:
 			// - "%s declared but not used"
 			// - "%q imported but not used"
+			// - "%s used as value"
 			if m := rxDeclaredNotUsed.FindStringSubmatch(err.Msg); m != nil {
 				ident := m[1]
 				debugf("quickFix :: declared but not used -> %s", ident)
@@ -479,6 +480,25 @@ func (s *Session) quickFixFile() error {
 						imp.Name = ast.NewIdent("_")
 						break
 					}
+				}
+			} else if strings.HasSuffix(err.Msg, " used as value") {
+				// if last added statement is p(expr), unwrap that expr
+				mainLen := len(s.mainBody.List)
+				debugf("%d %d", mainLen, s.storedBodyLength)
+				if mainLen-s.storedBodyLength == 1 {
+					// just one statement added
+					lastStmt := s.mainBody.List[mainLen-1]
+					if es, ok := lastStmt.(*ast.ExprStmt); ok {
+						if call, ok := es.X.(*ast.CallExpr); ok && isNamedIdent(call.Fun, printerName) {
+							s.RecallCode()
+							for _, expr := range call.Args {
+								s.appendStatements(&ast.ExprStmt{X: expr})
+							}
+						}
+					}
+				} else {
+					debugf("quickFix :: give up")
+					break
 				}
 			} else {
 				debugf("quickFix :: give up")
@@ -548,16 +568,16 @@ func printedExprs(stmt ast.Stmt) []ast.Expr {
 	}
 
 	// first check whether the expr is p(_) form
-	expr, ok := st.X.(*ast.CallExpr)
+	call, ok := st.X.(*ast.CallExpr)
 	if !ok {
 		return nil
 	}
 
-	if !isNamedIdent(expr.Fun, printerName) {
+	if !isNamedIdent(call.Fun, printerName) {
 		return nil
 	}
 
-	return expr.Args
+	return call.Args
 }
 
 var pureBuiltinFuncs = map[string]bool{
@@ -629,6 +649,7 @@ func (s *Session) Run(in string) error {
 	debugf("run >>> %q", in)
 
 	s.clearQuickFix()
+	s.RememberCode()
 
 	var commandRan bool
 	for _, command := range commands {
@@ -666,7 +687,6 @@ func (s *Session) Run(in string) error {
 	s.quickFixFile()
 
 	err := s.BuildRunFile()
-
 	if err != nil {
 		if exitErr, ok := err.(*exec.ExitError); ok {
 			// if failed with status 2, remove the last statement
@@ -677,8 +697,6 @@ func (s *Session) Run(in string) error {
 				}
 			}
 		}
-	} else {
-		s.RememberCode()
 	}
 
 	return err
