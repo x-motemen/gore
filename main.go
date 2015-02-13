@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"encoding/json"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -200,8 +201,6 @@ func main() {
 	rl := newContLiner()
 	defer rl.Close()
 
-	// TODO: set up completion for:
-	// - methods/fields using gocode?
 	rl.SetWordCompleter(func(line string, pos int) (string, []string, string) {
 		if strings.HasPrefix(line, ":") {
 			// complete commands
@@ -248,7 +247,7 @@ func main() {
 		editSource := source[0:p] + line + source[p:]
 		cursor := len(source[0:p]) + pos
 
-		gocode := exec.Command("gocode", "-f=csv", "autocomplete", fmt.Sprintf("%d", cursor))
+		gocode := exec.Command("gocode", "-f=json", "autocomplete", fmt.Sprintf("%d", cursor))
 		in, err := gocode.StdinPipe()
 		if err != nil {
 			errorf("gocode: %s", err)
@@ -271,16 +270,46 @@ func main() {
 		}
 		debugf("gocode :: %s", out)
 
-		result := []string{}
-		rows := strings.Split(string(out), "\n")
-		for _, row := range rows {
-			cols := strings.Split(row, ",")
-			if len(cols) > 2 {
-				result = append(result, cols[2])
-			}
+		result := []json.RawMessage{}
+		err = json.Unmarshal(out, &result)
+		if err != nil {
+			errorf("gocode: %s", err)
+			return "", nil, ""
 		}
 
-		return line[0:pos], result, ""
+		if len(result) < 2 {
+			debugf("gocode :: %#v", result)
+			return "", nil, ""
+		}
+
+		type entry struct {
+			Class string `json:"class"`
+			Name  string `json:"name"`
+			Type  string `json:"type"`
+		}
+
+		var c int
+		err = json.Unmarshal(result[0], &c)
+		if err != nil {
+			errorf("gocode: %s", err)
+			return "", nil, ""
+		}
+
+		entries := []entry{}
+		err = json.Unmarshal(result[1], &entries)
+		if err != nil {
+			errorf("gocode: %s", err)
+			return "", nil, ""
+		}
+
+		debugf("%d %#v", c, entries)
+
+		cands := make([]string, 0, len(entries))
+		for _, e := range entries {
+			cands = append(cands, e.Name[c:])
+		}
+
+		return line[0:pos], cands, ""
 	})
 
 	for {
