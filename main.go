@@ -118,6 +118,12 @@ func actionImport(s *Session, arg string) error {
 
 	path := strings.Trim(arg, `"`)
 
+	// check if the package specified by path is importable
+	_, err := types.DefaultImport(s.Types.Packages, path)
+	if err != nil {
+		return err
+	}
+
 	astutil.AddImport(s.Fset, s.File, path)
 
 	return nil
@@ -341,6 +347,7 @@ type Session struct {
 	FilePath string
 	File     *ast.File
 	Fset     *token.FileSet
+	Types    *types.Config
 
 	mainBody         *ast.BlockStmt
 	storedBodyLength int
@@ -366,6 +373,7 @@ func NewSession() *Session {
 
 	s := &Session{}
 	s.Fset = token.NewFileSet()
+	s.Types = &types.Config{}
 
 	s.FilePath, err = tempFile()
 	if err != nil {
@@ -525,12 +533,11 @@ var (
 )
 
 // quickFixFile tries to fix the source AST so that it compiles well.
-// TODO!! "could not import ..."
 func (s *Session) quickFixFile() error {
 	const maxAttempts = 10
 
 	for i := 0; i < maxAttempts; i++ {
-		_, err := types.Check("_quickfix", s.Fset, []*ast.File{s.File})
+		_, err := s.Types.Check("_quickfix", s.Fset, []*ast.File{s.File}, nil)
 		if err == nil {
 			break
 		}
@@ -567,7 +574,6 @@ func (s *Session) quickFixFile() error {
 			} else if strings.HasSuffix(err.Msg, " used as value") {
 				// if last added statement is p(expr), unwrap that expr
 				mainLen := len(s.mainBody.List)
-				debugf("%d %d", mainLen, s.storedBodyLength)
 				if mainLen-s.storedBodyLength == 1 {
 					// just one statement added
 					lastStmt := s.mainBody.List[mainLen-1]
