@@ -83,7 +83,7 @@ func completeImport(prefix string) []string {
 				if srcDir != gorootSrc {
 					// append "/" if this directory is not a repository
 					// e.g. does not have VCS directory such as .git or .hg
-					// TODO do not append "/" to subdirectories of repos
+					// TODO: do not append "/" to subdirectories of repos
 					var isRepo bool
 					for _, vcsDir := range []string{".git", ".hg", ".svn", ".bzr"} {
 						_, err := os.Stat(filepath.Join(srcDir, filepath.FromSlash(r), vcsDir))
@@ -302,9 +302,10 @@ func (s *Session) injectExpr(in string) error {
 
 	normalizeNode(expr)
 
+	// TODO "... used as value" error
 	stmt := &ast.ExprStmt{
 		X: &ast.CallExpr{
-			Fun:  ast.NewIdent("p"), // TODO remove this after evaluation
+			Fun:  ast.NewIdent("p"),
 			Args: []ast.Expr{expr},
 		},
 	}
@@ -312,6 +313,11 @@ func (s *Session) injectExpr(in string) error {
 	s.appendStatements(stmt)
 
 	return nil
+}
+
+func isNamedIdent(expr ast.Expr, name string) bool {
+	ident, ok := expr.(*ast.Ident)
+	return ok && ident.Name == name
 }
 
 func (s *Session) injectStmt(in string) error {
@@ -322,7 +328,31 @@ func (s *Session) injectStmt(in string) error {
 	}
 
 	enclosingFunc := f.Scope.Lookup("F").Decl.(*ast.FuncDecl)
-	s.appendStatements(enclosingFunc.Body.List...)
+	stmts := enclosingFunc.Body.List
+
+	if len(stmts) > 0 {
+		lastStmt := stmts[len(stmts)-1]
+		// print last assigned/defined values
+		if assign, ok := lastStmt.(*ast.AssignStmt); ok {
+			vs := []ast.Expr{}
+			for _, v := range assign.Lhs {
+				if !isNamedIdent(v, "_") {
+					vs = append(vs, v)
+				}
+			}
+			if len(vs) > 0 {
+				printLastValues := &ast.ExprStmt{
+					X: &ast.CallExpr{
+						Fun:  ast.NewIdent("p"),
+						Args: vs,
+					},
+				}
+				stmts = append(stmts, printLastValues)
+			}
+		}
+	}
+
+	s.appendStatements(stmts...)
 
 	return nil
 }
