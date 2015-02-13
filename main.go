@@ -429,7 +429,6 @@ func (s *Session) injectExpr(in string) error {
 
 	normalizeNode(expr)
 
-	// TODO "... used as value" error
 	stmt := &ast.ExprStmt{
 		X: &ast.CallExpr{
 			Fun:  ast.NewIdent(printerName),
@@ -526,7 +525,7 @@ var (
 )
 
 // quickFixFile tries to fix the source AST so that it compiles well.
-// TODO "could not import ..."
+// TODO!! "could not import ..."
 func (s *Session) quickFixFile() error {
 	const maxAttempts = 10
 
