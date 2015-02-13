@@ -108,6 +108,18 @@ func completeImport(prefix string) []string {
 	return result
 }
 
+func actionImport(s *Session, arg string) error {
+	if arg == "" {
+		return fmt.Errorf("arg required")
+	}
+
+	path := strings.Trim(arg, `"`)
+
+	astutil.AddImport(s.Fset, s.File, path)
+
+	return nil
+}
+
 const (
 	promptDefault  = "gore> "
 	promptContinue = "..... "
@@ -156,6 +168,30 @@ func (cl *contLiner) Accepted() {
 	cl.buffer = ""
 }
 
+type command struct {
+	name     string
+	action   func(*Session, string) error
+	complete func(string) []string
+}
+
+// TODO
+// - :write [<filepath>]
+// - :edit
+// - :undo
+// - :reset
+var commands = []command{
+	{
+		name:     "import",
+		action:   actionImport,
+		complete: completeImport,
+	},
+	{
+		name:     "print",
+		action:   actionPrint,
+		complete: nil,
+	},
+}
+
 func main() {
 	s := NewSession()
 
@@ -169,17 +205,28 @@ func main() {
 			pre, post := line[0:pos], line[pos:]
 
 			result := []string{}
-			for _, command := range []string{":import", ":print"} {
-				if strings.HasPrefix(command, pre) {
-					if !strings.HasPrefix(post, " ") {
-						command = command + " "
+			for _, command := range commands {
+				name := ":" + command.name
+				if strings.HasPrefix(name, pre) {
+					// having complete means that this command takes an argument (for now)
+					if !strings.HasPrefix(post, " ") && command.complete != nil {
+						name = name + " "
 					}
-					result = append(result, command)
+					result = append(result, name)
 				}
 			}
 			return "", result, post
-		} else if strings.HasPrefix(line, ":import ") && pos >= len(":import ") {
-			return ":import ", completeImport(line[len(":import "):pos]), ""
+		}
+
+		for _, command := range commands {
+			if command.complete == nil {
+				continue
+			}
+
+			cmdPrefix := ":" + command.name + " "
+			if strings.HasPrefix(line, cmdPrefix) && pos >= len(cmdPrefix) {
+				return cmdPrefix, command.complete(line[len(cmdPrefix):pos]), ""
+			}
 		}
 
 		return "", nil, ""
@@ -371,35 +418,17 @@ func (e Error) Error() string {
 	return string(e)
 }
 
-func (s *Session) handleImport(in string) bool {
-	if !strings.HasPrefix(in, ":import ") {
-		return false
-	}
-
-	path := in[len(":import "):]
-	path = strings.Trim(path, `"`)
-
-	astutil.AddImport(s.Fset, s.File, path)
-
-	return true
-}
-
 // TODO after :print do not run
-// TODO complete :print without trailing space
-func (s *Session) handlePrint(in string) bool {
-	if strings.TrimSpace(in) != ":print" {
-		return false
-	}
-
+func actionPrint(s *Session, _ string) error {
 	var buf bytes.Buffer
 	err := printer.Fprint(&buf, s.Fset, s.File)
-	if err == nil {
-		fmt.Println(buf.String())
-	} else {
-		errorf("%s", err)
+	if err != nil {
+		return err
 	}
 
-	return true
+	fmt.Println(buf.String())
+
+	return nil
 }
 
 var (
@@ -595,7 +624,25 @@ func (s *Session) Run(in string) error {
 
 	s.clearQuickFix()
 
-	if !s.handleImport(in) && !s.handlePrint(in) {
+	var commandRan bool
+	for _, command := range commands {
+		arg := strings.TrimPrefix(in, ":"+command.name)
+		if arg == in {
+			continue
+		}
+
+		if arg == "" || strings.HasPrefix(arg, " ") {
+			arg = strings.TrimSpace(arg)
+			err := command.action(s, arg)
+			if err != nil {
+				errorf("%s: %s", command.name, err)
+			}
+			commandRan = true
+			break
+		}
+	}
+
+	if !commandRan {
 		if err := s.injectExpr(in); err != nil {
 			debugf("expr :: err = %s", err)
 
