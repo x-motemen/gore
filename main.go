@@ -252,7 +252,10 @@ func main() {
 		}
 
 		// code completion
-		source, err := s.source(true)
+
+		s.clearQuickFix()
+
+		source, err := s.source(false)
 		if err != nil {
 			errorf("source: %s", err)
 			return "", nil, ""
