@@ -476,8 +476,28 @@ func (s *Session) clearQuickFix() {
 
 		// remove expressions just for printing out
 		// i.e. what causes "evaluated but not used."
-		if isPurePrintingStmt(stmt) {
-			s.mainBody.List = append(s.mainBody.List[0:i], s.mainBody.List[i+1:]...)
+		if exprs := printedExprs(stmt); exprs != nil {
+			allPure := true
+			for _, expr := range exprs {
+				if !isPureExpr(expr) {
+					allPure = false
+				}
+			}
+			if allPure {
+				s.mainBody.List = append(s.mainBody.List[0:i], s.mainBody.List[i+1:]...)
+				continue
+			}
+
+			// strip (possibly impure) printing expression to expression
+			var trailing []ast.Stmt
+			s.mainBody.List, trailing = s.mainBody.List[0:i], s.mainBody.List[i+1:]
+			for _, expr := range exprs {
+				if !isNamedIdent(expr, "_") {
+					s.mainBody.List = append(s.mainBody.List, &ast.ExprStmt{X: expr})
+				}
+			}
+
+			s.mainBody.List = append(s.mainBody.List, trailing...)
 			continue
 		}
 
@@ -485,32 +505,24 @@ func (s *Session) clearQuickFix() {
 	}
 }
 
-// isPurePrintingStmt checks if a statement stmt is an expression statement of
-// printing ("p(x)") of "pure" expression, which means removing this expression
-// will no affect the entire program.
-func isPurePrintingStmt(stmt ast.Stmt) bool {
+// printedExprs returns arguments of statement stmt of form "p(x...)"
+func printedExprs(stmt ast.Stmt) []ast.Expr {
 	st, ok := stmt.(*ast.ExprStmt)
 	if !ok {
-		return false
+		return nil
 	}
 
 	// first check whether the expr is p(_) form
 	expr, ok := st.X.(*ast.CallExpr)
 	if !ok {
-		return false
+		return nil
 	}
 
 	if !isNamedIdent(expr.Fun, "p") {
-		return false
+		return nil
 	}
 
-	for _, arg := range expr.Args {
-		if !isPureExpr(arg) {
-			return false
-		}
-	}
-
-	return true
+	return expr.Args
 }
 
 var pureBuiltinFuncs = map[string]bool{
@@ -522,6 +534,8 @@ var pureBuiltinFuncs = map[string]bool{
 	"real":   true,
 }
 
+// isPureExpr checks if an expression expr is "pure", which means
+// removing this expression will no affect the entire program.
 // - identifiers ("x")
 // - selectors ("x.y")
 // - slices ("a[n:m]")
