@@ -243,7 +243,7 @@ func main() {
 		}
 
 		// code completion
-		source, err := s.source()
+		source, err := s.source(true)
 		if err != nil {
 			errorf("source: %s", err)
 			return "", nil, ""
@@ -373,7 +373,9 @@ func NewSession() *Session {
 
 	s := &Session{}
 	s.Fset = token.NewFileSet()
-	s.Types = &types.Config{}
+	s.Types = &types.Config{
+		Packages: make(map[string]*types.Package),
+	}
 
 	s.FilePath, err = tempFile()
 	if err != nil {
@@ -505,19 +507,27 @@ func (e Error) Error() string {
 	return string(e)
 }
 
-func (s *Session) source() (string, error) {
-	var buf bytes.Buffer
-	config := &printer.Config{
-		Mode:     printer.UseSpaces,
-		Tabwidth: 4,
+func (s *Session) source(space bool) (string, error) {
+	var config *printer.Config
+	if space {
+		config = &printer.Config{
+			Mode:     printer.UseSpaces,
+			Tabwidth: 4,
+		}
+	} else {
+		config = &printer.Config{
+			Tabwidth: 8,
+		}
 	}
+
+	var buf bytes.Buffer
 	err := config.Fprint(&buf, s.Fset, s.File)
 	return buf.String(), err
 }
 
 // TODO after :print do not run
 func actionPrint(s *Session, _ string) error {
-	source, err := s.source()
+	source, err := s.source(true)
 	if err != nil {
 		return err
 	}
