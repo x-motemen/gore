@@ -14,6 +14,7 @@ import (
 	"runtime"
 	"strings"
 	"syscall"
+	"time"
 
 	"go/ast"
 	"go/build"
@@ -47,6 +48,10 @@ func debugf(format string, args ...interface{}) {
 
 func errorf(format string, args ...interface{}) {
 	fmt.Fprintf(os.Stderr, "error: "+format+"\n", args...)
+}
+
+func infof(format string, args ...interface{}) {
+	fmt.Fprintf(os.Stderr, format+"\n", args...)
 }
 
 var gorootSrc = filepath.Join(filepath.Clean(runtime.GOROOT()), "src")
@@ -184,7 +189,6 @@ type command struct {
 }
 
 // TODO
-// - :write [<filepath>]
 // - :edit
 // - :undo
 // - :reset
@@ -198,6 +202,11 @@ var commands = []command{
 		name:     "print",
 		action:   actionPrint,
 		complete: nil,
+	},
+	{
+		name:     "write",
+		action:   actionWrite,
+		complete: nil, // TODO implement
 	},
 }
 
@@ -507,6 +516,7 @@ func (e Error) Error() string {
 	return string(e)
 }
 
+// TODO normalize position
 func (s *Session) source(space bool) (string, error) {
 	var config *printer.Config
 	if space {
@@ -525,7 +535,7 @@ func (s *Session) source(space bool) (string, error) {
 	return buf.String(), err
 }
 
-// TODO after :print do not run
+// TODO do not run after :print
 func actionPrint(s *Session, _ string) error {
 	source, err := s.source(true)
 	if err != nil {
@@ -533,6 +543,27 @@ func actionPrint(s *Session, _ string) error {
 	}
 
 	fmt.Println(source)
+
+	return nil
+}
+
+// TODO do not run after :write
+func actionWrite(s *Session, filename string) error {
+	source, err := s.source(false)
+	if err != nil {
+		return err
+	}
+
+	if filename == "" {
+		filename = fmt.Sprintf("gore_session_%s.go", time.Now().Format("20060102_150405"))
+	}
+
+	err = ioutil.WriteFile(filename, []byte(source), 0644)
+	if err != nil {
+		return err
+	}
+
+	infof("Source wrote to %s", filename)
 
 	return nil
 }
