@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -27,11 +28,6 @@ import (
 )
 
 var debug = false
-
-const (
-	promptDefault  = "gore> "
-	promptContinue = "..... "
-)
 
 func debugf(format string, args ...interface{}) {
 	if !debug {
@@ -112,6 +108,11 @@ func completeImport(prefix string) []string {
 	return result
 }
 
+const (
+	promptDefault  = "gore> "
+	promptContinue = "..... "
+)
+
 type contLiner struct {
 	*liner.State
 	buffer string
@@ -139,7 +140,7 @@ func (cl *contLiner) Prompt() (string, error) {
 			fmt.Println()
 			err = nil
 		}
-	} else {
+	} else if err == nil {
 		if cl.buffer != "" {
 			cl.buffer = cl.buffer + "\n" + line
 		} else {
@@ -168,7 +169,7 @@ func main() {
 			pre, post := line[0:pos], line[pos:]
 
 			result := []string{}
-			for _, command := range []string{":import"} {
+			for _, command := range []string{":import", ":print"} {
 				if strings.HasPrefix(command, pre) {
 					if !strings.HasPrefix(post, " ") {
 						command = command + " "
@@ -353,6 +354,24 @@ func (s *Session) handleImport(in string) bool {
 	return true
 }
 
+// TODO after :print do not run
+// TODO complete :print with not trailing space
+func (s *Session) handlePrint(in string) bool {
+	if strings.TrimSpace(in) != ":print" {
+		return false
+	}
+
+	var buf bytes.Buffer
+	err := printer.Fprint(&buf, s.Fset, s.File)
+	if err == nil {
+		fmt.Println(buf.String())
+	} else {
+		errorf("%s", err)
+	}
+
+	return true
+}
+
 var (
 	rxDeclaredNotUsed = regexp.MustCompile(`^([a-zA-Z0-9_]+) declared but not used`)
 	rxImportedNotUsed = regexp.MustCompile(`^(".+") imported but not used`)
@@ -421,9 +440,7 @@ func (s *Session) Run(in string) error {
 
 	s.clearQuickFix()
 
-	imported := s.handleImport(in)
-
-	if !imported {
+	if !s.handleImport(in) && !s.handlePrint(in) {
 		if err := s.injectExpr(in); err != nil {
 			debugf("expr :: err = %s", err)
 
