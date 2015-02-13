@@ -192,6 +192,8 @@ type command struct {
 // - :edit
 // - :undo
 // - :reset
+// - :type
+// - :doc
 var commands = []command{
 	{
 		name:     "import",
@@ -353,6 +355,8 @@ func main() {
 		}
 		rl.Accepted()
 	}
+
+	// TODO save history
 }
 
 type Session struct {
@@ -360,6 +364,7 @@ type Session struct {
 	File     *ast.File
 	Fset     *token.FileSet
 	Types    *types.Config
+	TypeInfo types.Info
 
 	mainBody         *ast.BlockStmt
 	storedBodyLength int
@@ -581,7 +586,10 @@ func (s *Session) quickFixFile() error {
 	const maxAttempts = 10
 
 	for i := 0; i < maxAttempts; i++ {
-		_, err := s.Types.Check("_quickfix", s.Fset, []*ast.File{s.File}, nil)
+		s.TypeInfo = types.Info{
+			Types: make(map[ast.Expr]types.TypeAndValue),
+		}
+		_, err := s.Types.Check("_quickfix", s.Fset, []*ast.File{s.File}, &s.TypeInfo)
 		if err == nil {
 			break
 		}
@@ -667,7 +675,7 @@ func (s *Session) clearQuickFix() {
 		if exprs := printedExprs(stmt); exprs != nil {
 			allPure := true
 			for _, expr := range exprs {
-				if !isPureExpr(expr) {
+				if !s.isPureExpr(expr) {
 					allPure = false
 				}
 			}
@@ -713,6 +721,7 @@ func printedExprs(stmt ast.Stmt) []ast.Expr {
 	return call.Args
 }
 
+// TODO: use types.Universe?
 var pureBuiltinFuncs = map[string]bool{
 	"len":    true,
 	"make":   true,
@@ -720,6 +729,25 @@ var pureBuiltinFuncs = map[string]bool{
 	"append": true,
 	"imag":   true,
 	"real":   true,
+
+	// below are actually not builtin functions
+	"int":        true,
+	"bool":       true,
+	"int8":       true,
+	"int16":      true,
+	"int32":      true,
+	"int64":      true,
+	"uint":       true,
+	"uint8":      true,
+	"uint16":     true,
+	"uint32":     true,
+	"uint64":     true,
+	"uintptr":    true,
+	"float32":    true,
+	"float64":    true,
+	"complex64":  true,
+	"complex128": true,
+	"string":     true,
 }
 
 // isPureExpr checks if an expression expr is "pure", which means
@@ -731,7 +759,7 @@ var pureBuiltinFuncs = map[string]bool{
 // - type conversion ("int(1)")
 // - type assertion ("x.(int)")
 // - call of some built-in functions: len, make, cap, append, imag, real
-func isPureExpr(expr ast.Expr) bool {
+func (s *Session) isPureExpr(expr ast.Expr) bool {
 	if expr == nil {
 		return true
 	}
@@ -742,37 +770,37 @@ func isPureExpr(expr ast.Expr) bool {
 	case *ast.BasicLit:
 		return true
 	case *ast.BinaryExpr:
-		return isPureExpr(expr.X) && isPureExpr(expr.Y)
+		return s.isPureExpr(expr.X) && s.isPureExpr(expr.Y)
 	case *ast.CallExpr:
-		ident, ok := expr.Fun.(*ast.Ident)
-		if !ok {
-			return false
-		}
-		if !pureBuiltinFuncs[ident.Name] {
-			return false
-		}
-		for _, arg := range expr.Args {
-			if !isPureExpr(arg) {
+		if ident, ok := expr.Fun.(*ast.Ident); ok {
+			if !pureBuiltinFuncs[ident.Name] {
 				return false
 			}
+			for _, arg := range expr.Args {
+				if !s.isPureExpr(arg) {
+					return false
+				}
+			}
+			return true
 		}
-		return true
+		tv := s.TypeInfo.Types[expr.Fun]
+		debugf("%s: %#v", astutil.NodeDescription(expr), tv)
 	case *ast.CompositeLit:
 		return true
 	case *ast.FuncLit:
 		return true
 	case *ast.IndexExpr:
-		return isPureExpr(expr.X) && isPureExpr(expr.Index)
+		return s.isPureExpr(expr.X) && s.isPureExpr(expr.Index)
 	case *ast.SelectorExpr:
-		return isPureExpr(expr.X)
+		return s.isPureExpr(expr.X)
 	case *ast.SliceExpr:
-		return isPureExpr(expr.Low) && isPureExpr(expr.High) && isPureExpr(expr.Max)
+		return s.isPureExpr(expr.Low) && s.isPureExpr(expr.High) && s.isPureExpr(expr.Max)
 	case *ast.StarExpr:
-		return isPureExpr(expr.X)
+		return s.isPureExpr(expr.X)
 	case *ast.TypeAssertExpr:
 		return true
 	case *ast.UnaryExpr:
-		return isPureExpr(expr.X)
+		return s.isPureExpr(expr.X)
 	}
 
 	return false
