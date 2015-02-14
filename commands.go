@@ -6,6 +6,7 @@ import (
 	"os"
 	"path"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"text/tabwriter"
 	"time"
@@ -78,6 +79,8 @@ func actionImport(s *Session, arg string) error {
 
 	return nil
 }
+
+var gorootSrc = filepath.Join(filepath.Clean(runtime.GOROOT()), "src")
 
 func completeImport(prefix string) []string {
 	result := []string{}

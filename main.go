@@ -9,7 +9,6 @@ import (
 	"os/exec"
 	"path/filepath"
 	"regexp"
-	"runtime"
 	"strings"
 	"syscall"
 
@@ -24,31 +23,6 @@ import (
 )
 
 const printerName = "__gore_p"
-
-var debug = false
-
-func debugf(format string, args ...interface{}) {
-	if !debug {
-		return
-	}
-
-	_, file, line, ok := runtime.Caller(1)
-	if ok {
-		format = fmt.Sprintf("%s:%d %s", filepath.Base(file), line, format)
-	}
-
-	fmt.Fprintf(os.Stderr, format+"\n", args...)
-}
-
-func errorf(format string, args ...interface{}) {
-	fmt.Fprintf(os.Stderr, "error: "+format+"\n", args...)
-}
-
-func infof(format string, args ...interface{}) {
-	fmt.Fprintf(os.Stderr, format+"\n", args...)
-}
-
-var gorootSrc = filepath.Join(filepath.Clean(runtime.GOROOT()), "src")
 
 func main() {
 	s, err := NewSession()
