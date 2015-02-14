@@ -2,7 +2,6 @@ package main
 
 import (
 	"bytes"
-	"encoding/json"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -102,7 +101,10 @@ func (cl *contLiner) Accepted() {
 }
 
 func main() {
-	s := NewSession()
+	s, err := NewSession()
+	if err != nil {
+		panic(err)
+	}
 
 	rl := newContLiner()
 	defer rl.Close()
@@ -142,6 +144,10 @@ func main() {
 			return "", nil, ""
 		}
 
+		if gocode.invalid {
+			return "", nil, ""
+		}
+
 		// code completion
 
 		s.clearQuickFix()
@@ -156,66 +162,10 @@ func main() {
 		editSource := source[0:p] + line + source[p:]
 		cursor := len(source[0:p]) + pos
 
-		gocode := exec.Command("gocode", "-f=json", "autocomplete", fmt.Sprintf("%d", cursor))
-		in, err := gocode.StdinPipe()
+		cands, err := gocode.complete(editSource, cursor)
 		if err != nil {
 			errorf("gocode: %s", err)
 			return "", nil, ""
-		}
-		_, err = in.Write([]byte(editSource))
-		if err != nil {
-			errorf("gocode: %s", err)
-			return "", nil, ""
-		}
-		err = in.Close()
-		if err != nil {
-			errorf("gocode: %s", err)
-			return "", nil, ""
-		}
-		out, err := gocode.Output()
-		if err != nil {
-			errorf("gocode: %s", err)
-			return "", nil, ""
-		}
-		debugf("gocode :: %s", out)
-
-		result := []json.RawMessage{}
-		err = json.Unmarshal(out, &result)
-		if err != nil {
-			errorf("gocode: %s", err)
-			return "", nil, ""
-		}
-
-		if len(result) < 2 {
-			debugf("gocode :: %#v", result)
-			return "", nil, ""
-		}
-
-		type entry struct {
-			Class string `json:"class"`
-			Name  string `json:"name"`
-			Type  string `json:"type"`
-		}
-
-		var c int
-		err = json.Unmarshal(result[0], &c)
-		if err != nil {
-			errorf("gocode: %s", err)
-			return "", nil, ""
-		}
-
-		entries := []entry{}
-		err = json.Unmarshal(result[1], &entries)
-		if err != nil {
-			errorf("gocode: %s", err)
-			return "", nil, ""
-		}
-
-		debugf("%d %#v", c, entries)
-
-		cands := make([]string, 0, len(entries))
-		for _, e := range entries {
-			cands = append(cands, e.Name[c:])
 		}
 
 		return line[0:pos], cands, ""
@@ -276,7 +226,6 @@ func main() {
 
 // printerPkgs is a list of packages that provides
 // pretty printing function. Preceding first.
-// TODO: make configurable
 var printerPkgs = []struct {
 	path string
 	code string
@@ -286,18 +235,19 @@ var printerPkgs = []struct {
 	{"fmt", `fmt.Printf("%#v\n", x)`},
 }
 
-func NewSession() *Session {
+func NewSession() (*Session, error) {
 	var err error
 
-	s := &Session{}
-	s.Fset = token.NewFileSet()
-	s.Types = &types.Config{
-		Packages: make(map[string]*types.Package),
+	s := &Session{
+		Fset: token.NewFileSet(),
+		Types: &types.Config{
+			Packages: make(map[string]*types.Package),
+		},
 	}
 
 	s.FilePath, err = tempFile()
 	if err != nil {
-		panic(err)
+		return nil, err
 	}
 
 	var initialSource string
@@ -311,21 +261,21 @@ func NewSession() *Session {
 	}
 
 	if initialSource == "" {
-		panic(`Could not load pretty printing package (even "fmt"; something is wrong)`)
+		return nil, fmt.Errorf(`Could not load pretty printing package (even "fmt"; something is wrong)`)
 	}
 
 	s.File, err = parser.ParseFile(s.Fset, "gore_session.go", initialSource, parser.Mode(0))
 	if err != nil {
-		panic(err)
+		return nil, err
 	}
 
 	mainFunc := s.File.Scope.Lookup("main").Decl.(*ast.FuncDecl)
 	s.mainBody = mainFunc.Body
 
-	return s
+	return s, nil
 }
 
-func (s *Session) BuildRunFile() error {
+func (s *Session) RunFile() error {
 	f, err := os.Create(s.FilePath)
 	if err != nil {
 		return err
@@ -734,7 +684,7 @@ func (s *Session) Run(in string) error {
 
 	s.quickFixFile()
 
-	err := s.BuildRunFile()
+	err := s.RunFile()
 	if err != nil {
 		if exitErr, ok := err.(*exec.ExitError); ok {
 			// if failed with status 2, remove the last statement
@@ -745,6 +695,7 @@ func (s *Session) Run(in string) error {
 				}
 			}
 		}
+		errorf("%s", err)
 	}
 
 	return err
