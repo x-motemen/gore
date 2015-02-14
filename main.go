@@ -20,6 +20,8 @@ import (
 	"golang.org/x/tools/go/ast/astutil"
 	_ "golang.org/x/tools/go/gcimporter"
 	"golang.org/x/tools/go/types"
+
+	"github.com/mitchellh/go-homedir"
 )
 
 const printerName = "__gore_p"
@@ -32,6 +34,26 @@ func main() {
 
 	rl := newContLiner()
 	defer rl.Close()
+
+	var historyFile string
+	home, err := homeDir()
+	if err != nil {
+		errorf("home: %s", err)
+	} else {
+		historyFile = filepath.Join(home, "history")
+
+		f, err := os.Open(historyFile)
+		if err != nil {
+			if !os.IsNotExist(err) {
+				errorf("%s", err)
+			}
+		} else {
+			_, err := rl.ReadHistory(f)
+			if err != nil {
+				errorf("while reading history: %s", err)
+			}
+		}
+	}
 
 	rl.SetWordCompleter(func(line string, pos int) (string, []string, string) {
 		if strings.HasPrefix(line, ":") {
@@ -119,7 +141,37 @@ func main() {
 		rl.Accepted()
 	}
 
-	// TODO save history
+	if historyFile != "" {
+		err := os.MkdirAll(filepath.Dir(historyFile), 0755)
+		if err != nil {
+			errorf("%s", err)
+		} else {
+			f, err := os.Create(historyFile)
+			if err != nil {
+				errorf("%s", err)
+			} else {
+				_, err := rl.WriteHistory(f)
+				if err != nil {
+					errorf("while saving history: %s", err)
+				}
+			}
+		}
+	}
+}
+
+func homeDir() (home string, err error) {
+	home = os.Getenv("GORE_HOME")
+	if home != "" {
+		return
+	}
+
+	home, err = homedir.Dir()
+	if err != nil {
+		return
+	}
+
+	home = filepath.Join(home, ".gore")
+	return
 }
 
 type Session struct {
