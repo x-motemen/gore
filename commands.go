@@ -7,6 +7,7 @@ import (
 	"path"
 	"path/filepath"
 	"strings"
+	"text/tabwriter"
 	"time"
 
 	"go/build"
@@ -18,6 +19,8 @@ type command struct {
 	name     string
 	action   func(*Session, string) error
 	complete func(string) []string
+	arg      string
+	document string
 }
 
 // TODO
@@ -27,22 +30,35 @@ type command struct {
 // - :type
 // - :doc
 // - :help
-var commands = []command{
-	{
-		name:     "import",
-		action:   actionImport,
-		complete: completeImport,
-	},
-	{
-		name:     "print",
-		action:   actionPrint,
-		complete: nil,
-	},
-	{
-		name:     "write",
-		action:   actionWrite,
-		complete: nil, // TODO implement
-	},
+var commands []command
+
+func init() {
+	commands = []command{
+		{
+			name:     "import",
+			action:   actionImport,
+			complete: completeImport,
+			arg:      "<package>",
+			document: "import a package",
+		},
+		{
+			name:     "print",
+			action:   actionPrint,
+			document: "print current source",
+		},
+		{
+			name:     "write",
+			action:   actionWrite,
+			complete: nil, // TODO implement
+			arg:      "[<file>]",
+			document: "write out current source",
+		},
+		{
+			name:     "help",
+			action:   actionHelp,
+			document: "show this help",
+		},
+	}
 }
 
 func actionImport(s *Session, arg string) error {
@@ -150,6 +166,20 @@ func actionWrite(s *Session, filename string) error {
 	}
 
 	infof("Source wrote to %s", filename)
+
+	return nil
+}
+
+func actionHelp(s *Session, _ string) error {
+	w := tabwriter.NewWriter(os.Stdout, 0, 8, 4, ' ', 0)
+	for _, command := range commands {
+		cmd := ":" + command.name
+		if command.arg != "" {
+			cmd = cmd + " " + command.arg
+		}
+		w.Write([]byte("    " + cmd + "\t" + command.document + "\n"))
+	}
+	w.Flush()
 
 	return nil
 }

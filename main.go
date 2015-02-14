@@ -118,7 +118,7 @@ func main() {
 					name := ":" + command.name
 					if strings.HasPrefix(name, pre) {
 						// having complete means that this command takes an argument (for now)
-						if !strings.HasPrefix(post, " ") && command.complete != nil {
+						if !strings.HasPrefix(post, " ") && command.arg != "" {
 							name = name + " "
 						}
 						result = append(result, name)
