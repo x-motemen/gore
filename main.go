@@ -259,20 +259,32 @@ type Session struct {
 	storedBodyLength int
 }
 
-const initialSource = `
+const initialSourceTemplate = `
 package main
 
-import "fmt"
+import %q
 
 func ` + printerName + `(xx ...interface{}) {
 	for _, x := range xx {
-		fmt.Printf("%#v\n", x)
+		%s
 	}
 }
 
 func main() {
 }
 `
+
+// printerPkgs is a list of packages that provides
+// pretty printing function. Preceding first.
+// TODO: make configurable
+var printerPkgs = []struct {
+	path string
+	code string
+}{
+	{"github.com/k0kubun/pp", `pp.Println(x)`},
+	{"github.com/davecgh/go-spew/spew", `spew.Printf("%#v\n", x)`},
+	{"fmt", `fmt.Printf("%#v\n", x)`},
+}
 
 func NewSession() *Session {
 	var err error
@@ -286,6 +298,20 @@ func NewSession() *Session {
 	s.FilePath, err = tempFile()
 	if err != nil {
 		panic(err)
+	}
+
+	var initialSource string
+	for _, pp := range printerPkgs {
+		_, err := types.DefaultImport(s.Types.Packages, pp.path)
+		if err == nil {
+			initialSource = fmt.Sprintf(initialSourceTemplate, pp.path, pp.code)
+			break
+		}
+		debugf("could not import %q: %s", pp.path, err)
+	}
+
+	if initialSource == "" {
+		panic(`Could not load pretty printing package (even "fmt"; something is wrong)`)
 	}
 
 	s.File, err = parser.ParseFile(s.Fset, "gore_session.go", initialSource, parser.Mode(0))
