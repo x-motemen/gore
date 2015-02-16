@@ -8,7 +8,6 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
-	"regexp"
 	"strings"
 	"syscall"
 
@@ -17,7 +16,6 @@ import (
 	"go/printer"
 	"go/scanner"
 	"go/token"
-	"golang.org/x/tools/go/ast/astutil"
 	_ "golang.org/x/tools/go/gcimporter"
 	"golang.org/x/tools/go/types"
 
@@ -131,7 +129,7 @@ func main() {
 			continue
 		}
 
-		err = s.Run(in)
+		err = s.Eval(in)
 		if err != nil {
 			if err == ErrContinue {
 				continue
@@ -245,13 +243,16 @@ func NewSession() (*Session, error) {
 		return nil, err
 	}
 
-	mainFunc := s.File.Scope.Lookup("main").Decl.(*ast.FuncDecl)
-	s.mainBody = mainFunc.Body
+	s.mainBody = s.mainFunc().Body
 
 	return s, nil
 }
 
-func (s *Session) RunFile() error {
+func (s *Session) mainFunc() *ast.FuncDecl {
+	return s.File.Scope.Lookup("main").Decl.(*ast.FuncDecl)
+}
+
+func (s *Session) Run() error {
 	f, err := os.Create(s.FilePath)
 	if err != nil {
 		return err
@@ -289,7 +290,7 @@ func goRun(file string) error {
 	return cmd.Run()
 }
 
-func (s *Session) injectExpr(in string) (ast.Expr, error) {
+func (s *Session) evalExpr(in string) (ast.Expr, error) {
 	expr, err := parser.ParseExpr(in)
 	if err != nil {
 		return nil, err
@@ -314,7 +315,7 @@ func isNamedIdent(expr ast.Expr, name string) bool {
 	return ok && ident.Name == name
 }
 
-func (s *Session) injectStmt(in string) error {
+func (s *Session) evalStmt(in string) error {
 	src := fmt.Sprintf("package P; func F() { %s }", in)
 	f, err := parser.ParseFile(s.Fset, "stmt.go", src, parser.Mode(0))
 	if err != nil {
@@ -384,238 +385,8 @@ func (s *Session) source(space bool) (string, error) {
 	return buf.String(), err
 }
 
-var (
-	rxDeclaredNotUsed = regexp.MustCompile(`^([a-zA-Z0-9_]+) declared but not used`)
-	rxImportedNotUsed = regexp.MustCompile(`^(".+") imported but not used`)
-)
-
-// quickFixFile tries to fix the source AST so that it compiles well.
-func (s *Session) quickFixFile() error {
-	const maxAttempts = 10
-
-	for i := 0; i < maxAttempts; i++ {
-		s.TypeInfo = types.Info{
-			Types: make(map[ast.Expr]types.TypeAndValue),
-		}
-		_, err := s.Types.Check("_quickfix", s.Fset, []*ast.File{s.File}, &s.TypeInfo)
-		if err == nil {
-			break
-		}
-
-		debugf("quickFix :: err = %#v", err)
-
-		if err, ok := err.(types.Error); ok {
-			// Handle these situations:
-			// - "%s declared but not used"
-			// - "%q imported but not used"
-			// - "%s used as value"
-			if m := rxDeclaredNotUsed.FindStringSubmatch(err.Msg); m != nil {
-				ident := m[1]
-				debugf("quickFix :: declared but not used -> %s", ident)
-				// insert "_ = x" to supress "declared but not used" error
-				stmt := &ast.AssignStmt{
-					Lhs: []ast.Expr{ast.NewIdent("_")},
-					Tok: token.ASSIGN,
-					Rhs: []ast.Expr{ast.NewIdent(ident)},
-				}
-				s.appendStatements(stmt)
-			} else if m := rxImportedNotUsed.FindStringSubmatch(err.Msg); m != nil {
-				path := m[1] // quoted string, but it's okay because this will be compared to ast.BasicLit.Value.
-				debugf("quickFix :: imported but not used -> %s", path)
-
-				for _, imp := range s.File.Imports {
-					debugf("%s vs %s", imp.Path.Value, path)
-					if imp.Path.Value == path {
-						// make this import spec anonymous one
-						imp.Name = ast.NewIdent("_")
-						break
-					}
-				}
-			} else if strings.HasSuffix(err.Msg, " used as value") {
-				// if last added statement is p(expr), unwrap that expr
-				mainLen := len(s.mainBody.List)
-				if mainLen-s.storedBodyLength == 1 {
-					// just one statement added
-					lastStmt := s.mainBody.List[mainLen-1]
-					if es, ok := lastStmt.(*ast.ExprStmt); ok {
-						if call, ok := es.X.(*ast.CallExpr); ok && isNamedIdent(call.Fun, printerName) {
-							s.restoreMainBody()
-							for _, expr := range call.Args {
-								s.appendStatements(&ast.ExprStmt{X: expr})
-							}
-						}
-					}
-				} else {
-					debugf("quickFix :: give up")
-					break
-				}
-			} else {
-				debugf("quickFix :: give up")
-				break
-			}
-		} else {
-			return err
-		}
-	}
-
-	return nil
-}
-
-func (s *Session) clearQuickFix() {
-	// make all import specs explicit (i.e. no "_").
-	for _, imp := range s.File.Imports {
-		imp.Name = nil
-	}
-
-	for i := 0; i < len(s.mainBody.List); {
-		stmt := s.mainBody.List[i]
-
-		// remove "_ = x" stmt
-		if assign, ok := stmt.(*ast.AssignStmt); ok && len(assign.Lhs) == 1 {
-			if isNamedIdent(assign.Lhs[0], "_") {
-				s.mainBody.List = append(s.mainBody.List[0:i], s.mainBody.List[i+1:]...)
-				continue
-			}
-		}
-
-		// remove expressions just for printing out
-		// i.e. what causes "evaluated but not used."
-		if exprs := printedExprs(stmt); exprs != nil {
-			allPure := true
-			for _, expr := range exprs {
-				if !s.isPureExpr(expr) {
-					allPure = false
-				}
-			}
-			if allPure {
-				s.mainBody.List = append(s.mainBody.List[0:i], s.mainBody.List[i+1:]...)
-				continue
-			}
-
-			// strip (possibly impure) printing expression to expression
-			var trailing []ast.Stmt
-			s.mainBody.List, trailing = s.mainBody.List[0:i], s.mainBody.List[i+1:]
-			for _, expr := range exprs {
-				if !isNamedIdent(expr, "_") {
-					s.mainBody.List = append(s.mainBody.List, &ast.ExprStmt{X: expr})
-				}
-			}
-
-			s.mainBody.List = append(s.mainBody.List, trailing...)
-			continue
-		}
-
-		i++
-	}
-}
-
-// printedExprs returns arguments of statement stmt of form "p(x...)"
-func printedExprs(stmt ast.Stmt) []ast.Expr {
-	st, ok := stmt.(*ast.ExprStmt)
-	if !ok {
-		return nil
-	}
-
-	// first check whether the expr is p(_) form
-	call, ok := st.X.(*ast.CallExpr)
-	if !ok {
-		return nil
-	}
-
-	if !isNamedIdent(call.Fun, printerName) {
-		return nil
-	}
-
-	return call.Args
-}
-
-// TODO: use types.Universe?
-var pureBuiltinFuncs = map[string]bool{
-	"len":    true,
-	"make":   true,
-	"cap":    true,
-	"append": true,
-	"imag":   true,
-	"real":   true,
-
-	// below are actually not builtin functions
-	"int":        true,
-	"bool":       true,
-	"int8":       true,
-	"int16":      true,
-	"int32":      true,
-	"int64":      true,
-	"uint":       true,
-	"uint8":      true,
-	"uint16":     true,
-	"uint32":     true,
-	"uint64":     true,
-	"uintptr":    true,
-	"float32":    true,
-	"float64":    true,
-	"complex64":  true,
-	"complex128": true,
-	"string":     true,
-}
-
-// isPureExpr checks if an expression expr is "pure", which means
-// removing this expression will no affect the entire program.
-// - identifiers ("x")
-// - selectors ("x.y")
-// - slices ("a[n:m]")
-// - literals ("1")
-// - type conversion ("int(1)")
-// - type assertion ("x.(int)")
-// - call of some built-in functions: len, make, cap, append, imag, real
-func (s *Session) isPureExpr(expr ast.Expr) bool {
-	if expr == nil {
-		return true
-	}
-
-	switch expr := expr.(type) {
-	case *ast.Ident:
-		return true
-	case *ast.BasicLit:
-		return true
-	case *ast.BinaryExpr:
-		return s.isPureExpr(expr.X) && s.isPureExpr(expr.Y)
-	case *ast.CallExpr:
-		if ident, ok := expr.Fun.(*ast.Ident); ok {
-			if !pureBuiltinFuncs[ident.Name] {
-				return false
-			}
-			for _, arg := range expr.Args {
-				if !s.isPureExpr(arg) {
-					return false
-				}
-			}
-			return true
-		}
-		tv := s.TypeInfo.Types[expr.Fun]
-		debugf("%s: %#v", astutil.NodeDescription(expr), tv)
-	case *ast.CompositeLit:
-		return true
-	case *ast.FuncLit:
-		return true
-	case *ast.IndexExpr:
-		return s.isPureExpr(expr.X) && s.isPureExpr(expr.Index)
-	case *ast.SelectorExpr:
-		return s.isPureExpr(expr.X)
-	case *ast.SliceExpr:
-		return s.isPureExpr(expr.Low) && s.isPureExpr(expr.High) && s.isPureExpr(expr.Max)
-	case *ast.StarExpr:
-		return s.isPureExpr(expr.X)
-	case *ast.TypeAssertExpr:
-		return true
-	case *ast.UnaryExpr:
-		return s.isPureExpr(expr.X)
-	}
-
-	return false
-}
-
-func (s *Session) Run(in string) error {
-	debugf("run >>> %q", in)
+func (s *Session) Eval(in string) error {
+	debugf("eval >>> %q", in)
 
 	s.clearQuickFix()
 	s.storeMainBody()
@@ -639,28 +410,26 @@ func (s *Session) Run(in string) error {
 	}
 
 	if commandRan {
-		s.quickFixFile()
+		s.doQuickFix()
 		return nil
 	}
 
-	if !commandRan {
-		if _, err := s.injectExpr(in); err != nil {
-			debugf("expr :: err = %s", err)
+	if _, err := s.evalExpr(in); err != nil {
+		debugf("expr :: err = %s", err)
 
-			err := s.injectStmt(in)
-			if err != nil {
-				debugf("stmt :: err = %s", err)
+		err := s.evalStmt(in)
+		if err != nil {
+			debugf("stmt :: err = %s", err)
 
-				if _, ok := err.(scanner.ErrorList); ok {
-					return ErrContinue
-				}
+			if _, ok := err.(scanner.ErrorList); ok {
+				return ErrContinue
 			}
 		}
 	}
 
-	s.quickFixFile()
+	s.doQuickFix()
 
-	err := s.RunFile()
+	err := s.Run()
 	if err != nil {
 		if exitErr, ok := err.(*exec.ExitError); ok {
 			// if failed with status 2, remove the last statement

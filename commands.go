@@ -182,12 +182,12 @@ func actionDoc(s *Session, in string) error {
 	s.storeMainBody()
 	defer s.restoreMainBody()
 
-	expr, err := s.injectExpr(in)
+	expr, err := s.evalExpr(in)
 	if err != nil {
 		return err
 	}
 
-	s.quickFixFile()
+	s.doQuickFix()
 
 	s.TypeInfo = types.Info{
 		Types:  make(map[ast.Expr]types.TypeAndValue),
@@ -225,7 +225,7 @@ func actionDoc(s *Session, in string) error {
 		}
 	} else if ident, ok := expr.(*ast.Ident); ok {
 		// package name
-		mainScope := s.TypeInfo.Scopes[s.File.Scope.Lookup("main").Decl.(*ast.FuncDecl).Type]
+		mainScope := s.TypeInfo.Scopes[s.mainFunc().Type]
 		_, docObj = mainScope.LookupParent(ident.Name)
 	}
 
