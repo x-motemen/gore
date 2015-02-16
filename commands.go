@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"os/exec"
 	"path"
 	"path/filepath"
 	"runtime"
@@ -11,6 +12,7 @@ import (
 	"text/tabwriter"
 	"time"
 
+	"go/ast"
 	"go/build"
 	"golang.org/x/tools/go/ast/astutil"
 	"golang.org/x/tools/go/types"
@@ -30,7 +32,6 @@ type command struct {
 // - :reset
 // - :type
 // - :doc
-// - :help
 var commands []command
 
 func init() {
@@ -53,6 +54,10 @@ func init() {
 			complete: nil, // TODO implement
 			arg:      "[<file>]",
 			document: "write out current source",
+		},
+		{
+			name:   "doc",
+			action: actionDoc,
 		},
 		{
 			name:     "help",
@@ -171,6 +176,114 @@ func actionWrite(s *Session, filename string) error {
 	infof("Source wrote to %s", filename)
 
 	return nil
+}
+
+func actionDoc(s *Session, in string) error {
+	s.storeMainBody()
+	defer s.restoreMainBody()
+
+	expr, err := s.injectExpr(in)
+	if err != nil {
+		return err
+	}
+
+	s.quickFixFile()
+
+	s.TypeInfo = types.Info{
+		Types:  make(map[ast.Expr]types.TypeAndValue),
+		Uses:   make(map[*ast.Ident]types.Object),
+		Defs:   make(map[*ast.Ident]types.Object),
+		Scopes: make(map[ast.Node]*types.Scope),
+	}
+	_, err = s.Types.Check("_tmp", s.Fset, []*ast.File{s.File}, &s.TypeInfo)
+	if err != nil {
+		debugf("typecheck error (ignored): %s", err)
+	}
+
+	// :doc patterns:
+	// - "json" -> "encoding/json" (package name)
+	// - "json.Encoder" -> "encoding/json", "Encoder" (package member)
+	// - "json.NewEncoder(nil).Encode" -> "encoding/json", "Decode" (package type member)
+	var docObj types.Object
+	if sel, ok := expr.(*ast.SelectorExpr); ok {
+		// package member, package type member
+		docObj = s.TypeInfo.ObjectOf(sel.Sel)
+	} else if t := s.TypeInfo.TypeOf(expr); t != nil && t != types.Typ[types.Invalid] {
+		for {
+			if pt, ok := t.(*types.Pointer); ok {
+				t = pt.Elem()
+			} else {
+				break
+			}
+		}
+		switch t := t.(type) {
+		case *types.Named:
+			docObj = t.Obj()
+		case *types.Basic:
+			// builtin types
+			docObj = types.Universe.Lookup(t.Name())
+		}
+	} else if ident, ok := expr.(*ast.Ident); ok {
+		// package name
+		mainScope := s.TypeInfo.Scopes[s.File.Scope.Lookup("main").Decl.(*ast.FuncDecl).Type]
+		_, docObj = mainScope.LookupParent(ident.Name)
+	}
+
+	if docObj == nil {
+		return fmt.Errorf("cannot determine the document location")
+	}
+
+	debugf("doc :: obj=%#v", docObj)
+
+	var pkgPath, objName string
+	if pkgName, ok := docObj.(*types.PkgName); ok {
+		pkgPath = pkgName.Imported().Path()
+	} else {
+		if pkg := docObj.Pkg(); pkg != nil {
+			pkgPath = pkg.Path()
+		} else {
+			pkgPath = "builtin"
+		}
+		objName = docObj.Name()
+	}
+
+	debugf("doc :: %q %q", pkgPath, objName)
+
+	args := []string{pkgPath}
+	if objName != "" {
+		args = append(args, objName)
+	}
+
+	godoc := exec.Command("godoc", args...)
+	godoc.Stderr = os.Stderr
+
+	// TODO just use PAGER?
+	if pagerCmd := os.Getenv("GORE_PAGER"); pagerCmd != "" {
+		r, err := godoc.StdoutPipe()
+		if err != nil {
+			return err
+		}
+
+		pager := exec.Command(pagerCmd)
+		pager.Stdin = r
+		pager.Stdout = os.Stdout
+		pager.Stderr = os.Stderr
+
+		err = pager.Start()
+		if err != nil {
+			return err
+		}
+
+		err = godoc.Run()
+		if err != nil {
+			return err
+		}
+
+		return pager.Wait()
+	} else {
+		godoc.Stdout = os.Stdout
+		return godoc.Run()
+	}
 }
 
 func actionHelp(s *Session, _ string) error {

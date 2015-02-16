@@ -80,7 +80,11 @@ func (c *gocodeCompleter) complete(source string, cursor int) ([]string, error) 
 
 	cands := make([]string, 0, len(result.entries))
 	for _, e := range result.entries {
-		cands = append(cands, e.Name[result.pos:])
+		cand := e.Name[result.pos:]
+		if e.Class == "func" {
+			cand = cand + "("
+		}
+		cands = append(cands, cand)
 	}
 
 	return cands, nil

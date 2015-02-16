@@ -289,10 +289,10 @@ func goRun(file string) error {
 	return cmd.Run()
 }
 
-func (s *Session) injectExpr(in string) error {
+func (s *Session) injectExpr(in string) (ast.Expr, error) {
 	expr, err := parser.ParseExpr(in)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	normalizeNode(expr)
@@ -306,7 +306,7 @@ func (s *Session) injectExpr(in string) error {
 
 	s.appendStatements(stmt)
 
-	return nil
+	return expr, nil
 }
 
 func isNamedIdent(expr ast.Expr, name string) bool {
@@ -644,7 +644,7 @@ func (s *Session) Run(in string) error {
 	}
 
 	if !commandRan {
-		if err := s.injectExpr(in); err != nil {
+		if _, err := s.injectExpr(in); err != nil {
 			debugf("expr :: err = %s", err)
 
 			err := s.injectStmt(in)
