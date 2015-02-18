@@ -56,8 +56,10 @@ func init() {
 			document: "write out current source",
 		},
 		{
-			name:   "doc",
-			action: actionDoc,
+			name:     "doc",
+			action:   actionDoc,
+			arg:      "<expr or pkg>",
+			document: "show documentation",
 		},
 		{
 			name:     "help",

@@ -1,3 +1,19 @@
+/*
+Yet another Go REPL that works nicely. Featured with line editing, code completion and more.
+
+Usage
+
+When started, a prompt is shown waiting for input. Enter any statement or expression to proceed.
+If an expression is given or any variables are assigned or defined, their data will be pretty-printed.
+
+Some special functionalities are provided as commands, which starts with colons:
+
+	:import <package path>  Imports a package
+	:print                  Prints current source code
+	:write [<filename>]     Writes out current code
+	:doc <target>           Shows documentation for an expression or package name given
+	:help                   Lists commands
+*/
 package main
 
 import (
@@ -22,6 +38,7 @@ import (
 	"github.com/mitchellh/go-homedir"
 )
 
+const version = "0.0.0"
 const printerName = "__gore_p"
 
 func main() {
@@ -29,6 +46,8 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
+
+	fmt.Printf("gore version %s  :help for help\n", version)
 
 	rl := newContLiner()
 	defer rl.Close()
