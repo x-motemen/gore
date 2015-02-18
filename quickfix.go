@@ -6,7 +6,6 @@ import (
 
 	"go/ast"
 	"go/token"
-	"golang.org/x/tools/go/ast/astutil"
 	"golang.org/x/tools/go/types"
 )
 
@@ -155,36 +154,6 @@ func printedExprs(stmt ast.Stmt) []ast.Expr {
 	return call.Args
 }
 
-// TODO: use types.Universe?
-var pureBuiltinFuncs = map[string]bool{
-	"len":    true,
-	"make":   true,
-	"cap":    true,
-	"append": true,
-	"imag":   true,
-	"real":   true,
-
-	// below are actually not builtin functions
-	"int":        true,
-	"bool":       true,
-	"int8":       true,
-	"int16":      true,
-	"int32":      true,
-	"int64":      true,
-	"uint":       true,
-	"uint8":      true,
-	"uint16":     true,
-	"uint32":     true,
-	"uint64":     true,
-	"uintptr":    true,
-	"float32":    true,
-	"float64":    true,
-	"complex64":  true,
-	"complex128": true,
-	"string":     true,
-	"rune":       true,
-}
-
 // isPureExpr checks if an expression expr is "pure", which means
 // removing this expression will no affect the entire program.
 // - identifiers ("x")
@@ -207,19 +176,10 @@ func (s *Session) isPureExpr(expr ast.Expr) bool {
 	case *ast.BinaryExpr:
 		return s.isPureExpr(expr.X) && s.isPureExpr(expr.Y)
 	case *ast.CallExpr:
-		if ident, ok := expr.Fun.(*ast.Ident); ok {
-			if !pureBuiltinFuncs[ident.Name] {
-				return false
-			}
-			for _, arg := range expr.Args {
-				if !s.isPureExpr(arg) {
-					return false
-				}
-			}
+		tv := s.TypeInfo.Types[expr.Fun]
+		if tv.IsType() || tv.IsBuiltin() {
 			return true
 		}
-		tv := s.TypeInfo.Types[expr.Fun]
-		debugf("%s: %#v", astutil.NodeDescription(expr), tv)
 	case *ast.CompositeLit:
 		return true
 	case *ast.FuncLit:
