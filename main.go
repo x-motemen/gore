@@ -255,8 +255,6 @@ func (s *Session) evalExpr(in string) (ast.Expr, error) {
 		return nil, err
 	}
 
-	normalizeNode(expr)
-
 	stmt := &ast.ExprStmt{
 		X: &ast.CallExpr{
 			Fun:  ast.NewIdent(printerName),
@@ -325,8 +323,9 @@ func (e Error) Error() string {
 	return string(e)
 }
 
-// TODO normalize position
 func (s *Session) source(space bool) (string, error) {
+	normalizeNodePos(s.mainFunc())
+
 	var config *printer.Config
 	if space {
 		config = &printer.Config{
@@ -413,8 +412,4 @@ func (s *Session) storeMainBody() {
 
 func (s *Session) restoreMainBody() {
 	s.mainBody.List = s.mainBody.List[0:s.storedBodyLength]
-}
-
-func normalizeNode(node ast.Node) {
-	// TODO remove token.Pos information
 }
