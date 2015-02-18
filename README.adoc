@@ -1,0 +1,60 @@
+= gore
+
+Yet another Go REPL that works nicely. Featured with line editing, code completion, and more.
+
+image::doc/screencast.gif[Screencast]
+
+== Usage
+
+    gore
+
+== Features
+
+* Line editing with history
+* Multiline inputs
+* Package importing with completion
+* Evaluates any expressions or statements
+* No "evaluated but not used"
+* Code completion (requires https://github.com/nsf/gocode[gocode])
+* Pretty printing (https://github.com/k0kubun/pp[pp] or https://github.com/davecgh/go-spew[spew] recommended)
+* Showing documents (requires https://golang.org/x/tools/cmd/godoc[godoc])
+
+== REPL Commands
+
+Some functionalities are provided as colon-commands:
+
+    :import <package path>  Import package
+    :print                  Show current source
+    :write [<filename>]     Write out current source to file
+    :doc <expr or pkg>      Show document (requires godoc)
+    :help                   List commands
+
+== Installation
+
+gore uses Go toolchains, so I don't provide binaries.
+
+    go get github.com/motemen/gore
+
+Also recommended:
+
+    go get github.com/nsf/gocode
+    go get github.com/k0kubun/pp # or github.com/davecgh/go-spew
+    go get golang.org/x/tools/cmd/godoc
+
+== Caveats
+
+* gore runs code using `go run` for each input. If you have entered time-consuming code,
+  gore will run it for each input and take some time.
+
+== TODO
+
+* Undoing input
+* Configuration
+* :write completion
+* :doc completion
+* Direct editing of code
+* Pretty formatting of code
+
+== Author
+
+motemen <motemen@gmail.com>
