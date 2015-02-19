@@ -88,6 +88,7 @@ func main() {
 			continue
 		}
 
+		rl.Reindent()
 		err = s.Eval(in)
 		if err != nil {
 			if err == ErrContinue {
