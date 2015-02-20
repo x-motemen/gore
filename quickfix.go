@@ -16,13 +16,17 @@ var (
 
 // doQuickFix tries to fix the source AST so that it compiles well.
 func (s *Session) doQuickFix() error {
-	const maxAttempts = 10
+	const maxAttempts = 100
 
 	for i := 0; i < maxAttempts; i++ {
 		s.TypeInfo = types.Info{
 			Types: make(map[ast.Expr]types.TypeAndValue),
 		}
-		_, err := s.Types.Check("_quickfix", s.Fset, []*ast.File{s.File}, &s.TypeInfo)
+
+		files := s.IncludeFiles
+		files = append(files, s.File)
+
+		_, err := s.Types.Check("_quickfix", s.Fset, files, &s.TypeInfo)
 		if err == nil {
 			break
 		}

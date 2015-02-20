@@ -18,12 +18,14 @@ package main
 
 import (
 	"bytes"
+	"flag"
 	"fmt"
 	"io"
 	"io/ioutil"
 	"os"
 	"os/exec"
 	"path/filepath"
+	"regexp"
 	"strings"
 	"syscall"
 
@@ -42,12 +44,34 @@ const version = "0.0.0"
 const printerName = "__gore_p"
 
 func main() {
+
+	var stringExtFiles string
+	flags := flag.NewFlagSet("gore", flag.ContinueOnError)
+	flags.SetOutput(os.Stderr)
+	flags.Usage = func() {
+		fmt.Fprint(os.Stderr, "Usage of gore:\n")
+		flags.PrintDefaults()
+		os.Exit(0)
+	}
+
+	flags.StringVar(&stringExtFiles, "include", "",
+		"Import packages and functions from external golang source files")
+
+	if err := flags.Parse(os.Args[1:]); err != nil {
+		errorf("%s", err)
+	}
+
 	s, err := NewSession()
 	if err != nil {
 		panic(err)
 	}
 
 	fmt.Printf("gore version %s  :help for help\n", version)
+
+	if stringExtFiles != "" {
+		extFiles := strings.Split(stringExtFiles, ",")
+		s.includeFiles(extFiles)
+	}
 
 	rl := newContLiner()
 	defer rl.Close()
@@ -133,11 +157,13 @@ func homeDir() (home string, err error) {
 }
 
 type Session struct {
-	FilePath string
-	File     *ast.File
-	Fset     *token.FileSet
-	Types    *types.Config
-	TypeInfo types.Info
+	FilePath         string
+	File             *ast.File
+	Fset             *token.FileSet
+	Types            *types.Config
+	TypeInfo         types.Info
+	IncludeFilePaths []string
+	IncludeFiles     []*ast.File
 
 	mainBody         *ast.BlockStmt
 	storedBodyLength int
@@ -223,7 +249,7 @@ func (s *Session) Run() error {
 		return err
 	}
 
-	return goRun(s.FilePath)
+	return goRun(append(s.IncludeFilePaths, s.FilePath))
 }
 
 func tempFile() (string, error) {
@@ -240,10 +266,10 @@ func tempFile() (string, error) {
 	return filepath.Join(dir, "gore_session.go"), nil
 }
 
-func goRun(file string) error {
-	debugf("go run %s", file)
-
-	cmd := exec.Command("go", "run", file)
+func goRun(files []string) error {
+	args := append([]string{"run"}, files...)
+	debugf("go %s", strings.Join(args, " "))
+	cmd := exec.Command("go", args...)
 	cmd.Stdin = os.Stdin
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
@@ -413,4 +439,74 @@ func (s *Session) storeMainBody() {
 
 func (s *Session) restoreMainBody() {
 	s.mainBody.List = s.mainBody.List[0:s.storedBodyLength]
+}
+
+// includeFiles imports packages and funcsions from multiple golang source
+func (s *Session) includeFiles(files []string) {
+	for _, file := range files {
+		s.includeFile(file)
+	}
+}
+
+func (s *Session) includeFile(file string) {
+	content, err := ioutil.ReadFile(file)
+	if err != nil {
+		errorf("%s", err)
+		return
+	}
+
+	if err = s.importPackages(content); err != nil {
+		errorf("%s", err)
+		return
+	}
+
+	if err = s.importFile(content); err != nil {
+		errorf("%s", err)
+	}
+}
+
+// importPackages includes packages defined on external file into main file
+func (s *Session) importPackages(src []byte) error {
+	astf, err := parser.ParseFile(s.Fset, "", src, parser.Mode(0))
+	if err != nil {
+		return err
+	}
+
+	for _, imt := range astf.Imports {
+		debugf("import package: %s", imt.Path.Value)
+		actionImport(s, imt.Path.Value)
+	}
+
+	return nil
+}
+
+// importFile adds external golang file to goRun target to use its function
+func (s *Session) importFile(src []byte) error {
+	// Don't need to same directory
+	tmp, err := ioutil.TempFile(filepath.Dir(s.FilePath), "gore_extarnal_")
+	if err != nil {
+		return err
+	}
+
+	ext := tmp.Name() + ".go"
+	newSrc := replacePackageName(src)
+	if err = ioutil.WriteFile(ext, newSrc, 0755); err != nil {
+		return err
+	}
+
+	debugf("import file: %s", ext)
+	s.IncludeFilePaths = append(s.IncludeFilePaths, ext)
+
+	astf, err := parser.ParseFile(s.Fset, ext, newSrc, parser.Mode(0))
+	if err != nil {
+		return err
+	}
+	s.IncludeFiles = append(s.IncludeFiles, astf)
+	return nil
+}
+
+// replacePckageName replaces package name in included file to main
+func replacePackageName(src []byte) []byte {
+	rx := regexp.MustCompile("package ([A-z0-9]+)")
+	return rx.ReplaceAll(src, []byte("package main"))
 }
