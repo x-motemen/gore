@@ -1,4 +1,4 @@
-= gore
+= gore image:https://travis-ci.org/motemen/gore.svg?branch=master["Build Status", link="https://travis-ci.org/motemen/gore"]
 
 Yet another Go REPL that works nicely. Featured with line editing, code completion, and more.
 
@@ -51,9 +51,10 @@ Also recommended:
 * Undoing input
 * Configuration
 * :write completion
-* :doc completion
 * Direct editing of code
-* Pretty formatting of code
+* Using external sources
+* Auto-importing
+* API
 
 == License
 

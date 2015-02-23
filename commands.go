@@ -31,7 +31,6 @@ type command struct {
 // - :undo
 // - :reset
 // - :type
-// - :doc
 var commands []command
 
 func init() {
