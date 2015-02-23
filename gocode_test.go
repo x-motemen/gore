@@ -17,7 +17,7 @@ func F() {
 `
 	cursor := strings.Index(source, "_")
 
-	cand, err := gocode.complete(source, cursor)
+	result, err := gocode.query(source, cursor)
 	if err != nil {
 		if gocode.unavailable {
 			t.Skipf("gocode unavailable: %s", err)
@@ -26,7 +26,18 @@ func F() {
 		}
 	}
 
-	if strings.Contains(strings.Join(cand, "\000"), "rintln(") == false {
-		t.Errorf(`Result must contain "rintln(": %+v`, cand)
+	if result.pos != 1 {
+		t.Errorf("result.pos should == 1, got: %v", result.pos)
+	}
+
+	found := false
+	for _, e := range result.entries {
+		if e.Name == "Println" {
+			found = true
+			break
+		}
+	}
+	if !found {
+		t.Logf(`result must contain "Println": %#v`, result.entries)
 	}
 }

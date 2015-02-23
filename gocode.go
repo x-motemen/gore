@@ -48,7 +48,7 @@ func (r *gocodeResult) UnmarshalJSON(text []byte) error {
 	return json.Unmarshal(result[1], &r.entries)
 }
 
-func (c *gocodeCompleter) complete(source string, cursor int) ([]string, error) {
+func (c *gocodeCompleter) query(source string, cursor int) (*gocodeResult, error) {
 	cmd := exec.Command(c.gocodePath, "-f=json", "autocomplete", fmt.Sprintf("%d", cursor))
 
 	in, err := cmd.StdinPipe()
@@ -78,16 +78,7 @@ func (c *gocodeCompleter) complete(source string, cursor int) ([]string, error) 
 		return nil, err
 	}
 
-	cands := make([]string, 0, len(result.entries))
-	for _, e := range result.entries {
-		cand := e.Name[result.pos:]
-		if e.Class == "func" {
-			cand = cand + "("
-		}
-		cands = append(cands, cand)
-	}
-
-	return cands, nil
+	return &result, nil
 }
 
 func writeCloseString(w io.WriteCloser, s string) error {
