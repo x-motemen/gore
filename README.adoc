@@ -55,6 +55,10 @@ Also recommended:
 * Direct editing of code
 * Pretty formatting of code
 
+== License
+
+link:./LICENSE[The MIT License].
+
 == Author
 
 motemen <motemen@gmail.com>
