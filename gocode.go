@@ -12,8 +12,8 @@ var gocode = gocodeCompleter{
 }
 
 type gocodeCompleter struct {
-	gocodePath string
-	invalid    bool
+	gocodePath  string
+	unavailable bool
 }
 
 type gocodeResult struct {
@@ -65,7 +65,7 @@ func (c *gocodeCompleter) complete(source string, cursor int) ([]string, error) 
 	if err != nil {
 		if _, ok := err.(*exec.Error); ok {
 			// cannot invoke gocode
-			c.invalid = true
+			c.unavailable = true
 		}
 		return nil, err
 	}

@@ -39,7 +39,7 @@ func (s *Session) completeWord(line string, pos int) (string, []string, string) 
 		return "", nil, ""
 	}
 
-	if gocode.invalid {
+	if gocode.unavailable {
 		return "", nil, ""
 	}
 
