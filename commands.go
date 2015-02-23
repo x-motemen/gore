@@ -21,7 +21,7 @@ import (
 type command struct {
 	name     string
 	action   func(*Session, string) error
-	complete func(string) []string
+	complete func(*Session, string) []string
 	arg      string
 	document string
 }
@@ -58,6 +58,7 @@ func init() {
 		{
 			name:     "doc",
 			action:   actionDoc,
+			complete: completeDoc,
 			arg:      "<expr or pkg>",
 			document: "show documentation",
 		},
@@ -89,7 +90,7 @@ func actionImport(s *Session, arg string) error {
 
 var gorootSrc = filepath.Join(filepath.Clean(runtime.GOROOT()), "src")
 
-func completeImport(prefix string) []string {
+func completeImport(s *Session, prefix string) []string {
 	result := []string{}
 	seen := map[string]bool{}
 
@@ -144,6 +145,21 @@ func completeImport(prefix string) []string {
 				}
 			}
 		}
+	}
+
+	return result
+}
+
+func completeDoc(s *Session, prefix string) []string {
+	pos, cands, err := s.completeCode(prefix, len(prefix), false)
+	if err != nil {
+		errorf("completeCode: %s", err)
+		return nil
+	}
+
+	result := make([]string, 0, len(cands))
+	for _, c := range cands {
+		result = append(result, prefix[0:pos]+c)
 	}
 
 	return result

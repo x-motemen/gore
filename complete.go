@@ -32,7 +32,7 @@ func (s *Session) completeWord(line string, pos int) (string, []string, string) 
 
 			cmdPrefix := ":" + command.name + " "
 			if strings.HasPrefix(line, cmdPrefix) && pos >= len(cmdPrefix) {
-				return cmdPrefix, command.complete(line[len(cmdPrefix):pos]), ""
+				return cmdPrefix, command.complete(s, line[len(cmdPrefix):pos]), ""
 			}
 		}
 
@@ -44,7 +44,7 @@ func (s *Session) completeWord(line string, pos int) (string, []string, string) 
 	}
 
 	// code completion
-	pos, cands, err := s.completeCode(line, pos)
+	pos, cands, err := s.completeCode(line, pos, true)
 	if err != nil {
 		errorf("completeCode: %s", err)
 		return "", nil, ""
@@ -54,7 +54,7 @@ func (s *Session) completeWord(line string, pos int) (string, []string, string) 
 }
 
 // completeCode does code completion using gocode (https://github.com/nsf/gocode).
-func (s *Session) completeCode(in string, pos int) (int, []string, error) {
+func (s *Session) completeCode(in string, pos int, exprMode bool) (int, []string, error) {
 	s.clearQuickFix()
 
 	source, err := s.source(false)
@@ -75,7 +75,7 @@ func (s *Session) completeCode(in string, pos int) (int, []string, error) {
 	cands := make([]string, 0, len(result.entries))
 	for _, e := range result.entries {
 		cand := e.Name
-		if e.Class == "func" {
+		if exprMode && e.Class == "func" {
 			cand = cand + "("
 		}
 		cands = append(cands, cand)
