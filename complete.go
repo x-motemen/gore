@@ -32,37 +32,58 @@ func (s *Session) completeWord(line string, pos int) (string, []string, string) 
 
 			cmdPrefix := ":" + command.name + " "
 			if strings.HasPrefix(line, cmdPrefix) && pos >= len(cmdPrefix) {
-				return cmdPrefix, command.complete(line[len(cmdPrefix):pos]), ""
+				return cmdPrefix, command.complete(s, line[len(cmdPrefix):pos]), ""
 			}
 		}
 
 		return "", nil, ""
 	}
 
-	if gocode.invalid {
+	if gocode.unavailable {
 		return "", nil, ""
 	}
 
 	// code completion
-
-	s.clearQuickFix()
-
-	source, err := s.source(false)
+	pos, cands, err := s.completeCode(line, pos, true)
 	if err != nil {
-		errorf("source: %s", err)
-		return "", nil, ""
-	}
-
-	p := strings.LastIndex(source, "}")
-	editSource := source[0:p] + line + source[p:]
-	cursor := len(source[0:p]) + pos
-
-	cands, err := gocode.complete(editSource, cursor)
-	if err != nil {
-		errorf("gocode: %s", err)
+		errorf("completeCode: %s", err)
 		return "", nil, ""
 	}
 
 	return line[0:pos], cands, ""
+}
 
+// completeCode does code completion within the session using gocode (https://github.com/nsf/gocode).
+// in and pos specifies the current input and the cursor position (0 <= pos <= len(in)) respectively.
+// If exprMode is set to true, the completion is done as an expression (e.g. appends "(" to functions).
+// Return value keep specifies how many characters of in should be kept and candidates are what follow in[0:keep].
+func (s *Session) completeCode(in string, pos int, exprMode bool) (keep int, candidates []string, err error) {
+	s.clearQuickFix()
+
+	source, err := s.source(false)
+	if err != nil {
+		return
+	}
+
+	// Kind of dirty hack :/
+	p := strings.LastIndex(source, "}")
+	editingSource := source[0:p] + in + source[p:]
+	cursor := len(source[0:p]) + pos
+
+	result, err := gocode.query(editingSource, cursor)
+	if err != nil {
+		return
+	}
+
+	keep = pos - result.pos
+	candidates = make([]string, 0, len(result.entries))
+	for _, e := range result.entries {
+		cand := e.Name
+		if exprMode && e.Class == "func" {
+			cand = cand + "("
+		}
+		candidates = append(candidates, cand)
+	}
+
+	return
 }
