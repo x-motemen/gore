@@ -1,0 +1,8 @@
+language: go
+go:
+  - 1.4
+  - tip
+install:
+  - go get github.com/nsf/gocode
+  - go get ./...
+  - go get -t ./...
