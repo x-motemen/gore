@@ -4,9 +4,15 @@ Yet another Go REPL that works nicely. Featured with line editing, code completi
 
 image::doc/screencast.gif[Screencast]
 
+_(Screencast taken with https://github.com/cho45/KeyCast[cho45/KeyCast])_
+
 == Usage
 
     gore
+
+After a prompt is shown, enter any Go expressions/statements or commands described below.
+
+To quit the session, type `Ctrl-D`.
 
 == Features
 
