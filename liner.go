@@ -77,11 +77,12 @@ func (cl *contLiner) Reindent() {
 	lines := strings.Split(cl.buffer, "\n")
 	lastLine := lines[len(lines)-1]
 
-	prompt := promptDefault
+	cursorUp()
 	if len(lines) > 1 {
-		prompt = promptContinue
+		fmt.Printf("\r%s", promptContinue)
+	} else {
+		fmt.Printf("\r%s", promptDefault)
 	}
-	fmt.Printf("\x1b[1A\r%s", prompt)
 
 	cl.printIndent(min)
 	fmt.Print(lastLine)
