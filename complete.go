@@ -2,6 +2,8 @@ package main
 
 import (
 	"strings"
+
+	"github.com/motemen/gore/gocode"
 )
 
 func (s *Session) completeWord(line string, pos int) (string, []string, string) {
@@ -39,7 +41,7 @@ func (s *Session) completeWord(line string, pos int) (string, []string, string) 
 		return "", nil, ""
 	}
 
-	if gocode.unavailable {
+	if gocode.Available() == false {
 		return "", nil, ""
 	}
 
@@ -70,14 +72,14 @@ func (s *Session) completeCode(in string, pos int, exprMode bool) (keep int, can
 	editingSource := source[0:p] + in + source[p:]
 	cursor := len(source[0:p]) + pos
 
-	result, err := gocode.query(editingSource, cursor)
+	result, err := gocode.Query([]byte(editingSource), cursor)
 	if err != nil {
 		return
 	}
 
-	keep = pos - result.pos
-	candidates = make([]string, 0, len(result.entries))
-	for _, e := range result.entries {
+	keep = pos - result.Cursor
+	candidates = make([]string, 0, len(result.Candidates))
+	for _, e := range result.Candidates {
 		cand := e.Name
 		if exprMode && e.Class == "func" {
 			cand = cand + "("

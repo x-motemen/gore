@@ -2,9 +2,15 @@ package main
 
 import (
 	"testing"
+
+	"github.com/motemen/gore/gocode"
 )
 
 func TestSession_completeCode(t *testing.T) {
+	if gocode.Available() == false {
+		t.Skipf("gocode unavailable")
+	}
+
 	s, err := NewSession()
 	noError(t, err)
 
@@ -13,11 +19,7 @@ func TestSession_completeCode(t *testing.T) {
 
 	keep, cands, err := s.completeCode("fmt.p", 5, true)
 	if err != nil {
-		if gocode.unavailable {
-			t.Skipf("gocode unavailable: %s", err)
-		} else {
-			noError(t, err)
-		}
+		noError(t, err)
 	}
 
 	if keep != 4 {
