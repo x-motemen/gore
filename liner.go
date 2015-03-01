@@ -65,13 +65,13 @@ func (cl *contLiner) Accepted() {
 }
 
 func (cl *contLiner) Reindent() {
-	var min, max int
+	var minDepth int
 	newDepth := cl.countDepth()
 
 	if newDepth > cl.depth {
-		min, max = cl.depth, newDepth
+		minDepth = cl.depth
 	} else {
-		min, max = newDepth, cl.depth
+		minDepth = newDepth
 	}
 
 	lines := strings.Split(cl.buffer, "\n")
@@ -84,9 +84,9 @@ func (cl *contLiner) Reindent() {
 		fmt.Printf("\r%s", promptDefault)
 	}
 
-	cl.printIndent(min)
+	cl.printIndent(minDepth)
 	fmt.Print(lastLine)
-	cl.printIndent(max - min)
+	eraseInLine()
 	fmt.Print("\n")
 
 	cl.depth = newDepth

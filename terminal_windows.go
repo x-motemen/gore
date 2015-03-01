@@ -33,6 +33,7 @@ var (
 	procGetStdHandle               = kernel32.NewProc("GetStdHandle")
 	procGetConsoleScreenBufferInfo = kernel32.NewProc("GetConsoleScreenBufferInfo")
 	procSetConsoleCursorPosition   = kernel32.NewProc("SetConsoleCursorPosition")
+	procFillConsoleOutputCharacter = kernel32.NewProc("FillConsoleOutputCharacterW")
 
 	stdoutHandle uintptr
 )
@@ -55,4 +56,12 @@ func cursorUp() {
 	cursor.y = csbi.cursorPosition.y - 1
 
 	procSetConsoleCursorPosition.Call(stdoutHandle, uintptr(*(*int32)(unsafe.Pointer(&cursor))))
+}
+
+func eraseInLine() {
+	var csbi consoleScreenBufferInfo
+	procGetConsoleScreenBufferInfo.Call(stdoutHandle, uintptr(unsafe.Pointer(&csbi)))
+
+	var w uint32
+	procFillConsoleOutputCharacter.Call(stdoutHandle, uintptr(' '), uintptr(csbi.size.x), uintptr(*(*int32)(unsafe.Pointer(&csbi.cursorPosition))), uintptr(unsafe.Pointer(&w)))
 }
