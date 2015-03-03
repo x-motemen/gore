@@ -81,6 +81,9 @@ func (cl *contLiner) countDepth() int {
 	reader := bytes.NewBufferString(cl.buffer)
 	sc := new(scanner.Scanner)
 	sc.Init(reader)
+	sc.Error = func(_ *scanner.Scanner, msg string) {
+		debugf("scanner: %s", msg)
+	}
 
 	depth := 0
 	for {
