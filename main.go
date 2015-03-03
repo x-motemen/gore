@@ -24,6 +24,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"regexp"
 	"strings"
 	"syscall"
 
@@ -40,6 +41,10 @@ import (
 
 const version = "0.0.0"
 const printerName = "__gore_p"
+
+var (
+	rxUndefinedPackage = regexp.MustCompile(`undefined: (.+)\n`)
+)
 
 func main() {
 	s, err := NewSession()
@@ -213,17 +218,40 @@ func (s *Session) mainFunc() *ast.FuncDecl {
 }
 
 func (s *Session) Run() error {
+	err := s.prepareSource()
+	if err != nil {
+		return err
+	}
+
+	msg, err := tryGoRun(s.FilePath)
+
+	// fallback to import undefined package
+	if err != nil && rxUndefinedPackage.MatchString(msg) {
+		pkg := rxUndefinedPackage.FindStringSubmatch(msg)[1]
+		err := actionImport(s, pkg)
+		if err != nil {
+			return err
+		}
+
+		err = s.prepareSource()
+		if err != nil {
+			return err
+		}
+		return goRun(s.FilePath)
+	}
+
+	print(msg)
+	return err
+}
+
+func (s *Session) prepareSource() error {
 	f, err := os.Create(s.FilePath)
 	if err != nil {
 		return err
 	}
 
 	err = printer.Fprint(f, s.Fset, s.File)
-	if err != nil {
-		return err
-	}
-
-	return goRun(s.FilePath)
+	return err
 }
 
 func tempFile() (string, error) {
@@ -248,6 +276,18 @@ func goRun(file string) error {
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	return cmd.Run()
+}
+
+func tryGoRun(file string) (string, error) {
+	buf := bytes.NewBufferString("")
+
+	cmd := exec.Command("go", "run", file)
+	cmd.Stdin = os.Stdin
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = buf
+
+	err := cmd.Run()
+	return buf.String(), err
 }
 
 func (s *Session) evalExpr(in string) (ast.Expr, error) {
