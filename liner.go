@@ -29,11 +29,7 @@ func newContLiner() *contLiner {
 
 func (cl *contLiner) promptString() string {
 	if cl.buffer != "" {
-		prompt := promptContinue
-		for i := 0; i < cl.depth; i++ {
-			prompt += indent
-		}
-		return prompt
+		return promptContinue + strings.Repeat(indent, cl.depth)
 	}
 
 	return promptDefault
@@ -65,31 +61,20 @@ func (cl *contLiner) Accepted() {
 }
 
 func (cl *contLiner) Reindent() {
-	var minDepth int
-	newDepth := cl.countDepth()
+	oldDepth := cl.depth
+	cl.depth = cl.countDepth()
 
-	if newDepth > cl.depth {
-		minDepth = cl.depth
-	} else {
-		minDepth = newDepth
+	if cl.depth < oldDepth {
+		lines := strings.Split(cl.buffer, "\n")
+		if len(lines) > 1 {
+			lastLine := lines[len(lines)-1]
+
+			cursorUp()
+			fmt.Printf("\r%s%s", cl.promptString(), lastLine)
+			eraseInLine()
+			fmt.Print("\n")
+		}
 	}
-
-	lines := strings.Split(cl.buffer, "\n")
-	lastLine := lines[len(lines)-1]
-
-	cursorUp()
-	if len(lines) > 1 {
-		fmt.Printf("\r%s", promptContinue)
-	} else {
-		fmt.Printf("\r%s", promptDefault)
-	}
-
-	cl.printIndent(minDepth)
-	fmt.Print(lastLine)
-	eraseInLine()
-	fmt.Print("\n")
-
-	cl.depth = newDepth
 }
 
 func (cl *contLiner) countDepth() int {
@@ -107,11 +92,5 @@ func (cl *contLiner) countDepth() int {
 		case scanner.EOF:
 			return depth
 		}
-	}
-}
-
-func (cl *contLiner) printIndent(count int) {
-	for i := 0; i < count; i++ {
-		fmt.Print(indent)
 	}
 }
