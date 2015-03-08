@@ -24,6 +24,7 @@ To quit the session, type `Ctrl-D`.
 * Code completion (requires https://github.com/nsf/gocode[gocode])
 * Pretty printing (https://github.com/k0kubun/pp[pp] or https://github.com/davecgh/go-spew[spew] recommended)
 * Showing documents (requires https://golang.org/x/tools/cmd/godoc[godoc])
+* Auto-importing
 
 == REPL Commands
 
@@ -59,7 +60,6 @@ Also recommended:
 * :write completion
 * Direct editing of code
 * Using external sources
-* Auto-importing
 * API
 
 == License

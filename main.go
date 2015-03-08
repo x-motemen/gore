@@ -32,8 +32,10 @@ import (
 	"go/printer"
 	"go/scanner"
 	"go/token"
+
 	_ "golang.org/x/tools/go/gcimporter"
 	"golang.org/x/tools/go/types"
+	"golang.org/x/tools/imports"
 
 	"github.com/mitchellh/go-homedir"
 )
@@ -386,6 +388,7 @@ func (s *Session) Eval(in string) error {
 		}
 	}
 
+	s.fixImports()
 	s.doQuickFix()
 
 	err := s.Run()
@@ -413,4 +416,27 @@ func (s *Session) storeMainBody() {
 
 func (s *Session) restoreMainBody() {
 	s.mainBody.List = s.mainBody.List[0:s.storedBodyLength]
+}
+
+// fixImports formats and adjusts imports for the current AST.
+func (s *Session) fixImports() error {
+
+	var buf bytes.Buffer
+	err := printer.Fprint(&buf, s.Fset, s.File)
+	if err != nil {
+		return err
+	}
+
+	formatted, err := imports.Process("", buf.Bytes(), nil)
+	if err != nil {
+		return err
+	}
+
+	s.File, err = parser.ParseFile(s.Fset, "", formatted, parser.Mode(0))
+	if err != nil {
+		return err
+	}
+	s.mainBody = s.mainFunc().Body
+
+	return nil
 }

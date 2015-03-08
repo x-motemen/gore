@@ -37,3 +37,17 @@ func TestRun_QuickFix_evaluated_but_not_used(t *testing.T) {
 		noError(t, err)
 	}
 }
+
+func TestRun_FixImports(t *testing.T) {
+	s, err := NewSession()
+	noError(t, err)
+
+	codes := []string{
+		`filepath.Join("a", "b")`,
+	}
+
+	for _, code := range codes {
+		err := s.Eval(code)
+		noError(t, err)
+	}
+}
