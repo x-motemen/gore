@@ -18,6 +18,7 @@ package main
 
 import (
 	"bytes"
+	"flag"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -43,7 +44,11 @@ import (
 const version = "0.0.0"
 const printerName = "__gore_p"
 
+var flagAutoImport = flag.Bool("autoimport", false, "formats and adjusts imports automatically")
+
 func main() {
+	flag.Parse()
+
 	s, err := NewSession()
 	if err != nil {
 		panic(err)
@@ -388,7 +393,9 @@ func (s *Session) Eval(in string) error {
 		}
 	}
 
-	s.fixImports()
+	if *flagAutoImport {
+		s.fixImports()
+	}
 	s.doQuickFix()
 
 	err := s.Run()

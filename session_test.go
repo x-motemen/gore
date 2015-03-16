@@ -42,6 +42,9 @@ func TestRun_FixImports(t *testing.T) {
 	s, err := NewSession()
 	noError(t, err)
 
+	autoimport := true
+	flagAutoImport = &autoimport
+
 	codes := []string{
 		`filepath.Join("a", "b")`,
 	}
