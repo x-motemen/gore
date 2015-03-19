@@ -25,7 +25,6 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
-	"regexp"
 	"strings"
 	"syscall"
 
@@ -488,24 +487,29 @@ func (s *Session) importFile(src []byte) error {
 	}
 
 	ext := tmp.Name() + ".go"
-	newSrc := replacePackageName(src)
-	if err = ioutil.WriteFile(ext, newSrc, 0755); err != nil {
+
+	f, err := parser.ParseFile(s.Fset, ext, src, parser.Mode(0))
+	if err != nil {
+		return err
+	}
+
+	// rewrite to package main
+	f.Name.Name = "main"
+
+	out, err := os.Create(ext)
+	defer out.Close()
+	if err != nil {
+		return err
+	}
+
+	err = printer.Fprint(out, s.Fset, f)
+	if err != nil {
 		return err
 	}
 
 	debugf("import file: %s", ext)
 	s.ExtraFilePaths = append(s.ExtraFilePaths, ext)
+	s.ExtraFiles = append(s.ExtraFiles, f)
 
-	astf, err := parser.ParseFile(s.Fset, ext, newSrc, parser.Mode(0))
-	if err != nil {
-		return err
-	}
-	s.ExtraFiles = append(s.ExtraFiles, astf)
 	return nil
-}
-
-// replacePckageName replaces package name in included file to main
-func replacePackageName(src []byte) []byte {
-	rx := regexp.MustCompile("package ([A-z0-9]+)")
-	return rx.ReplaceAll(src, []byte("package main"))
 }
