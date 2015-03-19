@@ -23,7 +23,7 @@ func (s *Session) doQuickFix() error {
 			Types: make(map[ast.Expr]types.TypeAndValue),
 		}
 
-		files := s.IncludeFiles
+		files := s.ExtraFiles
 		files = append(files, s.File)
 
 		_, err := s.Types.Check("_quickfix", s.Fset, files, &s.TypeInfo)

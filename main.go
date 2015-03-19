@@ -44,7 +44,6 @@ const version = "0.0.0"
 const printerName = "__gore_p"
 
 func main() {
-
 	var stringExtFiles string
 	flags := flag.NewFlagSet("gore", flag.ContinueOnError)
 	flags.SetOutput(os.Stderr)
@@ -157,13 +156,13 @@ func homeDir() (home string, err error) {
 }
 
 type Session struct {
-	FilePath         string
-	File             *ast.File
-	Fset             *token.FileSet
-	Types            *types.Config
-	TypeInfo         types.Info
-	IncludeFilePaths []string
-	IncludeFiles     []*ast.File
+	FilePath       string
+	File           *ast.File
+	Fset           *token.FileSet
+	Types          *types.Config
+	TypeInfo       types.Info
+	ExtraFilePaths []string
+	ExtraFiles     []*ast.File
 
 	mainBody         *ast.BlockStmt
 	storedBodyLength int
@@ -249,7 +248,7 @@ func (s *Session) Run() error {
 		return err
 	}
 
-	return goRun(append(s.IncludeFilePaths, s.FilePath))
+	return goRun(append(s.ExtraFilePaths, s.FilePath))
 }
 
 func tempFile() (string, error) {
@@ -495,13 +494,13 @@ func (s *Session) importFile(src []byte) error {
 	}
 
 	debugf("import file: %s", ext)
-	s.IncludeFilePaths = append(s.IncludeFilePaths, ext)
+	s.ExtraFilePaths = append(s.ExtraFilePaths, ext)
 
 	astf, err := parser.ParseFile(s.Fset, ext, newSrc, parser.Mode(0))
 	if err != nil {
 		return err
 	}
-	s.IncludeFiles = append(s.IncludeFiles, astf)
+	s.ExtraFiles = append(s.ExtraFiles, astf)
 	return nil
 }
 
