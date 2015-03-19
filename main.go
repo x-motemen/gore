@@ -54,8 +54,8 @@ func main() {
 		os.Exit(0)
 	}
 
-	flags.StringVar(&stringExtFiles, "include", "",
-		"Import packages and functions from external golang source files")
+	flags.StringVar(&stringExtFiles, "context", "",
+		"Import packages, functions, variables and constants from external golang source files")
 
 	if err := flags.Parse(os.Args[1:]); err != nil {
 		errorf("%s", err)
