@@ -496,6 +496,16 @@ func (s *Session) importFile(src []byte) error {
 	// rewrite to package main
 	f.Name.Name = "main"
 
+	// remove func main()
+	for i, decl := range f.Decls {
+		if funcDecl, ok := decl.(*ast.FuncDecl); ok {
+			if isNamedIdent(funcDecl.Name, "main") {
+				f.Decls = append(f.Decls[0:i], f.Decls[i+1:]...)
+				break
+			}
+		}
+	}
+
 	out, err := os.Create(ext)
 	defer out.Close()
 	if err != nil {
