@@ -502,10 +502,10 @@ func (s *Session) importFile(src []byte) error {
 	}
 
 	out, err := os.Create(ext)
-	defer out.Close()
 	if err != nil {
 		return err
 	}
+	defer out.Close()
 
 	err = printer.Fprint(out, s.Fset, f)
 	if err != nil {
