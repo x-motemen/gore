@@ -33,8 +33,10 @@ import (
 	"go/printer"
 	"go/scanner"
 	"go/token"
+
 	_ "golang.org/x/tools/go/gcimporter"
 	"golang.org/x/tools/go/types"
+	"golang.org/x/tools/imports"
 
 	"github.com/mitchellh/go-homedir"
 )
@@ -42,22 +44,12 @@ import (
 const version = "0.0.0"
 const printerName = "__gore_p"
 
+var flagAutoImport = flag.Bool("autoimport", false, "formats and adjusts imports automatically")
+var stringExtFiles = flag.String("context", "",
+	"Import packages, functions, variables and constants from external golang source files")
+
 func main() {
-	var stringExtFiles string
-	flags := flag.NewFlagSet("gore", flag.ContinueOnError)
-	flags.SetOutput(os.Stderr)
-	flags.Usage = func() {
-		fmt.Fprint(os.Stderr, "Usage of gore:\n")
-		flags.PrintDefaults()
-		os.Exit(0)
-	}
-
-	flags.StringVar(&stringExtFiles, "context", "",
-		"Import packages, functions, variables and constants from external golang source files")
-
-	if err := flags.Parse(os.Args[1:]); err != nil {
-		errorf("%s", err)
-	}
+	flag.Parse()
 
 	s, err := NewSession()
 	if err != nil {
@@ -66,8 +58,8 @@ func main() {
 
 	fmt.Printf("gore version %s  :help for help\n", version)
 
-	if stringExtFiles != "" {
-		extFiles := strings.Split(stringExtFiles, ",")
+	if *stringExtFiles != "" {
+		extFiles := strings.Split(*stringExtFiles, ",")
 		s.includeFiles(extFiles)
 	}
 
@@ -410,6 +402,9 @@ func (s *Session) Eval(in string) error {
 		}
 	}
 
+	if *flagAutoImport {
+		s.fixImports()
+	}
 	s.doQuickFix()
 
 	err := s.Run()
@@ -520,6 +515,29 @@ func (s *Session) importFile(src []byte) error {
 	debugf("import file: %s", ext)
 	s.ExtraFilePaths = append(s.ExtraFilePaths, ext)
 	s.ExtraFiles = append(s.ExtraFiles, f)
+
+	return nil
+}
+
+// fixImports formats and adjusts imports for the current AST.
+func (s *Session) fixImports() error {
+
+	var buf bytes.Buffer
+	err := printer.Fprint(&buf, s.Fset, s.File)
+	if err != nil {
+		return err
+	}
+
+	formatted, err := imports.Process("", buf.Bytes(), nil)
+	if err != nil {
+		return err
+	}
+
+	s.File, err = parser.ParseFile(s.Fset, "", formatted, parser.Mode(0))
+	if err != nil {
+		return err
+	}
+	s.mainBody = s.mainFunc().Body
 
 	return nil
 }
