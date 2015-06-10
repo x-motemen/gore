@@ -360,6 +360,23 @@ func (s *Session) source(space bool) (string, error) {
 	return buf.String(), err
 }
 
+func (s *Session) reset() error {
+	source, err := s.source(false)
+	if err != nil {
+		return err
+	}
+
+	file, err := parser.ParseFile(s.Fset, "gore_session.go", source, parser.Mode(0))
+	if err != nil {
+		return err
+	}
+
+	s.File = file
+	s.mainBody = s.mainFunc().Body
+
+	return nil
+}
+
 func (s *Session) Eval(in string) error {
 	debugf("eval >>> %q", in)
 

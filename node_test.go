@@ -1,10 +1,7 @@
 package main
 
 import (
-	"bytes"
-	"go/ast"
 	"go/parser"
-	"go/printer"
 	"go/token"
 
 	"testing"
@@ -38,10 +35,4 @@ func F() {
 	}
 
 	t.Log(formatted)
-}
-
-func showNode(fset *token.FileSet, node ast.Node) string {
-	var buf bytes.Buffer
-	printer.Fprint(&buf, fset, node)
-	return buf.String()
 }
