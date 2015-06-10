@@ -12,7 +12,7 @@ import (
 
 // doQuickFix tries to fix the source AST so that it compiles well.
 func (s *Session) doQuickFix() error {
-	const maxAttempts = 100
+	const maxAttempts = 10
 
 	s.reset()
 
