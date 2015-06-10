@@ -39,6 +39,7 @@ import (
 	"golang.org/x/tools/imports"
 
 	"github.com/mitchellh/go-homedir"
+	"github.com/motemen/go-quickfix"
 )
 
 const version = "0.0.0"
@@ -513,6 +514,9 @@ func (s *Session) importFile(src []byte) error {
 		if funcDecl, ok := decl.(*ast.FuncDecl); ok {
 			if isNamedIdent(funcDecl.Name, "main") {
 				f.Decls = append(f.Decls[0:i], f.Decls[i+1:]...)
+				// main() removed from this file, we may have to
+				// remove some unsed import's
+				quickfix.QuickFix(s.Fset, []*ast.File{f})
 				break
 			}
 		}
