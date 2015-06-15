@@ -243,7 +243,7 @@ func actionDoc(s *Session, in string) error {
 	} else if ident, ok := expr.(*ast.Ident); ok {
 		// package name
 		mainScope := s.TypeInfo.Scopes[s.mainFunc().Type]
-		_, docObj = mainScope.LookupParent(ident.Name)
+		_, docObj = mainScope.LookupParent(ident.Name, ident.NamePos)
 	}
 
 	if docObj == nil {
