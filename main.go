@@ -42,7 +42,7 @@ import (
 	"github.com/motemen/go-quickfix"
 )
 
-const version = "0.0.0"
+const version = "0.1.0"
 const printerName = "__gore_p"
 
 var flagAutoImport = flag.Bool("autoimport", false, "formats and adjusts imports automatically")
