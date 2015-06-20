@@ -1,23 +1,22 @@
 package main
 
 import (
-	"regexp"
 	"strings"
 
 	"go/ast"
-	"go/token"
+	"golang.org/x/tools/go/ast/astutil"
 	"golang.org/x/tools/go/types"
-)
 
-var (
-	rxDeclaredNotUsed = regexp.MustCompile(`^([a-zA-Z0-9_]+) declared but not used`)
-	rxImportedNotUsed = regexp.MustCompile(`^(".+") imported but not used`)
+	"github.com/motemen/go-quickfix"
 )
 
 // doQuickFix tries to fix the source AST so that it compiles well.
 func (s *Session) doQuickFix() error {
-	const maxAttempts = 100
+	const maxAttempts = 10
 
+	s.reset()
+
+quickFixAttempt:
 	for i := 0; i < maxAttempts; i++ {
 		s.TypeInfo = types.Info{
 			Types: make(map[ast.Expr]types.TypeAndValue),
@@ -26,65 +25,65 @@ func (s *Session) doQuickFix() error {
 		files := s.ExtraFiles
 		files = append(files, s.File)
 
-		_, err := s.Types.Check("_quickfix", s.Fset, files, &s.TypeInfo)
+		config := quickfix.Config{
+			Fset:     s.Fset,
+			Files:    files,
+			TypeInfo: &s.TypeInfo,
+		}
+		_, err := config.QuickFixOnce()
 		if err == nil {
 			break
 		}
 
 		debugf("quickFix :: err = %#v", err)
 
-		if err, ok := err.(types.Error); ok {
-			// Handle these situations:
-			// - "%s declared but not used"
-			// - "%q imported but not used"
-			// - "%s used as value"
-			if m := rxDeclaredNotUsed.FindStringSubmatch(err.Msg); m != nil {
-				ident := m[1]
-				debugf("quickFix :: declared but not used -> %s", ident)
-				// insert "_ = x" to supress "declared but not used" error
-				stmt := &ast.AssignStmt{
-					Lhs: []ast.Expr{ast.NewIdent("_")},
-					Tok: token.ASSIGN,
-					Rhs: []ast.Expr{ast.NewIdent(ident)},
-				}
-				s.appendStatements(stmt)
-			} else if m := rxImportedNotUsed.FindStringSubmatch(err.Msg); m != nil {
-				path := m[1] // quoted string, but it's okay because this will be compared to ast.BasicLit.Value.
-				debugf("quickFix :: imported but not used -> %s", path)
-
-				for _, imp := range s.File.Imports {
-					debugf("%s vs %s", imp.Path.Value, path)
-					if imp.Path.Value == path {
-						// make this import spec anonymous one
-						imp.Name = ast.NewIdent("_")
-						break
-					}
-				}
-			} else if strings.HasSuffix(err.Msg, " used as value") {
-				// if last added statement is p(expr), unwrap that expr
-				mainLen := len(s.mainBody.List)
-				if mainLen-s.storedBodyLength == 1 {
-					// just one statement added
-					lastStmt := s.mainBody.List[mainLen-1]
-					if es, ok := lastStmt.(*ast.ExprStmt); ok {
-						if call, ok := es.X.(*ast.CallExpr); ok && isNamedIdent(call.Fun, printerName) {
-							s.restoreMainBody()
-							for _, expr := range call.Args {
-								s.appendStatements(&ast.ExprStmt{X: expr})
-							}
-						}
-					}
-				} else {
-					debugf("quickFix :: give up")
-					break
-				}
-			} else {
-				debugf("quickFix :: give up")
-				break
-			}
-		} else {
-			return err
+		errList, ok := err.(quickfix.ErrorList)
+		if !ok {
+			continue
 		}
+
+		// (try to) fix gore-specific remaining errors
+		for _, err := range errList {
+			err, ok := err.(types.Error)
+			if !ok {
+				continue
+			}
+
+			// "... used as value":
+			//
+			// convert
+			//   __gore_pp(funcWithSideEffectReturningNoValue())
+			// to
+			//   funcWithSideEffectReturningNoValue()
+			if strings.HasSuffix(err.Msg, " used as value") {
+				nodepath, _ := astutil.PathEnclosingInterval(s.File, err.Pos, err.Pos)
+
+				for _, node := range nodepath {
+					stmt, ok := node.(ast.Stmt)
+					if !ok {
+						continue
+					}
+
+					for i := range s.mainBody.List {
+						if s.mainBody.List[i] != stmt {
+							continue
+						}
+
+						exprs := printedExprs(stmt)
+
+						stmts := s.mainBody.List[0:i]
+						for _, expr := range exprs {
+							stmts = append(stmts, &ast.ExprStmt{expr})
+						}
+
+						s.mainBody.List = append(stmts, s.mainBody.List[i+1:]...)
+						continue quickFixAttempt
+					}
+				}
+			}
+		}
+
+		debugf("quickFix :: give up: %#v", err)
 	}
 
 	return nil
@@ -114,8 +113,10 @@ func (s *Session) clearQuickFix() {
 			for _, expr := range exprs {
 				if !s.isPureExpr(expr) {
 					allPure = false
+					break
 				}
 			}
+
 			if allPure {
 				s.mainBody.List = append(s.mainBody.List[0:i], s.mainBody.List[i+1:]...)
 				continue
@@ -136,6 +137,8 @@ func (s *Session) clearQuickFix() {
 
 		i++
 	}
+
+	debugf("clearQuickFix :: %s", showNode(s.Fset, s.mainBody))
 }
 
 // printedExprs returns arguments of statement stmt of form "p(x...)"

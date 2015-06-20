@@ -39,6 +39,7 @@ import (
 	"golang.org/x/tools/imports"
 
 	"github.com/mitchellh/go-homedir"
+	"github.com/motemen/go-quickfix"
 )
 
 const version = "0.0.0"
@@ -360,6 +361,23 @@ func (s *Session) source(space bool) (string, error) {
 	return buf.String(), err
 }
 
+func (s *Session) reset() error {
+	source, err := s.source(false)
+	if err != nil {
+		return err
+	}
+
+	file, err := parser.ParseFile(s.Fset, "gore_session.go", source, parser.Mode(0))
+	if err != nil {
+		return err
+	}
+
+	s.File = file
+	s.mainBody = s.mainFunc().Body
+
+	return nil
+}
+
 func (s *Session) Eval(in string) error {
 	debugf("eval >>> %q", in)
 
@@ -496,6 +514,9 @@ func (s *Session) importFile(src []byte) error {
 		if funcDecl, ok := decl.(*ast.FuncDecl); ok {
 			if isNamedIdent(funcDecl.Name, "main") {
 				f.Decls = append(f.Decls[0:i], f.Decls[i+1:]...)
+				// main() removed from this file, we may have to
+				// remove some unsed import's
+				quickfix.QuickFix(s.Fset, []*ast.File{f})
 				break
 			}
 		}

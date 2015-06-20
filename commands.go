@@ -196,6 +196,8 @@ func actionWrite(s *Session, filename string) error {
 }
 
 func actionDoc(s *Session, in string) error {
+	s.clearQuickFix()
+
 	s.storeMainBody()
 	defer s.restoreMainBody()
 
@@ -203,8 +205,6 @@ func actionDoc(s *Session, in string) error {
 	if err != nil {
 		return err
 	}
-
-	s.doQuickFix()
 
 	s.TypeInfo = types.Info{
 		Types:  make(map[ast.Expr]types.TypeAndValue),
