@@ -29,6 +29,7 @@ import (
 	"syscall"
 
 	"go/ast"
+	"go/build"
 	"go/parser"
 	"go/printer"
 	"go/scanner"
@@ -45,9 +46,12 @@ import (
 const version = "0.1.0"
 const printerName = "__gore_p"
 
-var flagAutoImport = flag.Bool("autoimport", false, "formats and adjusts imports automatically")
-var stringExtFiles = flag.String("context", "",
-	"Import packages, functions, variables and constants from external golang source files")
+var (
+	flagAutoImport = flag.Bool("autoimport", false, "formats and adjusts imports automatically")
+	flagExtFiles   = flag.String("context", "",
+		"import packages, functions, variables and constants from external golang source files")
+	flagPkg = flag.String("pkg", "", "specify a package where the session will be run inside")
+)
 
 func main() {
 	flag.Parse()
@@ -59,9 +63,22 @@ func main() {
 
 	fmt.Printf("gore version %s  :help for help\n", version)
 
-	if *stringExtFiles != "" {
-		extFiles := strings.Split(*stringExtFiles, ",")
+	if *flagExtFiles != "" {
+		extFiles := strings.Split(*flagExtFiles, ",")
 		s.includeFiles(extFiles)
+	}
+
+	if *flagPkg != "" {
+		pkg, err := build.Import(*flagPkg, ".", 0)
+		if err != nil {
+			panic(err)
+		}
+		files := make([]string, len(pkg.GoFiles))
+		for i, f := range pkg.GoFiles {
+			files[i] = filepath.Join(pkg.Dir, f)
+		}
+		fmt.Println(files)
+		s.includeFiles(files)
 	}
 
 	rl := newContLiner()
