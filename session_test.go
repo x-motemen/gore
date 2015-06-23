@@ -70,3 +70,14 @@ func TestRun_FixImports(t *testing.T) {
 		noError(t, err)
 	}
 }
+
+func TestIncludePackage(t *testing.T) {
+	s, err := NewSession()
+	noError(t, err)
+
+	err = s.includePackage("github.com/motemen/gore/gocode")
+	noError(t, err)
+
+	err = s.Eval("Completer{}")
+	noError(t, err)
+}

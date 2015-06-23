@@ -69,16 +69,11 @@ func main() {
 	}
 
 	if *flagPkg != "" {
-		pkg, err := build.Import(*flagPkg, ".", 0)
+		err := s.includePackage(*flagPkg)
 		if err != nil {
-			panic(err)
+			errorf("-pkg: %s", err)
+			os.Exit(1)
 		}
-		files := make([]string, len(pkg.GoFiles))
-		for i, f := range pkg.GoFiles {
-			files[i] = filepath.Join(pkg.Dir, f)
-		}
-		fmt.Println(files)
-		s.includeFiles(files)
 	}
 
 	rl := newContLiner()
@@ -491,6 +486,8 @@ func (s *Session) includeFile(file string) {
 	if err = s.importFile(content); err != nil {
 		errorf("%s", err)
 	}
+
+	infof("added file %s", file)
 }
 
 // importPackages includes packages defined on external file into main file
@@ -576,6 +573,25 @@ func (s *Session) fixImports() error {
 		return err
 	}
 	s.mainBody = s.mainFunc().Body
+
+	return nil
+}
+
+func (s *Session) includePackage(path string) error {
+	pkg, err := build.Import(path, ".", 0)
+	if err != nil {
+		var err2 error
+		pkg, err2 = build.ImportDir(path, 0)
+		if err2 != nil {
+			return err // return package path import error, not directory import error as build.Import can also import directories if "./foo" is specified
+		}
+	}
+
+	files := make([]string, len(pkg.GoFiles))
+	for i, f := range pkg.GoFiles {
+		files[i] = filepath.Join(pkg.Dir, f)
+	}
+	s.includeFiles(files)
 
 	return nil
 }
