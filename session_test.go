@@ -29,6 +29,7 @@ func TestRun_QuickFix_evaluated_but_not_used(t *testing.T) {
 		`make([]int, 0)`,
 		`1+1`,
 		`func() {}`,
+		`(4 & (1 << 1))`,
 		`1`,
 	}
 
