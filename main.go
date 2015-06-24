@@ -29,6 +29,7 @@ import (
 	"syscall"
 
 	"go/ast"
+	"go/build"
 	"go/parser"
 	"go/printer"
 	"go/scanner"
@@ -45,9 +46,12 @@ import (
 const version = "0.1.0"
 const printerName = "__gore_p"
 
-var flagAutoImport = flag.Bool("autoimport", false, "formats and adjusts imports automatically")
-var stringExtFiles = flag.String("context", "",
-	"Import packages, functions, variables and constants from external golang source files")
+var (
+	flagAutoImport = flag.Bool("autoimport", false, "formats and adjusts imports automatically")
+	flagExtFiles   = flag.String("context", "",
+		"import packages, functions, variables and constants from external golang source files")
+	flagPkg = flag.String("pkg", "", "specify a package where the session will be run inside")
+)
 
 func main() {
 	flag.Parse()
@@ -59,9 +63,17 @@ func main() {
 
 	fmt.Printf("gore version %s  :help for help\n", version)
 
-	if *stringExtFiles != "" {
-		extFiles := strings.Split(*stringExtFiles, ",")
+	if *flagExtFiles != "" {
+		extFiles := strings.Split(*flagExtFiles, ",")
 		s.includeFiles(extFiles)
+	}
+
+	if *flagPkg != "" {
+		err := s.includePackage(*flagPkg)
+		if err != nil {
+			errorf("-pkg: %s", err)
+			os.Exit(1)
+		}
 	}
 
 	rl := newContLiner()
@@ -474,6 +486,8 @@ func (s *Session) includeFile(file string) {
 	if err = s.importFile(content); err != nil {
 		errorf("%s", err)
 	}
+
+	infof("added file %s", file)
 }
 
 // importPackages includes packages defined on external file into main file
@@ -559,6 +573,25 @@ func (s *Session) fixImports() error {
 		return err
 	}
 	s.mainBody = s.mainFunc().Body
+
+	return nil
+}
+
+func (s *Session) includePackage(path string) error {
+	pkg, err := build.Import(path, ".", 0)
+	if err != nil {
+		var err2 error
+		pkg, err2 = build.ImportDir(path, 0)
+		if err2 != nil {
+			return err // return package path import error, not directory import error as build.Import can also import directories if "./foo" is specified
+		}
+	}
+
+	files := make([]string, len(pkg.GoFiles))
+	for i, f := range pkg.GoFiles {
+		files[i] = filepath.Join(pkg.Dir, f)
+	}
+	s.includeFiles(files)
 
 	return nil
 }
