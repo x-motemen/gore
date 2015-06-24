@@ -203,6 +203,8 @@ func (s *Session) isPureExpr(expr ast.Expr) bool {
 		return true
 	case *ast.UnaryExpr:
 		return s.isPureExpr(expr.X)
+	case *ast.ParenExpr:
+		return s.isPureExpr(expr.X)
 	}
 
 	return false
