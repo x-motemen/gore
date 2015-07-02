@@ -24,6 +24,7 @@ type contLiner struct {
 
 func newContLiner() *contLiner {
 	rl := liner.NewLiner()
+	rl.SetCtrlCAborts(true)
 	return &contLiner{State: rl}
 }
 
@@ -43,6 +44,13 @@ func (cl *contLiner) Prompt() (string, error) {
 			cl.Accepted()
 			fmt.Println()
 			err = nil
+		}
+	} else if err == liner.ErrPromptAborted {
+		err = nil
+		if cl.buffer != "" {
+			cl.Accepted()
+		} else {
+			fmt.Println("(^D to quit)")
 		}
 	} else if err == nil {
 		if cl.buffer != "" {
