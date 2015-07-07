@@ -1,10 +1,16 @@
 package main
 
 import (
+	"os/exec"
 	"testing"
 )
 
 func TestActionDoc(t *testing.T) {
+	_, err := exec.LookPath("godoc")
+	if err != nil {
+		t.Skipf("godoc not found: %s", err)
+	}
+
 	s, err := NewSession()
 	noError(t, err)
 
