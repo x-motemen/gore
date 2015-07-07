@@ -1,0 +1,24 @@
+box: golang
+build:
+  steps:
+    - setup-go-workspace
+
+    - script:
+        name: go get
+        code: |
+          go get -t ./...
+
+    - script:
+        name: go build
+        code: |
+          go build ./...
+
+    - script:
+        name: go test
+        code: |
+          go test ./...
+deploy:
+  steps:
+    - motemen/gobump-github-pull-request@1.0.2:
+        github_token: $GITHUB_TOKEN
+        label_pattern_minor: ^feature$
