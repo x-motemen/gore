@@ -1,4 +1,4 @@
-package main
+package eval
 
 import (
 	"testing"
@@ -60,7 +60,7 @@ func TestRun_FixImports(t *testing.T) {
 	noError(t, err)
 
 	autoimport := true
-	flagAutoImport = &autoimport
+	s.SetAutoImport(autoimport)
 
 	codes := []string{
 		`filepath.Join("a", "b")`,
@@ -76,7 +76,7 @@ func TestIncludePackage(t *testing.T) {
 	s, err := NewSession()
 	noError(t, err)
 
-	err = s.includePackage("github.com/motemen/gore/gocode")
+	err = s.IncludePackage("github.com/motemen/gore/gocode")
 	noError(t, err)
 
 	err = s.Eval("Completer{}")

@@ -1,4 +1,4 @@
-package main
+package eval
 
 import (
 	"strings"
@@ -6,7 +6,7 @@ import (
 	"github.com/motemen/gore/gocode"
 )
 
-func (s *Session) completeWord(line string, pos int) (string, []string, string) {
+func (s *Session) CompleteWord(line string, pos int) (string, []string, string) {
 	if strings.HasPrefix(line, ":") {
 		// complete commands
 		if !strings.Contains(line[0:pos], " ") {
