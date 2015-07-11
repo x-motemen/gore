@@ -19,6 +19,13 @@ build:
           go test ./...
 deploy:
   steps:
-    - motemen/gobump-github-pull-request@1.1.2:
+    - motemen/gobump-github-pull-request:
         github_token: $GITHUB_TOKEN
         label_pattern_minor: ^feature$
+    - script:
+        name: tag version
+        code: |
+          if [ -n "$GOBUMP_NEW_VERSION" ]; then
+            git tag "v$GOBUMP_NEW_VERSION"
+            git push --tags "https://$GITHUB_TOKEN@github.com/$WERCKER_GIT_OWNER/$WERCKER_GIT_REPOSITORY"
+          fi
