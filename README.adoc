@@ -42,6 +42,8 @@ gore uses Go toolchains, so I don't provide binaries.
 
     go get github.com/motemen/gore
 
+Make sure `$GOPATH/bin` is in your `$PATH`.
+
 Also recommended:
 
     go get github.com/nsf/gocode
