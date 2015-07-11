@@ -19,6 +19,6 @@ build:
           go test ./...
 deploy:
   steps:
-    - motemen/gobump-github-pull-request:
+    - motemen/gobump-github-pull-request@1.1.2:
         github_token: $GITHUB_TOKEN
         label_pattern_minor: ^feature$
