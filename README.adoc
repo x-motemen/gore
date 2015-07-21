@@ -35,6 +35,7 @@ Some functionalities are provided as colon-commands:
     :write [<filename>]     Write out current source to file
     :doc <expr or pkg>      Show document (requires godoc)
     :help                   List commands
+    :quit                   Quit the session
 
 == Installation
 

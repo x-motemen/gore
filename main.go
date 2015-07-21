@@ -13,6 +13,7 @@ Some special functionalities are provided as commands, which starts with colons:
 	:write [<filename>]     Writes out current code
 	:doc <target>           Shows documentation for an expression or package name given
 	:help                   Lists commands
+	:quit                   Quit the session
 */
 package main
 
