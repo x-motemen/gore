@@ -13,6 +13,7 @@ Some special functionalities are provided as commands, which starts with colons:
 	:write [<filename>]     Writes out current code
 	:doc <target>           Shows documentation for an expression or package name given
 	:help                   Lists commands
+	:quit                   Quit the session
 */
 package main
 
@@ -120,6 +121,8 @@ func main() {
 		if err != nil {
 			if err == ErrContinue {
 				continue
+			} else if err == ErrQuit {
+				break
 			}
 			fmt.Println(err)
 		}
@@ -347,6 +350,7 @@ type Error string
 
 const (
 	ErrContinue Error = "<continue input>"
+	ErrQuit     Error = "<quit session>"
 )
 
 func (e Error) Error() string {
@@ -407,6 +411,9 @@ func (s *Session) Eval(in string) error {
 			arg = strings.TrimSpace(arg)
 			err := command.action(s, arg)
 			if err != nil {
+				if err == ErrQuit {
+					return err
+				}
 				errorf("%s: %s", command.name, err)
 			}
 			commandRan = true

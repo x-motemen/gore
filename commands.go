@@ -66,6 +66,11 @@ func init() {
 			action:   actionHelp,
 			document: "show this help",
 		},
+		{
+			name:     "quit",
+			action:   actionQuit,
+			document: "quit the session",
+		},
 	}
 }
 
@@ -315,4 +320,8 @@ func actionHelp(s *Session, _ string) error {
 	w.Flush()
 
 	return nil
+}
+
+func actionQuit(s *Session, _ string) error {
+	return ErrQuit
 }
