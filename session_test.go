@@ -82,3 +82,22 @@ func TestIncludePackage(t *testing.T) {
 	err = s.Eval("Completer{}")
 	noError(t, err)
 }
+
+func TestRun_Copy(t *testing.T) {
+	s, err := NewSession()
+	noError(t, err)
+
+	codes := []string{
+		`a := []string{"hello", "world"}`,
+		`b := []string{"goodbye", "world"}`,
+		`copy(a, b)`,
+		`if (a[0] != "goodbye") {
+			panic("should be copied")
+		}`,
+	}
+
+	for _, code := range codes {
+		err := s.Eval(code)
+		noError(t, err)
+	}
+}
