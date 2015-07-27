@@ -161,15 +161,27 @@ func printedExprs(stmt ast.Stmt) []ast.Expr {
 	return call.Args
 }
 
+var pureBuiltinFuncNames = map[string]bool{
+	"append":  true,
+	"cap":     true,
+	"complex": true,
+	"imag":    true,
+	"len":     true,
+	"make":    true,
+	"new":     true,
+	"real":    true,
+}
+
 // isPureExpr checks if an expression expr is "pure", which means
 // removing this expression will no affect the entire program.
 // - identifiers ("x")
+// - types
 // - selectors ("x.y")
 // - slices ("a[n:m]")
 // - literals ("1")
 // - type conversion ("int(1)")
 // - type assertion ("x.(int)")
-// - call of some built-in functions: len, make, cap, append, imag, real
+// - call of some built-in functions as listed in pureBuiltinFuncNames
 func (s *Session) isPureExpr(expr ast.Expr) bool {
 	if expr == nil {
 		return true
@@ -184,9 +196,25 @@ func (s *Session) isPureExpr(expr ast.Expr) bool {
 		return s.isPureExpr(expr.X) && s.isPureExpr(expr.Y)
 	case *ast.CallExpr:
 		tv := s.TypeInfo.Types[expr.Fun]
-		if tv.IsType() || tv.IsBuiltin() {
+		for _, arg := range expr.Args {
+			if s.isPureExpr(arg) == false {
+				return false
+			}
+		}
+
+		if tv.IsType() {
 			return true
 		}
+
+		if tv.IsBuiltin() {
+			if ident, ok := expr.Fun.(*ast.Ident); ok {
+				if pureBuiltinFuncNames[ident.Name] {
+					return true
+				}
+			}
+		}
+
+		return false
 	case *ast.CompositeLit:
 		return true
 	case *ast.FuncLit:
@@ -205,6 +233,27 @@ func (s *Session) isPureExpr(expr ast.Expr) bool {
 		return s.isPureExpr(expr.X)
 	case *ast.ParenExpr:
 		return s.isPureExpr(expr.X)
+
+	case *ast.InterfaceType:
+		return true
+	case *ast.ArrayType:
+		return true
+	case *ast.ChanType:
+		return true
+	case *ast.KeyValueExpr:
+		return true
+	case *ast.MapType:
+		return true
+	case *ast.StructType:
+		return true
+	case *ast.FuncType:
+		return true
+
+	case *ast.Ellipsis:
+		return true
+
+	case *ast.BadExpr:
+		return false
 	}
 
 	return false
