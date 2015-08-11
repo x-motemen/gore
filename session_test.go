@@ -101,3 +101,19 @@ func TestRun_Copy(t *testing.T) {
 		noError(t, err)
 	}
 }
+
+func TestRun_Const(t *testing.T) {
+	s, err := NewSession()
+	noError(t, err)
+
+	codes := []string{
+		`const ( a = iota; b )`,
+		`a`,
+		`b`,
+	}
+
+	for _, code := range codes {
+		err := s.Eval(code)
+		noError(t, err)
+	}
+}

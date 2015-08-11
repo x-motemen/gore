@@ -31,8 +31,8 @@ func normalizeNodePos(node ast.Node) {
 		for i := 0; i < v.NumField(); i++ {
 			f := v.Field(i)
 			ft := f.Type()
-			if f.CanSet() && ft.PkgPath() == "go/token" && ft.Name() == "Pos" {
-				f.SetInt(0)
+			if f.CanSet() && ft.PkgPath() == "go/token" && ft.Name() == "Pos" && f.Int() != 0 {
+				f.SetInt(1)
 			}
 		}
 
