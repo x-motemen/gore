@@ -316,6 +316,7 @@ func (s *Session) evalStmt(in string) error {
 	stmts := enclosingFunc.Body.List
 
 	if len(stmts) > 0 {
+		debugf("evalStmt :: %s", showNode(s.Fset, stmts))
 		lastStmt := stmts[len(stmts)-1]
 		// print last assigned/defined values
 		if assign, ok := lastStmt.(*ast.AssignStmt); ok {
