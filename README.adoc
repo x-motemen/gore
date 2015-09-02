@@ -41,15 +41,15 @@ Some functionalities are provided as colon-commands:
 
 gore uses Go toolchains, so I don't provide binaries.
 
-    go get github.com/motemen/gore
+    go get -u github.com/motemen/gore
 
 Make sure `$GOPATH/bin` is in your `$PATH`.
 
 Also recommended:
 
-    go get github.com/nsf/gocode
-    go get github.com/k0kubun/pp # or github.com/davecgh/go-spew
-    go get golang.org/x/tools/cmd/godoc
+    go get -u github.com/nsf/gocode
+    go get -u github.com/k0kubun/pp # or github.com/davecgh/go-spew
+    go get -u golang.org/x/tools/cmd/godoc
 
 == Caveats
 
