@@ -10,6 +10,7 @@ Some special functionalities are provided as commands, which starts with colons:
 
 	:import <package path>  Imports a package
 	:print                  Prints current source code
+	:ssa                    Prints the SSA IR for the current source code
 	:write [<filename>]     Writes out current code
 	:doc <target>           Shows documentation for an expression or package name given
 	:help                   Lists commands
