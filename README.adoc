@@ -32,6 +32,7 @@ Some functionalities are provided as colon-commands:
 
     :import <package path>  Import package
     :print                  Show current source
+    :ssa                    Show SSA IR representation of current source
     :write [<filename>]     Write out current source to file
     :doc <expr or pkg>      Show document (requires godoc)
     :help                   List commands
