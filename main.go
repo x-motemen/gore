@@ -51,8 +51,25 @@ var (
 	flagAutoImport = flag.Bool("autoimport", false, "formats and adjusts imports automatically")
 	flagExtFiles   = flag.String("context", "",
 		"import packages, functions, variables and constants from external golang source files")
-	flagPkg = flag.String("pkg", "", "specify a package where the session will be run inside")
+	flagPkg             = flag.String("pkg", "", "specify a package where the session will be run inside")
+	flagRecursiveImport = flag.Bool("recursive", false, "formats and adjusts imports automatically")
 )
+
+func recursiveImport(s *Session, path string) error {
+	files, err := ioutil.ReadDir(path)
+	if err != nil {
+		fmt.Println(err)
+	}
+	for _, v := range files {
+		if v.IsDir() {
+			newdir := filepath.Join(path, v.Name())
+			s.includePackage(newdir)
+			recursiveImport(s, newdir)
+		}
+	}
+
+	return nil
+}
 
 func main() {
 	flag.Parse()
@@ -70,7 +87,12 @@ func main() {
 	}
 
 	if *flagPkg != "" {
-		err := s.includePackage(*flagPkg)
+		var err error
+		if *flagRecursiveImport {
+			err = recursiveImport(s, filepath.Join(os.Getenv("GOPATH"), "src", *flagPkg))
+		} else {
+			err = s.includePackage(*flagPkg)
+		}
 		if err != nil {
 			errorf("-pkg: %s", err)
 			os.Exit(1)
