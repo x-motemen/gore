@@ -52,7 +52,7 @@ var (
 	flagExtFiles   = flag.String("context", "",
 		"import packages, functions, variables and constants from external golang source files")
 	flagPkg             = flag.String("pkg", "", "specify a package where the session will be run inside")
-	flagRecursiveImport = flag.Bool("recursive", false, "formats and adjusts imports automatically")
+	flagRecursiveImport = flag.Bool("recursive", false, "recursively imports with -pkg")
 )
 
 func recursiveImport(s *Session, path string) error {
