@@ -51,8 +51,10 @@ Also recommended:
     go get -u github.com/k0kubun/pp # or github.com/davecgh/go-spew
     go get -u golang.org/x/tools/cmd/godoc
 
-== Caveats
+== FAQ/Caveats
 
+* If you see `too many arguments in call to mainScope.LookupParent` while installing gore,
+  run `go get -u golang.org/x/tools/go/types`.
 * gore runs code using `go run` for each input. If you have entered time-consuming code,
   gore will run it for each input and take some time.
 
