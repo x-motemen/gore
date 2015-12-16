@@ -45,6 +45,8 @@ func init() {
 		{
 			name:     "print",
 			action:   actionPrint,
+			complete: completePrint,
+			arg:      "[-ast]",
 			document: "print current source",
 		},
 		{
@@ -169,7 +171,15 @@ func completeDoc(s *Session, prefix string) []string {
 	return result
 }
 
-func actionPrint(s *Session, _ string) error {
+func completePrint(s *Session, prefix string) []string {
+	return []string{"-ast", ""}
+}
+
+func actionPrint(s *Session, mode string) error {
+	if mode == "-ast" {
+		return ast.Print(s.Fset, s.mainBody.List)
+	}
+
 	source, err := s.source(true)
 	if err != nil {
 		return err
