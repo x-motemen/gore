@@ -116,7 +116,12 @@ func main() {
 			continue
 		}
 
-		rl.Reindent()
+		if !rl.Reindent() {
+			fmt.Fprintf(os.Stderr, "syntax error: unmatched braces\n")
+			rl.Clear()
+			continue
+		}
+
 		err = s.Eval(in)
 		if err != nil {
 			if err == ErrContinue {

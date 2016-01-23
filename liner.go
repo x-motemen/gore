@@ -68,9 +68,18 @@ func (cl *contLiner) Accepted() {
 	cl.buffer = ""
 }
 
-func (cl *contLiner) Reindent() {
+func (cl *contLiner) Clear() {
+	cl.buffer = ""
+	cl.depth = 0
+}
+
+func (cl *contLiner) Reindent() bool {
 	oldDepth := cl.depth
 	cl.depth = cl.countDepth()
+
+	if cl.depth < 0 {
+		return false
+	}
 
 	if cl.depth < oldDepth {
 		lines := strings.Split(cl.buffer, "\n")
@@ -83,6 +92,8 @@ func (cl *contLiner) Reindent() {
 			fmt.Print("\n")
 		}
 	}
+
+	return true
 }
 
 func (cl *contLiner) countDepth() int {
