@@ -32,13 +32,13 @@ import (
 
 	"go/ast"
 	"go/build"
+	"go/importer"
 	"go/parser"
 	"go/printer"
 	"go/scanner"
 	"go/token"
+	"go/types"
 
-	_ "golang.org/x/tools/go/gcimporter"
-	"golang.org/x/tools/go/types"
 	"golang.org/x/tools/imports"
 
 	"github.com/mitchellh/go-homedir"
@@ -208,7 +208,7 @@ func NewSession() (*Session, error) {
 	s := &Session{
 		Fset: token.NewFileSet(),
 		Types: &types.Config{
-			Packages: make(map[string]*types.Package),
+			Importer: importer.Default(),
 		},
 	}
 
@@ -219,7 +219,7 @@ func NewSession() (*Session, error) {
 
 	var initialSource string
 	for _, pp := range printerPkgs {
-		_, err := types.DefaultImport(s.Types.Packages, pp.path)
+		_, err := s.Types.Importer.Import(pp.path)
 		if err == nil {
 			initialSource = fmt.Sprintf(initialSourceTemplate, pp.path, pp.code)
 			break

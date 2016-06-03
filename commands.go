@@ -14,8 +14,8 @@ import (
 
 	"go/ast"
 	"go/build"
+	"go/types"
 	"golang.org/x/tools/go/ast/astutil"
-	"golang.org/x/tools/go/types"
 )
 
 type command struct {
@@ -87,7 +87,7 @@ func actionImport(s *Session, arg string) error {
 	path := strings.Trim(arg, `"`)
 
 	// check if the package specified by path is importable
-	_, err := types.DefaultImport(s.Types.Packages, path)
+	_, err := s.Types.Importer.Import(path)
 	if err != nil {
 		return err
 	}
