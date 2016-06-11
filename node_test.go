@@ -23,10 +23,6 @@ func F() {
 	f, err := parser.ParseFile(fset, "t.go", src, 0)
 	noError(t, err)
 
-	if formatted := showNode(fset, f); formatted != src {
-		t.Fatalf("formatted source must equal original: %s", formatted)
-	}
-
 	normalizeNodePos(f)
 
 	formatted := showNode(fset, f)
