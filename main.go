@@ -116,8 +116,8 @@ func main() {
 			continue
 		}
 
-		if !rl.Reindent() {
-			fmt.Fprintf(os.Stderr, "syntax error: unmatched braces\n")
+		if err := rl.Reindent(); err != nil {
+			fmt.Fprintf(os.Stderr, "error: %s\n", err)
 			rl.Clear()
 			continue
 		}

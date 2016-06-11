@@ -73,12 +73,14 @@ func (cl *contLiner) Clear() {
 	cl.depth = 0
 }
 
-func (cl *contLiner) Reindent() bool {
+var errUnmatchedBraces = fmt.Errorf("unmatched braces")
+
+func (cl *contLiner) Reindent() error {
 	oldDepth := cl.depth
 	cl.depth = cl.countDepth()
 
 	if cl.depth < 0 {
-		return false
+		return errUnmatchedBraces
 	}
 
 	if cl.depth < oldDepth {
@@ -93,7 +95,7 @@ func (cl *contLiner) Reindent() bool {
 		}
 	}
 
-	return true
+	return nil
 }
 
 func (cl *contLiner) countDepth() int {
