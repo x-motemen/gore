@@ -68,9 +68,20 @@ func (cl *contLiner) Accepted() {
 	cl.buffer = ""
 }
 
-func (cl *contLiner) Reindent() {
+func (cl *contLiner) Clear() {
+	cl.buffer = ""
+	cl.depth = 0
+}
+
+var errUnmatchedBraces = fmt.Errorf("unmatched braces")
+
+func (cl *contLiner) Reindent() error {
 	oldDepth := cl.depth
 	cl.depth = cl.countDepth()
+
+	if cl.depth < 0 {
+		return errUnmatchedBraces
+	}
 
 	if cl.depth < oldDepth {
 		lines := strings.Split(cl.buffer, "\n")
@@ -83,6 +94,8 @@ func (cl *contLiner) Reindent() {
 			fmt.Print("\n")
 		}
 	}
+
+	return nil
 }
 
 func (cl *contLiner) countDepth() int {

@@ -116,7 +116,12 @@ func main() {
 			continue
 		}
 
-		rl.Reindent()
+		if err := rl.Reindent(); err != nil {
+			fmt.Fprintf(os.Stderr, "error: %s\n", err)
+			rl.Clear()
+			continue
+		}
+
 		err = s.Eval(in)
 		if err != nil {
 			if err == ErrContinue {
