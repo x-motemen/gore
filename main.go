@@ -44,7 +44,7 @@ import (
 	"github.com/motemen/go-quickfix"
 )
 
-const version = "0.2.5"
+const version = "0.2.6"
 const printerName = "__gore_p"
 
 var (
