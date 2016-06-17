@@ -48,6 +48,11 @@ func init() {
 			document: "print current source",
 		},
 		{
+			name:     "ssa",
+			action:   actionSSA,
+			document: "print the SSA representation of the current source",
+		},
+		{
 			name:     "write",
 			action:   actionWrite,
 			complete: nil, // TODO implement
@@ -177,6 +182,17 @@ func actionPrint(s *Session, _ string) error {
 
 	fmt.Println(source)
 
+	return nil
+}
+
+func actionSSA(s *Session, _ string) error {
+	source, err := s.dumpSSA()
+	if err != nil {
+		errorf("actionSSA: %v", err)
+		return err
+	}
+
+	fmt.Println(source)
 	return nil
 }
 
