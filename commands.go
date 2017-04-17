@@ -79,6 +79,18 @@ func actionImport(s *Session, arg string) error {
 		return fmt.Errorf("arg required")
 	}
 
+	if strings.Contains(arg, ",") {
+		arg = strings.Trim(arg, ",")
+
+		for _, v  := range strings.Split(arg, ",") {
+			if err := actionImport(s,v); err != nil {
+				return err
+			}
+		}
+
+		return nil
+	}
+
 	path := strings.Trim(arg, `"`)
 
 	// check if the package specified by path is importable
