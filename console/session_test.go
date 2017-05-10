@@ -1,4 +1,4 @@
-package main
+package console
 
 import (
 	"testing"
@@ -15,7 +15,7 @@ func TestRun_import(t *testing.T) {
 	}
 
 	for _, code := range codes {
-		err := s.Eval(code)
+		err := s.Eval(code, false)
 		noError(t, err)
 	}
 }
@@ -34,7 +34,7 @@ func TestRun_QuickFix_evaluated_but_not_used(t *testing.T) {
 	}
 
 	for _, code := range codes {
-		err := s.Eval(code)
+		err := s.Eval(code, false)
 		noError(t, err)
 	}
 }
@@ -50,7 +50,7 @@ func TestRun_QuickFix_used_as_value(t *testing.T) {
 	}
 
 	for _, code := range codes {
-		err := s.Eval(code)
+		err := s.Eval(code, false)
 		noError(t, err)
 	}
 }
@@ -59,15 +59,12 @@ func TestRun_FixImports(t *testing.T) {
 	s, err := NewSession()
 	noError(t, err)
 
-	autoimport := true
-	flagAutoImport = &autoimport
-
 	codes := []string{
 		`filepath.Join("a", "b")`,
 	}
 
 	for _, code := range codes {
-		err := s.Eval(code)
+		err := s.Eval(code, true)
 		noError(t, err)
 	}
 }
@@ -79,7 +76,7 @@ func TestIncludePackage(t *testing.T) {
 	err = s.includePackage("github.com/motemen/gore/gocode")
 	noError(t, err)
 
-	err = s.Eval("Completer{}")
+	err = s.Eval("Completer{}", false)
 	noError(t, err)
 }
 
@@ -97,7 +94,7 @@ func TestRun_Copy(t *testing.T) {
 	}
 
 	for _, code := range codes {
-		err := s.Eval(code)
+		err := s.Eval(code, false)
 		noError(t, err)
 	}
 }
@@ -113,7 +110,7 @@ func TestRun_Const(t *testing.T) {
 	}
 
 	for _, code := range codes {
-		err := s.Eval(code)
+		err := s.Eval(code, false)
 		noError(t, err)
 	}
 }

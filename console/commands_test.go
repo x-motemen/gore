@@ -1,4 +1,4 @@
-package main
+package console
 
 import (
 	"os/exec"
@@ -34,8 +34,8 @@ func TestActionDoc(t *testing.T) {
 
 	// test :doc works after some code
 
-	s.Eval("a := 1")
-	s.Eval("fmt.Print()")
+	s.Eval("a := 1", false)
+	s.Eval("fmt.Print()", false)
 
 	test()
 }
@@ -46,6 +46,6 @@ func TestActionImport(t *testing.T) {
 
 	noError(t, actionImport(s, "encoding/json fmt"))
 
-	noError(t, s.Eval("fmt.Print"))
-	noError(t, s.Eval("json.Encoder{}"))
+	noError(t, s.Eval("fmt.Print", false))
+	noError(t, s.Eval("json.Encoder{}", false))
 }

@@ -1,6 +1,6 @@
 // +build debug
 
-package main
+package console
 
 func init() {
 	debug = true

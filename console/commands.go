@@ -1,4 +1,4 @@
-package main
+package console
 
 import (
 	"fmt"
@@ -16,6 +16,7 @@ import (
 	"go/ast"
 	"go/build"
 	"go/types"
+
 	"golang.org/x/tools/go/ast/astutil"
 )
 
