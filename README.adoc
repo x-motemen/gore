@@ -48,7 +48,7 @@ Make sure `$GOPATH/bin` is in your `$PATH`.
 Also recommended:
 
     go get -u github.com/nsf/gocode
-    go get -u github.com/k0kubun/pp # or github.com/davecgh/go-spew
+    go get -u github.com/k0kubun/pp # or github.com/davecgh/go-spew/spew
     go get -u golang.org/x/tools/cmd/godoc
 
 == FAQ/Caveats
