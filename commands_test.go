@@ -39,3 +39,13 @@ func TestActionDoc(t *testing.T) {
 
 	test()
 }
+
+func TestActionImport(t *testing.T) {
+	s, err := NewSession()
+	noError(t, err)
+
+	noError(t, actionImport(s, "encoding/json fmt"))
+
+	noError(t, s.Eval("fmt.Print"))
+	noError(t, s.Eval("json.Encoder{}"))
+}
