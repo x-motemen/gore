@@ -1,8 +1,11 @@
 language: go
 go:
-  - 1.5
-  - 1.6
+  - 1.x
+  - tip
 install:
   - go get github.com/nsf/gocode
   - go get ./...
   - go get -t ./...
+script:
+  - go fmt ./... | perl -pe 'END { exit !!$. }'
+  - go test ./...
