@@ -79,10 +79,11 @@ func actionImport(s *Session, arg string) error {
 		return fmt.Errorf("arg required")
 	}
 
-	if strings.Contains(arg, ",") {
-		arg = strings.Trim(arg, ",")
-
-		for _, v := range strings.Split(arg, ",") {
+	if strings.Contains(arg, " ") {
+		for _, v := range strings.Fields(arg) {
+			if v == "" {
+				continue
+			}
 			if err := actionImport(s, v); err != nil {
 				return err
 			}
