@@ -82,8 +82,8 @@ func actionImport(s *Session, arg string) error {
 	if strings.Contains(arg, ",") {
 		arg = strings.Trim(arg, ",")
 
-		for _, v  := range strings.Split(arg, ",") {
-			if err := actionImport(s,v); err != nil {
+		for _, v := range strings.Split(arg, ",") {
+			if err := actionImport(s, v); err != nil {
 				return err
 			}
 		}
