@@ -264,12 +264,7 @@ func (s *Session) Run() error {
 }
 
 func tempFile() (string, error) {
-	dir, err := ioutil.TempDir("", "")
-	if err != nil {
-		return "", err
-	}
-
-	err = os.MkdirAll(dir, 0755)
+	dir, err := ioutil.TempDir("", "gore-")
 	if err != nil {
 		return "", err
 	}
