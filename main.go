@@ -271,17 +271,14 @@ func tempFile() (string, error) {
 		return "", err
 	}
 
-	candidates := []string{
-		"tmp_gore_session.go",
-		fmt.Sprintf("tmp_gore_session-%v.go", time.Now().Unix()),
-	}
-	for _, candidate := range candidates {
-		tempFile := filepath.Join(dir, candidate)
+	for range make([]bool, 100) {
+		tempFile := filepath.Join(dir, fmt.Sprintf("tmp_gore_session-%v.go", time.Now().UnixNano()))
 		_, err := os.Stat(tempFile)
 		if err != nil {
 			// file not found
 			return tempFile, nil
 		}
+		time.Sleep(time.Nanosecond)
 	}
 
 	return "", fmt.Errorf("tempFile cannot set")
