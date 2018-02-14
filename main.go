@@ -28,6 +28,7 @@ import (
 	"path/filepath"
 	"strings"
 	"syscall"
+	"time"
 
 	"go/ast"
 	"go/build"
@@ -58,6 +59,7 @@ func main() {
 	flag.Parse()
 
 	s, err := NewSession()
+	defer s.cleanup()
 	if err != nil {
 		panic(err)
 	}
@@ -264,7 +266,51 @@ func (s *Session) Run() error {
 }
 
 func tempFile() (string, error) {
-	dir, err := ioutil.TempDir("", "")
+	dir, err := tempDir()
+	if err != nil {
+		return "", err
+	}
+
+	candidates := []string{
+		"tmp_gore_session.go",
+		fmt.Sprintf("tmp_gore_session-%v.go", time.Now().Unix()),
+	}
+	for _, candidate := range candidates {
+		tempFile := filepath.Join(dir, candidate)
+		_, err := os.Stat(tempFile)
+		if err != nil {
+			// file not found
+			return tempFile, nil
+		}
+	}
+
+	return "", fmt.Errorf("tempFile cannot set")
+}
+
+func tempDir() (string, error) {
+	var dir string
+	var out []byte
+	var err error
+
+	// Mac, Linux...
+	dir = os.Getenv("PWD")
+	if dir != "" {
+		return dir, nil
+	}
+
+	out, err = exec.Command("pwd").Output()
+	if out != nil && err == nil {
+		return string(out), nil
+	}
+
+	// Windows
+	out, err = exec.Command("cd").Output()
+	if out != nil && err == nil {
+		return string(out), nil
+	}
+
+	// alternative
+	dir, err = ioutil.TempDir("", "")
 	if err != nil {
 		return "", err
 	}
@@ -274,7 +320,11 @@ func tempFile() (string, error) {
 		return "", err
 	}
 
-	return filepath.Join(dir, "gore_session.go"), nil
+	if dir != "" {
+		return dir, nil
+	}
+
+	return "", fmt.Errorf("cannot set tempdir")
 }
 
 func goRun(files []string) error {
@@ -607,4 +657,17 @@ func (s *Session) includePackage(path string) error {
 	s.includeFiles(files)
 
 	return nil
+}
+
+func (s *Session) cleanup() {
+	if s.FilePath == "" {
+		return
+	}
+	if _, err := os.Stat(s.FilePath); err == nil {
+		// tempFile found
+		err = os.Remove(s.FilePath)
+		if err != nil {
+			errorf("%v", err)
+		}
+	}
 }
