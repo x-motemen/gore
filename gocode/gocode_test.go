@@ -9,7 +9,7 @@ import (
 func TestUnavailable(t *testing.T) {
 	c := &Completer{GocodePath: "./no-such-bin"}
 	if c.Available() {
-		t.Error("should not be available: %#v", c)
+		t.Errorf("should not be available: %#v", c)
 	}
 }
 
