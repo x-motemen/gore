@@ -62,7 +62,7 @@ func main() {
 		panic(err)
 	}
 
-	fmt.Printf("gore version %s  :help for help\n", version)
+	fmt.Fprintf(os.Stderr, "gore version %s  :help for help\n", version)
 
 	if *flagExtFiles != "" {
 		extFiles := strings.Split(*flagExtFiles, ",")
