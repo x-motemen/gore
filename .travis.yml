@@ -1,7 +1,6 @@
 language: go
 go:
   - 1.x
-  - tip
 install:
   - go get github.com/nsf/gocode
   - go get ./...
