@@ -44,7 +44,7 @@ import (
 	"github.com/motemen/go-quickfix"
 )
 
-const version = "0.2.6"
+const version = "0.3.0"
 const printerName = "__gore_p"
 
 var (
@@ -264,12 +264,7 @@ func (s *Session) Run() error {
 }
 
 func tempFile() (string, error) {
-	dir, err := ioutil.TempDir("", "")
-	if err != nil {
-		return "", err
-	}
-
-	err = os.MkdirAll(dir, 0755)
+	dir, err := ioutil.TempDir("", "gore-")
 	if err != nil {
 		return "", err
 	}
