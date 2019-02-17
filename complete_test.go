@@ -3,6 +3,9 @@ package main
 import (
 	"testing"
 
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+
 	"github.com/motemen/gore/gocode"
 )
 
@@ -12,30 +15,21 @@ func TestSession_completeCode(t *testing.T) {
 	}
 
 	s, err := NewSession()
-	noError(t, err)
+	require.NoError(t, err)
 
 	keep, cands, err := s.completeCode("", 0, true)
-	if err != nil {
-		noError(t, err)
-	}
+	require.NoError(t, err)
 
-	if keep != 0 {
-		t.Errorf("keep should be == 0: got %v", keep)
-	}
-
-	stringsContain(t, cands, "main(")
+	assert.Equal(t, 0, keep)
+	assert.Contains(t, cands, "main(")
+	assert.NotContains(t, cands, printerName+"(")
 
 	err = actionImport(s, "fmt")
-	noError(t, err)
+	require.NoError(t, err)
 
 	keep, cands, err = s.completeCode("fmt.p", 5, true)
-	if err != nil {
-		noError(t, err)
-	}
+	require.NoError(t, err)
 
-	if keep != 4 {
-		t.Errorf("keep should be == 4: got %v", keep)
-	}
-
-	stringsContain(t, cands, "Println(")
+	assert.Equal(t, 4, keep)
+	assert.Contains(t, cands, "Println(")
 }

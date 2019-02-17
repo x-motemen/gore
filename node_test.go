@@ -5,6 +5,8 @@ import (
 	"go/token"
 
 	"testing"
+
+	"github.com/stretchr/testify/require"
 )
 
 func TestNormalizeNodePos(t *testing.T) {
@@ -21,7 +23,7 @@ func F() {
 `
 	fset := token.NewFileSet()
 	f, err := parser.ParseFile(fset, "t.go", src, 0)
-	noError(t, err)
+	require.NoError(t, err)
 
 	normalizeNodePos(f)
 

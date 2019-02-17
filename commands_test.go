@@ -3,6 +3,8 @@ package main
 import (
 	"os/exec"
 	"testing"
+
+	"github.com/stretchr/testify/require"
 )
 
 func TestActionDoc(t *testing.T) {
@@ -12,22 +14,22 @@ func TestActionDoc(t *testing.T) {
 	}
 
 	s, err := NewSession()
-	noError(t, err)
+	require.NoError(t, err)
 
 	err = actionImport(s, "encoding/json")
-	noError(t, err)
+	require.NoError(t, err)
 	err = actionImport(s, "fmt")
-	noError(t, err)
+	require.NoError(t, err)
 
 	test := func() {
 		err = actionDoc(s, "fmt")
-		noError(t, err)
+		require.NoError(t, err)
 
 		err = actionDoc(s, "fmt.Print")
-		noError(t, err)
+		require.NoError(t, err)
 
 		err = actionDoc(s, "json.NewEncoder(nil).Encode")
-		noError(t, err)
+		require.NoError(t, err)
 	}
 
 	test()
@@ -42,10 +44,10 @@ func TestActionDoc(t *testing.T) {
 
 func TestActionImport(t *testing.T) {
 	s, err := NewSession()
-	noError(t, err)
+	require.NoError(t, err)
 
-	noError(t, actionImport(s, "encoding/json fmt"))
+	require.NoError(t, actionImport(s, "encoding/json fmt"))
 
-	noError(t, s.Eval("fmt.Print"))
-	noError(t, s.Eval("json.Encoder{}"))
+	require.NoError(t, s.Eval("fmt.Print"))
+	require.NoError(t, s.Eval("json.Encoder{}"))
 }

@@ -2,11 +2,13 @@ package main
 
 import (
 	"testing"
+
+	"github.com/stretchr/testify/require"
 )
 
 func TestRun_import(t *testing.T) {
 	s, err := NewSession()
-	noError(t, err)
+	require.NoError(t, err)
 
 	codes := []string{
 		":import encoding/json",
@@ -16,13 +18,13 @@ func TestRun_import(t *testing.T) {
 
 	for _, code := range codes {
 		err := s.Eval(code)
-		noError(t, err)
+		require.NoError(t, err)
 	}
 }
 
 func TestRun_QuickFix_evaluated_but_not_used(t *testing.T) {
 	s, err := NewSession()
-	noError(t, err)
+	require.NoError(t, err)
 
 	codes := []string{
 		`[]byte("")`,
@@ -35,13 +37,13 @@ func TestRun_QuickFix_evaluated_but_not_used(t *testing.T) {
 
 	for _, code := range codes {
 		err := s.Eval(code)
-		noError(t, err)
+		require.NoError(t, err)
 	}
 }
 
 func TestRun_QuickFix_used_as_value(t *testing.T) {
 	s, err := NewSession()
-	noError(t, err)
+	require.NoError(t, err)
 
 	codes := []string{
 		`:import log`,
@@ -51,13 +53,13 @@ func TestRun_QuickFix_used_as_value(t *testing.T) {
 
 	for _, code := range codes {
 		err := s.Eval(code)
-		noError(t, err)
+		require.NoError(t, err)
 	}
 }
 
 func TestRun_FixImports(t *testing.T) {
 	s, err := NewSession()
-	noError(t, err)
+	require.NoError(t, err)
 
 	autoimport := true
 	flagAutoImport = &autoimport
@@ -68,24 +70,24 @@ func TestRun_FixImports(t *testing.T) {
 
 	for _, code := range codes {
 		err := s.Eval(code)
-		noError(t, err)
+		require.NoError(t, err)
 	}
 }
 
 func TestIncludePackage(t *testing.T) {
 	s, err := NewSession()
-	noError(t, err)
+	require.NoError(t, err)
 
 	err = s.includePackage("github.com/motemen/gore/gocode")
-	noError(t, err)
+	require.NoError(t, err)
 
 	err = s.Eval("Completer{}")
-	noError(t, err)
+	require.NoError(t, err)
 }
 
 func TestRun_Copy(t *testing.T) {
 	s, err := NewSession()
-	noError(t, err)
+	require.NoError(t, err)
 
 	codes := []string{
 		`a := []string{"hello", "world"}`,
@@ -98,13 +100,13 @@ func TestRun_Copy(t *testing.T) {
 
 	for _, code := range codes {
 		err := s.Eval(code)
-		noError(t, err)
+		require.NoError(t, err)
 	}
 }
 
 func TestRun_Const(t *testing.T) {
 	s, err := NewSession()
-	noError(t, err)
+	require.NoError(t, err)
 
 	codes := []string{
 		`const ( a = iota; b )`,
@@ -114,6 +116,6 @@ func TestRun_Const(t *testing.T) {
 
 	for _, code := range codes {
 		err := s.Eval(code)
-		noError(t, err)
+		require.NoError(t, err)
 	}
 }
