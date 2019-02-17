@@ -97,6 +97,7 @@ func main() {
 			if err != nil {
 				errorf("while reading history: %s", err)
 			}
+			f.Close()
 		}
 	}
 
@@ -147,6 +148,7 @@ func main() {
 				if err != nil {
 					errorf("while saving history: %s", err)
 				}
+				f.Close()
 			}
 		}
 	}
@@ -257,6 +259,7 @@ func (s *Session) Run() error {
 	if err != nil {
 		return err
 	}
+	defer f.Close()
 
 	err = printer.Fprint(f, s.Fset, s.File)
 	if err != nil {
