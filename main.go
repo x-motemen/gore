@@ -167,6 +167,7 @@ func homeDir() (home string, err error) {
 	return
 }
 
+// Session ...
 type Session struct {
 	FilePath       string
 	File           *ast.File
@@ -206,6 +207,7 @@ var printerPkgs = []struct {
 	{"fmt", `fmt.Printf("%#v\n", x)`},
 }
 
+// NewSession creates a new Session.
 func NewSession() (*Session, error) {
 	var err error
 
@@ -249,6 +251,7 @@ func (s *Session) mainFunc() *ast.FuncDecl {
 	return s.File.Scope.Lookup("main").Decl.(*ast.FuncDecl)
 }
 
+// Run the session.
 func (s *Session) Run() error {
 	f, err := os.Create(s.FilePath)
 	if err != nil {
@@ -347,8 +350,10 @@ func (s *Session) appendStatements(stmts ...ast.Stmt) {
 	s.mainBody.List = append(s.mainBody.List, stmts...)
 }
 
+// Error ...
 type Error string
 
+// Errors
 const (
 	ErrContinue Error = "<continue input>"
 	ErrQuit     Error = "<quit session>"
@@ -395,6 +400,7 @@ func (s *Session) reset() error {
 	return nil
 }
 
+// Eval the input.
 func (s *Session) Eval(in string) error {
 	debugf("eval >>> %q", in)
 
