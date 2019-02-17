@@ -81,6 +81,9 @@ func (s *Session) completeCode(in string, pos int, exprMode bool) (keep int, can
 	candidates = make([]string, 0, len(result.Candidates))
 	for _, e := range result.Candidates {
 		cand := e.Name
+		if cand == printerName && e.Class == "func" {
+			continue
+		}
 		if exprMode && e.Class == "func" {
 			cand = cand + "("
 		}
