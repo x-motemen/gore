@@ -129,8 +129,9 @@ func main() {
 				continue
 			} else if err == ErrQuit {
 				break
+			} else if err != ErrCmdRun {
+				fmt.Println(err)
 			}
-			fmt.Println(err)
 		}
 		rl.Accepted()
 	}
@@ -364,6 +365,7 @@ type Error string
 const (
 	ErrContinue Error = "<continue input>"
 	ErrQuit     Error = "<quit session>"
+	ErrCmdRun   Error = "<command failed>"
 )
 
 func (e Error) Error() string {
@@ -469,7 +471,8 @@ func (s *Session) Eval(in string) error {
 				}
 			}
 		}
-		errorf("%s", err)
+		debugf("%s", err)
+		err = ErrCmdRun
 	}
 
 	return err
