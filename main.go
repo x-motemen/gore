@@ -288,7 +288,7 @@ func (s *Session) goRun(files []string) error {
 	cmd := exec.Command("go", args...)
 	cmd.Stdin = os.Stdin
 	cmd.Stdout = s.stdout
-	cmd.Stderr = s.stderr
+	cmd.Stderr = newErrFilter(s.stderr)
 	return cmd.Run()
 }
 
