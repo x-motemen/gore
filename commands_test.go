@@ -16,6 +16,7 @@ func TestActionDoc(t *testing.T) {
 	}
 
 	s, err := NewSession(stdout, stderr)
+	defer s.Clear()
 	require.NoError(t, err)
 
 	err = actionImport(s, "encoding/json")
@@ -51,6 +52,7 @@ func TestActionDoc(t *testing.T) {
 func TestActionImport(t *testing.T) {
 	stdout, stderr := new(bytes.Buffer), new(bytes.Buffer)
 	s, err := NewSession(stdout, stderr)
+	defer s.Clear()
 	require.NoError(t, err)
 
 	require.NoError(t, actionImport(s, "encoding/json fmt"))

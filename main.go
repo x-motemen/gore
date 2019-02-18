@@ -614,7 +614,7 @@ func (s *Session) includePackage(path string) error {
 	return nil
 }
 
-// Clear temporary directory.
+// Clear the temporary directory.
 func (s *Session) Clear() error {
 	return os.RemoveAll(s.tempDir)
 }
