@@ -89,8 +89,7 @@ func TestRun_QuickFix_used_as_value(t *testing.T) {
 		require.NoError(t, err)
 	}
 
-	require.Equal(t, `1
-`, stdout.String())
+	require.Equal(t, "1\n", stdout.String())
 	require.Equal(t, "", stderr.String())
 }
 
@@ -112,8 +111,7 @@ func TestRun_FixImports(t *testing.T) {
 		require.NoError(t, err)
 	}
 
-	require.Equal(t, `"a/b"
-`, stdout.String())
+	require.Equal(t, "\"a/b\"\n", stdout.String())
 	require.Equal(t, "", stderr.String())
 }
 
@@ -174,9 +172,7 @@ func TestRun_Const(t *testing.T) {
 		require.NoError(t, err)
 	}
 
-	require.Equal(t, `0
-1
-`, stdout.String())
+	require.Equal(t, "0\n1\n", stdout.String())
 	require.Equal(t, "", stderr.String())
 }
 
