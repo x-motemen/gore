@@ -58,6 +58,7 @@ func main() {
 	flag.Parse()
 
 	s, err := NewSession(os.Stdout, os.Stderr)
+	defer s.Clear()
 	if err != nil {
 		panic(err)
 	}
@@ -611,4 +612,9 @@ func (s *Session) includePackage(path string) error {
 	s.includeFiles(files)
 
 	return nil
+}
+
+// Clear temporary directory.
+func (s *Session) Clear() error {
+	return os.RemoveAll(s.tempDir)
 }
