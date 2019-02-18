@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -14,7 +15,8 @@ func TestSession_completeCode(t *testing.T) {
 		t.Skipf("gocode unavailable")
 	}
 
-	s, err := NewSession()
+	stdout, stderr := new(bytes.Buffer), new(bytes.Buffer)
+	s, err := NewSession(stdout, stderr)
 	require.NoError(t, err)
 
 	keep, cands, err := s.completeCode("", 0, true)

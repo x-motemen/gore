@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"os/exec"
 	"testing"
 
@@ -8,12 +9,13 @@ import (
 )
 
 func TestActionDoc(t *testing.T) {
+	stdout, stderr := new(bytes.Buffer), new(bytes.Buffer)
 	_, err := exec.LookPath("godoc")
 	if err != nil {
 		t.Skipf("godoc not found: %s", err)
 	}
 
-	s, err := NewSession()
+	s, err := NewSession(stdout, stderr)
 	require.NoError(t, err)
 
 	err = actionImport(s, "encoding/json")
@@ -40,14 +42,23 @@ func TestActionDoc(t *testing.T) {
 	s.Eval("fmt.Print()")
 
 	test()
+
+	require.Contains(t, stdout.String(), "package fmt")
+	require.Contains(t, stdout.String(), "func Printf")
+	require.Equal(t, "", stderr.String())
 }
 
 func TestActionImport(t *testing.T) {
-	s, err := NewSession()
+	stdout, stderr := new(bytes.Buffer), new(bytes.Buffer)
+	s, err := NewSession(stdout, stderr)
 	require.NoError(t, err)
 
 	require.NoError(t, actionImport(s, "encoding/json fmt"))
 
 	require.NoError(t, s.Eval("fmt.Print"))
 	require.NoError(t, s.Eval("json.Encoder{}"))
+
+	require.Contains(t, stdout.String(), "(func(...interface {}) (int, error))")
+	require.Contains(t, stdout.String(), "json.Encoder")
+	require.Equal(t, "", stderr.String())
 }

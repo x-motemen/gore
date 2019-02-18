@@ -57,7 +57,7 @@ var (
 func main() {
 	flag.Parse()
 
-	s, err := NewSession()
+	s, err := NewSession(os.Stdout, os.Stderr)
 	if err != nil {
 		panic(err)
 	}
@@ -181,6 +181,8 @@ type Session struct {
 
 	mainBody         *ast.BlockStmt
 	storedBodyLength int
+	stdout           io.Writer
+	stderr           io.Writer
 }
 
 const initialSourceTemplate = `
@@ -210,7 +212,7 @@ var printerPkgs = []struct {
 }
 
 // NewSession creates a new Session.
-func NewSession() (*Session, error) {
+func NewSession(stdout, stderr io.Writer) (*Session, error) {
 	var err error
 
 	s := &Session{
@@ -218,6 +220,8 @@ func NewSession() (*Session, error) {
 		Types: &types.Config{
 			Importer: importer.Default(),
 		},
+		stdout: stdout,
+		stderr: stderr,
 	}
 
 	s.FilePath, err = tempFile()
@@ -266,7 +270,7 @@ func (s *Session) Run() error {
 		return err
 	}
 
-	return goRun(append(s.ExtraFilePaths, s.FilePath))
+	return s.goRun(append(s.ExtraFilePaths, s.FilePath))
 }
 
 func tempFile() (string, error) {
@@ -278,13 +282,13 @@ func tempFile() (string, error) {
 	return filepath.Join(dir, "gore_session.go"), nil
 }
 
-func goRun(files []string) error {
+func (s *Session) goRun(files []string) error {
 	args := append([]string{"run"}, files...)
 	debugf("go %s", strings.Join(args, " "))
 	cmd := exec.Command("go", args...)
 	cmd.Stdin = os.Stdin
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
+	cmd.Stdout = s.stdout
+	cmd.Stderr = s.stderr
 	return cmd.Run()
 }
 
