@@ -172,6 +172,7 @@ func homeDir() (home string, err error) {
 
 // Session ...
 type Session struct {
+	tempDir        string
 	tempFilePath   string
 	File           *ast.File
 	Fset           *token.FileSet
@@ -225,10 +226,11 @@ func NewSession(stdout, stderr io.Writer) (*Session, error) {
 		stderr: stderr,
 	}
 
-	s.tempFilePath, err = tempFile()
+	s.tempDir, err = ioutil.TempDir("", "gore-")
 	if err != nil {
 		return nil, err
 	}
+	s.tempFilePath = filepath.Join(s.tempDir, "gore_session.go")
 
 	var initialSource string
 	for _, pp := range printerPkgs {
@@ -272,15 +274,6 @@ func (s *Session) Run() error {
 	}
 
 	return s.goRun(append(s.ExtraFilePaths, s.tempFilePath))
-}
-
-func tempFile() (string, error) {
-	dir, err := ioutil.TempDir("", "gore-")
-	if err != nil {
-		return "", err
-	}
-
-	return filepath.Join(dir, "gore_session.go"), nil
 }
 
 func (s *Session) goRun(files []string) error {
@@ -532,7 +525,7 @@ func (s *Session) importPackages(src []byte) error {
 // importFile adds external golang file to goRun target to use its function
 func (s *Session) importFile(src []byte) error {
 	// Don't need to same directory
-	tmp, err := ioutil.TempFile(filepath.Dir(s.tempFilePath), "gore_extarnal_")
+	tmp, err := ioutil.TempFile(s.tempDir, "gore_extarnal_")
 	if err != nil {
 		return err
 	}
