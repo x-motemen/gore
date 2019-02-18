@@ -172,3 +172,24 @@ func TestRun_Const(t *testing.T) {
 `, stdout.String())
 	require.Equal(t, "", stderr.String())
 }
+
+func TestRun_Error(t *testing.T) {
+	stdout, stderr := new(bytes.Buffer), new(bytes.Buffer)
+	s, err := NewSession(stdout, stderr)
+	require.NoError(t, err)
+
+	codes := []string{
+		`foo`,
+		`len(100)`,
+	}
+
+	for _, code := range codes {
+		err := s.Eval(code)
+		require.Error(t, err)
+	}
+
+	require.Equal(t, "", stdout.String())
+	require.Equal(t, `undefined: foo
+invalid argument 100 (type int) for len
+`, stderr.String())
+}
