@@ -58,6 +58,7 @@ func main() {
 	flag.Parse()
 
 	s, err := NewSession(os.Stdout, os.Stderr)
+	defer s.Clear()
 	if err != nil {
 		panic(err)
 	}
@@ -172,7 +173,8 @@ func homeDir() (home string, err error) {
 
 // Session ...
 type Session struct {
-	FilePath       string
+	tempDir        string
+	tempFilePath   string
 	File           *ast.File
 	Fset           *token.FileSet
 	Types          *types.Config
@@ -225,10 +227,11 @@ func NewSession(stdout, stderr io.Writer) (*Session, error) {
 		stderr: stderr,
 	}
 
-	s.FilePath, err = tempFile()
+	s.tempDir, err = ioutil.TempDir("", "gore-")
 	if err != nil {
 		return nil, err
 	}
+	s.tempFilePath = filepath.Join(s.tempDir, "gore_session.go")
 
 	var initialSource string
 	for _, pp := range printerPkgs {
@@ -260,7 +263,7 @@ func (s *Session) mainFunc() *ast.FuncDecl {
 
 // Run the session.
 func (s *Session) Run() error {
-	f, err := os.Create(s.FilePath)
+	f, err := os.Create(s.tempFilePath)
 	if err != nil {
 		return err
 	}
@@ -271,16 +274,7 @@ func (s *Session) Run() error {
 		return err
 	}
 
-	return s.goRun(append(s.ExtraFilePaths, s.FilePath))
-}
-
-func tempFile() (string, error) {
-	dir, err := ioutil.TempDir("", "gore-")
-	if err != nil {
-		return "", err
-	}
-
-	return filepath.Join(dir, "gore_session.go"), nil
+	return s.goRun(append(s.ExtraFilePaths, s.tempFilePath))
 }
 
 func (s *Session) goRun(files []string) error {
@@ -532,7 +526,7 @@ func (s *Session) importPackages(src []byte) error {
 // importFile adds external golang file to goRun target to use its function
 func (s *Session) importFile(src []byte) error {
 	// Don't need to same directory
-	tmp, err := ioutil.TempFile(filepath.Dir(s.FilePath), "gore_extarnal_")
+	tmp, err := ioutil.TempFile(s.tempDir, "gore_extarnal_")
 	if err != nil {
 		return err
 	}
@@ -618,4 +612,9 @@ func (s *Session) includePackage(path string) error {
 	s.includeFiles(files)
 
 	return nil
+}
+
+// Clear the temporary directory.
+func (s *Session) Clear() error {
+	return os.RemoveAll(s.tempDir)
 }

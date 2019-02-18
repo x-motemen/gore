@@ -17,6 +17,7 @@ func TestSession_completeCode(t *testing.T) {
 
 	stdout, stderr := new(bytes.Buffer), new(bytes.Buffer)
 	s, err := NewSession(stdout, stderr)
+	defer s.Clear()
 	require.NoError(t, err)
 
 	keep, cands, err := s.completeCode("", 0, true)

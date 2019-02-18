@@ -20,6 +20,7 @@ func init() {
 func TestRun_import(t *testing.T) {
 	stdout, stderr := new(bytes.Buffer), new(bytes.Buffer)
 	s, err := NewSession(stdout, stderr)
+	defer s.Clear()
 	require.NoError(t, err)
 
 	codes := []string{
@@ -43,6 +44,7 @@ func TestRun_import(t *testing.T) {
 func TestRun_QuickFix_evaluated_but_not_used(t *testing.T) {
 	stdout, stderr := new(bytes.Buffer), new(bytes.Buffer)
 	s, err := NewSession(stdout, stderr)
+	defer s.Clear()
 	require.NoError(t, err)
 
 	codes := []string{
@@ -73,6 +75,7 @@ func TestRun_QuickFix_evaluated_but_not_used(t *testing.T) {
 func TestRun_QuickFix_used_as_value(t *testing.T) {
 	stdout, stderr := new(bytes.Buffer), new(bytes.Buffer)
 	s, err := NewSession(stdout, stderr)
+	defer s.Clear()
 	require.NoError(t, err)
 
 	codes := []string{
@@ -86,14 +89,14 @@ func TestRun_QuickFix_used_as_value(t *testing.T) {
 		require.NoError(t, err)
 	}
 
-	require.Equal(t, `1
-`, stdout.String())
+	require.Equal(t, "1\n", stdout.String())
 	require.Equal(t, "", stderr.String())
 }
 
 func TestRun_FixImports(t *testing.T) {
 	stdout, stderr := new(bytes.Buffer), new(bytes.Buffer)
 	s, err := NewSession(stdout, stderr)
+	defer s.Clear()
 	require.NoError(t, err)
 
 	autoimport := true
@@ -108,14 +111,14 @@ func TestRun_FixImports(t *testing.T) {
 		require.NoError(t, err)
 	}
 
-	require.Equal(t, `"a/b"
-`, stdout.String())
+	require.Equal(t, "\"a/b\"\n", stdout.String())
 	require.Equal(t, "", stderr.String())
 }
 
 func TestIncludePackage(t *testing.T) {
 	stdout, stderr := new(bytes.Buffer), new(bytes.Buffer)
 	s, err := NewSession(stdout, stderr)
+	defer s.Clear()
 	require.NoError(t, err)
 
 	err = s.includePackage("github.com/motemen/gore/gocode")
@@ -128,6 +131,7 @@ func TestIncludePackage(t *testing.T) {
 func TestRun_Copy(t *testing.T) {
 	stdout, stderr := new(bytes.Buffer), new(bytes.Buffer)
 	s, err := NewSession(stdout, stderr)
+	defer s.Clear()
 	require.NoError(t, err)
 
 	codes := []string{
@@ -154,6 +158,7 @@ func TestRun_Copy(t *testing.T) {
 func TestRun_Const(t *testing.T) {
 	stdout, stderr := new(bytes.Buffer), new(bytes.Buffer)
 	s, err := NewSession(stdout, stderr)
+	defer s.Clear()
 	require.NoError(t, err)
 
 	codes := []string{
@@ -167,15 +172,14 @@ func TestRun_Const(t *testing.T) {
 		require.NoError(t, err)
 	}
 
-	require.Equal(t, `0
-1
-`, stdout.String())
+	require.Equal(t, "0\n1\n", stdout.String())
 	require.Equal(t, "", stderr.String())
 }
 
 func TestRun_Error(t *testing.T) {
 	stdout, stderr := new(bytes.Buffer), new(bytes.Buffer)
 	s, err := NewSession(stdout, stderr)
+	defer s.Clear()
 	require.NoError(t, err)
 
 	codes := []string{
