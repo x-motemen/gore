@@ -294,7 +294,7 @@ func actionDoc(s *Session, in string) error {
 	}
 
 	godoc := exec.Command("godoc", args...)
-	godoc.Stderr = os.Stderr
+	godoc.Stderr = s.stderr
 
 	// TODO just use PAGER?
 	if pagerCmd := os.Getenv("GORE_PAGER"); pagerCmd != "" {
@@ -305,8 +305,8 @@ func actionDoc(s *Session, in string) error {
 
 		pager := exec.Command(pagerCmd)
 		pager.Stdin = r
-		pager.Stdout = os.Stdout
-		pager.Stderr = os.Stderr
+		pager.Stdout = s.stdout
+		pager.Stderr = s.stderr
 
 		err = pager.Start()
 		if err != nil {
@@ -320,12 +320,12 @@ func actionDoc(s *Session, in string) error {
 
 		return pager.Wait()
 	}
-	godoc.Stdout = os.Stdout
+	godoc.Stdout = s.stdout
 	return godoc.Run()
 }
 
 func actionHelp(s *Session, _ string) error {
-	w := tabwriter.NewWriter(os.Stdout, 0, 8, 4, ' ', 0)
+	w := tabwriter.NewWriter(s.stdout, 0, 8, 4, ' ', 0)
 	for _, command := range commands {
 		cmd := ":" + command.name
 		if command.arg != "" {
