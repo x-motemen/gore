@@ -172,7 +172,7 @@ func homeDir() (home string, err error) {
 
 // Session ...
 type Session struct {
-	FilePath       string
+	tempFilePath   string
 	File           *ast.File
 	Fset           *token.FileSet
 	Types          *types.Config
@@ -225,7 +225,7 @@ func NewSession(stdout, stderr io.Writer) (*Session, error) {
 		stderr: stderr,
 	}
 
-	s.FilePath, err = tempFile()
+	s.tempFilePath, err = tempFile()
 	if err != nil {
 		return nil, err
 	}
@@ -260,7 +260,7 @@ func (s *Session) mainFunc() *ast.FuncDecl {
 
 // Run the session.
 func (s *Session) Run() error {
-	f, err := os.Create(s.FilePath)
+	f, err := os.Create(s.tempFilePath)
 	if err != nil {
 		return err
 	}
@@ -271,7 +271,7 @@ func (s *Session) Run() error {
 		return err
 	}
 
-	return s.goRun(append(s.ExtraFilePaths, s.FilePath))
+	return s.goRun(append(s.ExtraFilePaths, s.tempFilePath))
 }
 
 func tempFile() (string, error) {
@@ -532,7 +532,7 @@ func (s *Session) importPackages(src []byte) error {
 // importFile adds external golang file to goRun target to use its function
 func (s *Session) importFile(src []byte) error {
 	// Don't need to same directory
-	tmp, err := ioutil.TempFile(filepath.Dir(s.FilePath), "gore_extarnal_")
+	tmp, err := ioutil.TempFile(filepath.Dir(s.tempFilePath), "gore_extarnal_")
 	if err != nil {
 		return err
 	}
