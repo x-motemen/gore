@@ -1,13 +1,25 @@
 package main
 
 import (
+	"bytes"
+	"regexp"
 	"testing"
 
 	"github.com/stretchr/testify/require"
 )
 
+func init() {
+	printerPkgs = []struct {
+		path string
+		code string
+	}{
+		{"fmt", `fmt.Printf("%#v\n", x)`},
+	}
+}
+
 func TestRun_import(t *testing.T) {
-	s, err := NewSession()
+	stdout, stderr := new(bytes.Buffer), new(bytes.Buffer)
+	s, err := NewSession(stdout, stderr)
 	require.NoError(t, err)
 
 	codes := []string{
@@ -20,10 +32,17 @@ func TestRun_import(t *testing.T) {
 		err := s.Eval(code)
 		require.NoError(t, err)
 	}
+
+	require.Equal(t, `[]byte{0x6e, 0x75, 0x6c, 0x6c}
+<nil>
+"null"
+`, stdout.String())
+	require.Equal(t, "", stderr.String())
 }
 
 func TestRun_QuickFix_evaluated_but_not_used(t *testing.T) {
-	s, err := NewSession()
+	stdout, stderr := new(bytes.Buffer), new(bytes.Buffer)
+	s, err := NewSession(stdout, stderr)
 	require.NoError(t, err)
 
 	codes := []string{
@@ -39,10 +58,21 @@ func TestRun_QuickFix_evaluated_but_not_used(t *testing.T) {
 		err := s.Eval(code)
 		require.NoError(t, err)
 	}
+
+	r := regexp.MustCompile(`0x[0-9a-f]+`)
+	require.Equal(t, `[]byte{}
+[]int{}
+2
+(func())(...)
+0
+1
+`, r.ReplaceAllString(stdout.String(), "..."))
+	require.Equal(t, "", stderr.String())
 }
 
 func TestRun_QuickFix_used_as_value(t *testing.T) {
-	s, err := NewSession()
+	stdout, stderr := new(bytes.Buffer), new(bytes.Buffer)
+	s, err := NewSession(stdout, stderr)
 	require.NoError(t, err)
 
 	codes := []string{
@@ -55,10 +85,15 @@ func TestRun_QuickFix_used_as_value(t *testing.T) {
 		err := s.Eval(code)
 		require.NoError(t, err)
 	}
+
+	require.Equal(t, `1
+`, stdout.String())
+	require.Equal(t, "", stderr.String())
 }
 
 func TestRun_FixImports(t *testing.T) {
-	s, err := NewSession()
+	stdout, stderr := new(bytes.Buffer), new(bytes.Buffer)
+	s, err := NewSession(stdout, stderr)
 	require.NoError(t, err)
 
 	autoimport := true
@@ -72,10 +107,15 @@ func TestRun_FixImports(t *testing.T) {
 		err := s.Eval(code)
 		require.NoError(t, err)
 	}
+
+	require.Equal(t, `"a/b"
+`, stdout.String())
+	require.Equal(t, "", stderr.String())
 }
 
 func TestIncludePackage(t *testing.T) {
-	s, err := NewSession()
+	stdout, stderr := new(bytes.Buffer), new(bytes.Buffer)
+	s, err := NewSession(stdout, stderr)
 	require.NoError(t, err)
 
 	err = s.includePackage("github.com/motemen/gore/gocode")
@@ -86,7 +126,8 @@ func TestIncludePackage(t *testing.T) {
 }
 
 func TestRun_Copy(t *testing.T) {
-	s, err := NewSession()
+	stdout, stderr := new(bytes.Buffer), new(bytes.Buffer)
+	s, err := NewSession(stdout, stderr)
 	require.NoError(t, err)
 
 	codes := []string{
@@ -102,10 +143,17 @@ func TestRun_Copy(t *testing.T) {
 		err := s.Eval(code)
 		require.NoError(t, err)
 	}
+
+	require.Equal(t, `[]string{"hello", "world"}
+[]string{"goodbye", "world"}
+2
+`, stdout.String())
+	require.Equal(t, "", stderr.String())
 }
 
 func TestRun_Const(t *testing.T) {
-	s, err := NewSession()
+	stdout, stderr := new(bytes.Buffer), new(bytes.Buffer)
+	s, err := NewSession(stdout, stderr)
 	require.NoError(t, err)
 
 	codes := []string{
@@ -118,4 +166,9 @@ func TestRun_Const(t *testing.T) {
 		err := s.Eval(code)
 		require.NoError(t, err)
 	}
+
+	require.Equal(t, `0
+1
+`, stdout.String())
+	require.Equal(t, "", stderr.String())
 }

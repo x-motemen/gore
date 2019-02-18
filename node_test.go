@@ -31,6 +31,4 @@ func F() {
 	if formatted == src {
 		t.Fatalf("formatted source must differ from original after normalizeNode: %s", formatted)
 	}
-
-	t.Log(formatted)
 }
