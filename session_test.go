@@ -250,6 +250,28 @@ func TestRun_MultipleValues(t *testing.T) {
 	assert.Equal(t, "", stderr.String())
 }
 
+func TestRun_Func(t *testing.T) {
+	stdout, stderr := new(bytes.Buffer), new(bytes.Buffer)
+	s, err := NewSession(stdout, stderr)
+	require.NoError(t, err)
+
+	codes := []string{
+		`func f() int { return 100 }`,
+		`func g() string { return "hello, world" }`,
+		`func h() int { return "foo" }`,
+		`f() + len(g())`,
+		`func f() int { return 200 }`,
+		`f() * len(g())`,
+	}
+
+	for _, code := range codes {
+		_ = s.Eval(code)
+	}
+
+	assert.Equal(t, "112\n2400\n", stdout.String())
+	assert.Equal(t, "cannot use \"foo\" (type string) as type int in return argument\n", stderr.String())
+}
+
 func TestRun_Error(t *testing.T) {
 	stdout, stderr := new(bytes.Buffer), new(bytes.Buffer)
 	s, err := NewSession(stdout, stderr)
