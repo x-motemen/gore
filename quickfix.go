@@ -100,12 +100,10 @@ func (s *Session) clearQuickFix() {
 	for i := 0; i < len(s.mainBody.List); {
 		stmt := s.mainBody.List[i]
 
-		// remove "_ = x" stmt
-		if assign, ok := stmt.(*ast.AssignStmt); ok && len(assign.Lhs) == 1 {
-			if isNamedIdent(assign.Lhs[0], "_") {
-				s.mainBody.List = append(s.mainBody.List[0:i], s.mainBody.List[i+1:]...)
-				continue
-			}
+		// remove assignment statement if it is omittable.
+		if assign, ok := stmt.(*ast.AssignStmt); ok && s.isPureAssignStmt(assign) {
+			s.mainBody.List = append(s.mainBody.List[0:i], s.mainBody.List[i+1:]...)
+			continue
 		}
 
 		// remove expressions just for printing out
@@ -153,6 +151,21 @@ func (s *Session) clearQuickFix() {
 	}
 
 	debugf("clearQuickFix :: %s", showNode(s.Fset, s.mainBody))
+}
+
+// isPureAssignStmt returns assignment is pure and omittable.
+func (s *Session) isPureAssignStmt(stmt *ast.AssignStmt) bool {
+	for _, lhs := range stmt.Lhs {
+		if !isNamedIdent(lhs, "_") {
+			return false
+		}
+	}
+	for _, expr := range stmt.Rhs {
+		if !s.isPureExpr(expr) {
+			return false
+		}
+	}
+	return true
 }
 
 // printedExprs returns arguments of statement stmt of form "p(x...)"
