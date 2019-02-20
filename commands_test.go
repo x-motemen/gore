@@ -5,6 +5,7 @@ import (
 	"os/exec"
 	"testing"
 
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
@@ -44,9 +45,9 @@ func TestActionDoc(t *testing.T) {
 
 	test()
 
-	require.Contains(t, stdout.String(), "package fmt")
-	require.Contains(t, stdout.String(), "func Printf")
-	require.Equal(t, "", stderr.String())
+	assert.Contains(t, stdout.String(), "package fmt")
+	assert.Contains(t, stdout.String(), "func Printf")
+	assert.Equal(t, "", stderr.String())
 }
 
 func TestActionImport(t *testing.T) {
@@ -60,7 +61,7 @@ func TestActionImport(t *testing.T) {
 	require.NoError(t, s.Eval("fmt.Print"))
 	require.NoError(t, s.Eval("json.Encoder{}"))
 
-	require.Contains(t, stdout.String(), "(func(...interface {}) (int, error))")
-	require.Contains(t, stdout.String(), "json.Encoder")
-	require.Equal(t, "", stderr.String())
+	assert.Contains(t, stdout.String(), "(func(...interface {}) (int, error))")
+	assert.Contains(t, stdout.String(), "json.Encoder")
+	assert.Equal(t, "", stderr.String())
 }

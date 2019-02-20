@@ -5,6 +5,7 @@ import (
 	"regexp"
 	"testing"
 
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
@@ -34,11 +35,11 @@ func TestRun_import(t *testing.T) {
 		require.NoError(t, err)
 	}
 
-	require.Equal(t, `[]byte{0x6e, 0x75, 0x6c, 0x6c}
+	assert.Equal(t, `[]byte{0x6e, 0x75, 0x6c, 0x6c}
 <nil>
 "null"
 `, stdout.String())
-	require.Equal(t, "", stderr.String())
+	assert.Equal(t, "", stderr.String())
 }
 
 func TestRun_QuickFix_evaluated_but_not_used(t *testing.T) {
@@ -62,14 +63,14 @@ func TestRun_QuickFix_evaluated_but_not_used(t *testing.T) {
 	}
 
 	r := regexp.MustCompile(`0x[0-9a-f]+`)
-	require.Equal(t, `[]byte{}
+	assert.Equal(t, `[]byte{}
 []int{}
 2
 (func())(...)
 0
 1
 `, r.ReplaceAllString(stdout.String(), "..."))
-	require.Equal(t, "", stderr.String())
+	assert.Equal(t, "", stderr.String())
 }
 
 func TestRun_QuickFix_used_as_value(t *testing.T) {
@@ -89,8 +90,8 @@ func TestRun_QuickFix_used_as_value(t *testing.T) {
 		require.NoError(t, err)
 	}
 
-	require.Equal(t, "1\n", stdout.String())
-	require.Equal(t, "", stderr.String())
+	assert.Equal(t, "1\n", stdout.String())
+	assert.Equal(t, "", stderr.String())
 }
 
 func TestRun_FixImports(t *testing.T) {
@@ -111,8 +112,8 @@ func TestRun_FixImports(t *testing.T) {
 		require.NoError(t, err)
 	}
 
-	require.Equal(t, "\"a/b\"\n", stdout.String())
-	require.Equal(t, "", stderr.String())
+	assert.Equal(t, "\"a/b\"\n", stdout.String())
+	assert.Equal(t, "", stderr.String())
 }
 
 func TestIncludePackage(t *testing.T) {
@@ -148,11 +149,11 @@ func TestRun_Copy(t *testing.T) {
 		require.NoError(t, err)
 	}
 
-	require.Equal(t, `[]string{"hello", "world"}
+	assert.Equal(t, `[]string{"hello", "world"}
 []string{"goodbye", "world"}
 2
 `, stdout.String())
-	require.Equal(t, "", stderr.String())
+	assert.Equal(t, "", stderr.String())
 }
 
 func TestRun_Const(t *testing.T) {
@@ -172,8 +173,8 @@ func TestRun_Const(t *testing.T) {
 		require.NoError(t, err)
 	}
 
-	require.Equal(t, "0\n1\n", stdout.String())
-	require.Equal(t, "", stderr.String())
+	assert.Equal(t, "0\n1\n", stdout.String())
+	assert.Equal(t, "", stderr.String())
 }
 
 func TestRun_NotUsed(t *testing.T) {
@@ -199,7 +200,7 @@ func TestRun_NotUsed(t *testing.T) {
 	}
 
 	r := regexp.MustCompile(`0x[0-9a-f]+`)
-	require.Equal(t, `(func() []int)(...)
+	assert.Equal(t, `(func() []int)(...)
 3
 3
 6
@@ -208,7 +209,7 @@ func TestRun_NotUsed(t *testing.T) {
 16384
 4
 `, r.ReplaceAllString(stdout.String(), "..."))
-	require.Equal(t, "", stderr.String())
+	assert.Equal(t, "", stderr.String())
 }
 
 func TestRun_MultipleValues(t *testing.T) {
@@ -235,7 +236,7 @@ func TestRun_MultipleValues(t *testing.T) {
 		_ = s.Eval(code)
 	}
 
-	require.Equal(t, `0
+	assert.Equal(t, `0
 <nil>
 0
 <nil>
@@ -246,7 +247,7 @@ func TestRun_MultipleValues(t *testing.T) {
 10
 "test"
 `, stdout.String())
-	require.Equal(t, "", stderr.String())
+	assert.Equal(t, "", stderr.String())
 }
 
 func TestRun_Error(t *testing.T) {
@@ -265,8 +266,8 @@ func TestRun_Error(t *testing.T) {
 		require.Error(t, err)
 	}
 
-	require.Equal(t, "", stdout.String())
-	require.Equal(t, `undefined: foo
+	assert.Equal(t, "", stdout.String())
+	assert.Equal(t, `undefined: foo
 invalid argument 100 (type int) for len
 `, stderr.String())
 }
