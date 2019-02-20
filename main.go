@@ -19,6 +19,7 @@ package main
 
 import (
 	"bytes"
+	"errors"
 	"flag"
 	"fmt"
 	"io"
@@ -348,6 +349,29 @@ func (s *Session) evalStmt(in string) error {
 	return nil
 }
 
+func (s *Session) evalFunc(in string) error {
+	src := fmt.Sprintf("package P; %s", in)
+	f, err := parser.ParseFile(s.Fset, "func.go", src, parser.Mode(0))
+	if err != nil {
+		return err
+	}
+	if len(f.Decls) != 1 {
+		return errors.New("eval func error")
+	}
+	newDecl, ok := f.Decls[0].(*ast.FuncDecl)
+	if !ok {
+		return errors.New("eval func error")
+	}
+	for i, d := range s.File.Decls {
+		if d, ok := d.(*ast.FuncDecl); ok && d.Name.String() == newDecl.Name.String() {
+			s.File.Decls = append(s.File.Decls[:i], s.File.Decls[i+1:]...)
+			break
+		}
+	}
+	s.File.Decls = append(s.File.Decls, newDecl)
+	return nil
+}
+
 func (s *Session) appendStatements(stmts ...ast.Stmt) {
 	s.mainBody.List = append(s.mainBody.List, stmts...)
 }
@@ -443,8 +467,13 @@ func (s *Session) Eval(in string) error {
 		if err != nil {
 			debugf("stmt :: err = %s", err)
 
-			if _, ok := err.(scanner.ErrorList); ok {
-				return ErrContinue
+			err := s.evalFunc(in)
+			if err != nil {
+				debugf("func :: err = %s", err)
+
+				if _, ok := err.(scanner.ErrorList); ok {
+					return ErrContinue
+				}
 			}
 		}
 	}
