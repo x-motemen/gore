@@ -183,11 +183,11 @@ type Session struct {
 	ExtraFilePaths []string
 	ExtraFiles     []*ast.File
 
-	mainBody         *ast.BlockStmt
-	storedBodyLength int
-	storedDeclLength int
-	stdout           io.Writer
-	stderr           io.Writer
+	mainBody  *ast.BlockStmt
+	lastStmts []ast.Stmt
+	lastDecls []ast.Decl
+	stdout    io.Writer
+	stderr    io.Writer
 }
 
 const initialSourceTemplate = `
@@ -503,15 +503,31 @@ func (s *Session) Eval(in string) error {
 }
 
 // storeCode stores current state of code so that it can be restored
-// actually it saves the length of statements inside main()
 func (s *Session) storeCode() {
-	s.storedBodyLength = len(s.mainBody.List)
-	s.storedDeclLength = len(s.File.Decls)
+	s.lastStmts = s.mainBody.List
+	if len(s.lastDecls) != len(s.File.Decls) {
+		s.lastDecls = make([]ast.Decl, len(s.File.Decls))
+	}
+	copy(s.lastDecls, s.File.Decls)
 }
 
+// restoreCode restores the previous code
 func (s *Session) restoreCode() {
-	s.mainBody.List = s.mainBody.List[0:s.storedBodyLength]
-	s.File.Decls = s.File.Decls[0:s.storedDeclLength]
+	s.mainBody.List = s.lastStmts
+	decls := make([]ast.Decl, 0, len(s.File.Decls))
+	for _, d := range s.File.Decls {
+		if d, ok := d.(*ast.FuncDecl); ok && d.Name.String() != "main" {
+			for _, ld := range s.lastDecls {
+				if ld, ok := ld.(*ast.FuncDecl); ok && ld.Name.String() == d.Name.String() {
+					decls = append(decls, ld)
+					break
+				}
+			}
+			continue
+		}
+		decls = append(decls, d)
+	}
+	s.File.Decls = decls
 }
 
 // includeFiles imports packages and funcsions from multiple golang source
