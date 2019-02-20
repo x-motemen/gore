@@ -176,6 +176,79 @@ func TestRun_Const(t *testing.T) {
 	require.Equal(t, "", stderr.String())
 }
 
+func TestRun_NotUsed(t *testing.T) {
+	stdout, stderr := new(bytes.Buffer), new(bytes.Buffer)
+	s, err := NewSession(stdout, stderr)
+	defer s.Clear()
+	require.NoError(t, err)
+
+	codes := []string{
+		`f := func() []int { return []int{1, 2, 3} }`,
+		`len(f())`,
+		`3`,
+		`len(f()) + len(f())`,
+		`var x int`,
+		`g := func() int { x++; return 128 }`,
+		`g() + g()`,
+		`g() * g()`,
+		`x`,
+	}
+
+	for _, code := range codes {
+		_ = s.Eval(code)
+	}
+
+	r := regexp.MustCompile(`0x[0-9a-f]+`)
+	require.Equal(t, `(func() []int)(...)
+3
+3
+6
+(func() int)(...)
+256
+16384
+4
+`, r.ReplaceAllString(stdout.String(), "..."))
+	require.Equal(t, "", stderr.String())
+}
+
+func TestRun_MultipleValues(t *testing.T) {
+	stdout, stderr := new(bytes.Buffer), new(bytes.Buffer)
+	s, err := NewSession(stdout, stderr)
+	defer s.Clear()
+	require.NoError(t, err)
+
+	codes := []string{
+		`var err error`,
+		`:import fmt`,
+		`fmt.Print()`,
+		`fmt.Print()`,
+		`:import io`,
+		`_, err = func() (int, error) { return 0, io.EOF }()`,
+		`err.Error()`,
+		`var x int`,
+		`x, err = 10, fmt.Errorf("test")`,
+		`x`,
+		`err.Error()`,
+	}
+
+	for _, code := range codes {
+		_ = s.Eval(code)
+	}
+
+	require.Equal(t, `0
+<nil>
+0
+<nil>
+&errors.errorString{s:"EOF"}
+"EOF"
+10
+&errors.errorString{s:"test"}
+10
+"test"
+`, stdout.String())
+	require.Equal(t, "", stderr.String())
+}
+
 func TestRun_Error(t *testing.T) {
 	stdout, stderr := new(bytes.Buffer), new(bytes.Buffer)
 	s, err := NewSession(stdout, stderr)
