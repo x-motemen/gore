@@ -220,8 +220,8 @@ func actionWrite(s *Session, filename string) error {
 func actionDoc(s *Session, in string) error {
 	s.clearQuickFix()
 
-	s.storeMainBody()
-	defer s.restoreMainBody()
+	s.storeCode()
+	defer s.restoreCode()
 
 	expr, err := s.evalExpr(in)
 	if err != nil {

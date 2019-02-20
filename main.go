@@ -433,7 +433,7 @@ func (s *Session) Eval(in string) error {
 	debugf("eval >>> %q", in)
 
 	s.clearQuickFix()
-	s.storeMainBody()
+	s.storeCode()
 
 	var commandRan bool
 	for _, command := range commands {
@@ -491,7 +491,7 @@ func (s *Session) Eval(in string) error {
 			if st, ok := exitErr.ProcessState.Sys().(syscall.WaitStatus); ok {
 				if st.ExitStatus() == 2 {
 					debugf("got exit status 2, popping out last input")
-					s.restoreMainBody()
+					s.restoreCode()
 				}
 			}
 		}
@@ -502,14 +502,14 @@ func (s *Session) Eval(in string) error {
 	return err
 }
 
-// storeMainBody stores current state of code so that it can be restored
+// storeCode stores current state of code so that it can be restored
 // actually it saves the length of statements inside main()
-func (s *Session) storeMainBody() {
+func (s *Session) storeCode() {
 	s.storedBodyLength = len(s.mainBody.List)
 	s.storedDeclLength = len(s.File.Decls)
 }
 
-func (s *Session) restoreMainBody() {
+func (s *Session) restoreCode() {
 	s.mainBody.List = s.mainBody.List[0:s.storedBodyLength]
 	s.File.Decls = s.File.Decls[0:s.storedDeclLength]
 }
