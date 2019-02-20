@@ -4,7 +4,9 @@ import (
 	"strings"
 
 	"go/ast"
+	"go/token"
 	"go/types"
+
 	"golang.org/x/tools/go/ast/astutil"
 
 	"github.com/motemen/go-quickfix"
@@ -98,12 +100,10 @@ func (s *Session) clearQuickFix() {
 	for i := 0; i < len(s.mainBody.List); {
 		stmt := s.mainBody.List[i]
 
-		// remove "_ = x" stmt
-		if assign, ok := stmt.(*ast.AssignStmt); ok && len(assign.Lhs) == 1 {
-			if isNamedIdent(assign.Lhs[0], "_") {
-				s.mainBody.List = append(s.mainBody.List[0:i], s.mainBody.List[i+1:]...)
-				continue
-			}
+		// remove assignment statement if it is omittable.
+		if assign, ok := stmt.(*ast.AssignStmt); ok && s.isPureAssignStmt(assign) {
+			s.mainBody.List = append(s.mainBody.List[0:i], s.mainBody.List[i+1:]...)
+			continue
 		}
 
 		// remove expressions just for printing out
@@ -122,12 +122,24 @@ func (s *Session) clearQuickFix() {
 				continue
 			}
 
-			// strip (possibly impure) printing expression to expression
+			// convert possibly impure expressions to blank assignment
 			var trailing []ast.Stmt
 			s.mainBody.List, trailing = s.mainBody.List[0:i], s.mainBody.List[i+1:]
 			for _, expr := range exprs {
-				if !isNamedIdent(expr, "_") {
-					s.mainBody.List = append(s.mainBody.List, &ast.ExprStmt{X: expr})
+				if !s.isPureExpr(expr) {
+					t := s.TypeInfo.TypeOf(expr)
+					var lhs []ast.Expr
+					if t, ok := t.(*types.Tuple); ok {
+						lhs = make([]ast.Expr, t.Len())
+						for i := 0; i < t.Len(); i++ {
+							lhs[i] = ast.NewIdent("_")
+						}
+					} else {
+						lhs = []ast.Expr{ast.NewIdent("_")}
+					}
+					s.mainBody.List = append(s.mainBody.List, &ast.AssignStmt{
+						Lhs: lhs, Tok: token.ASSIGN, Rhs: []ast.Expr{expr},
+					})
 				}
 			}
 
@@ -139,6 +151,21 @@ func (s *Session) clearQuickFix() {
 	}
 
 	debugf("clearQuickFix :: %s", showNode(s.Fset, s.mainBody))
+}
+
+// isPureAssignStmt returns assignment is pure and omittable.
+func (s *Session) isPureAssignStmt(stmt *ast.AssignStmt) bool {
+	for _, lhs := range stmt.Lhs {
+		if !isNamedIdent(lhs, "_") {
+			return false
+		}
+	}
+	for _, expr := range stmt.Rhs {
+		if !s.isPureExpr(expr) {
+			return false
+		}
+	}
+	return true
 }
 
 // printedExprs returns arguments of statement stmt of form "p(x...)"
