@@ -185,6 +185,7 @@ type Session struct {
 
 	mainBody         *ast.BlockStmt
 	storedBodyLength int
+	storedDeclLength int
 	stdout           io.Writer
 	stderr           io.Writer
 }
@@ -505,10 +506,12 @@ func (s *Session) Eval(in string) error {
 // actually it saves the length of statements inside main()
 func (s *Session) storeMainBody() {
 	s.storedBodyLength = len(s.mainBody.List)
+	s.storedDeclLength = len(s.File.Decls)
 }
 
 func (s *Session) restoreMainBody() {
 	s.mainBody.List = s.mainBody.List[0:s.storedBodyLength]
+	s.File.Decls = s.File.Decls[0:s.storedDeclLength]
 }
 
 // includeFiles imports packages and funcsions from multiple golang source
