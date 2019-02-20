@@ -4,7 +4,9 @@ import (
 	"strings"
 
 	"go/ast"
+	"go/token"
 	"go/types"
+
 	"golang.org/x/tools/go/ast/astutil"
 
 	"github.com/motemen/go-quickfix"
@@ -122,12 +124,24 @@ func (s *Session) clearQuickFix() {
 				continue
 			}
 
-			// strip (possibly impure) printing expression to expression
+			// convert possibly impure expressions to blank assignment
 			var trailing []ast.Stmt
 			s.mainBody.List, trailing = s.mainBody.List[0:i], s.mainBody.List[i+1:]
 			for _, expr := range exprs {
-				if !isNamedIdent(expr, "_") {
-					s.mainBody.List = append(s.mainBody.List, &ast.ExprStmt{X: expr})
+				if !s.isPureExpr(expr) {
+					t := s.TypeInfo.TypeOf(expr)
+					var lhs []ast.Expr
+					if t, ok := t.(*types.Tuple); ok {
+						lhs = make([]ast.Expr, t.Len())
+						for i := 0; i < t.Len(); i++ {
+							lhs[i] = ast.NewIdent("_")
+						}
+					} else {
+						lhs = []ast.Expr{ast.NewIdent("_")}
+					}
+					s.mainBody.List = append(s.mainBody.List, &ast.AssignStmt{
+						Lhs: lhs, Tok: token.ASSIGN, Rhs: []ast.Expr{expr},
+					})
 				}
 			}
 
