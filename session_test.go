@@ -250,6 +250,34 @@ func TestRun_MultipleValues(t *testing.T) {
 	assert.Equal(t, "", stderr.String())
 }
 
+func TestRun_Func(t *testing.T) {
+	stdout, stderr := new(bytes.Buffer), new(bytes.Buffer)
+	s, err := NewSession(stdout, stderr)
+	require.NoError(t, err)
+
+	codes := []string{
+		`func f() int { return 100 }`,
+		`func g() string { return "hello, world" }`,
+		`func h() int { return "foo" }`,
+		`f() + len(g())`,
+		`func f() int { return 200 }`,
+		`f() * len(g())`,
+		`func f() string { return 100 }`,
+		`f() | len(g())`,
+	}
+
+	for _, code := range codes {
+		_ = s.Eval(code)
+	}
+
+	assert.Equal(t, "112\n2400\n204\n", stdout.String())
+	assert.Equal(t, `cannot use "foo" (type string) as type int in return argument
+invalid operation: f() + len(g()) (mismatched types string and int)
+invalid operation: f() * len(g()) (mismatched types string and int)
+cannot use 100 (type int) as type string in return argument
+`, stderr.String())
+}
+
 func TestRun_Error(t *testing.T) {
 	stdout, stderr := new(bytes.Buffer), new(bytes.Buffer)
 	s, err := NewSession(stdout, stderr)
@@ -258,16 +286,21 @@ func TestRun_Error(t *testing.T) {
 
 	codes := []string{
 		`foo`,
-		`len(100)`,
+		`func f() int { return 100 }`,
+		`func g() string { return "hello" }`,
+		`len(f())`,
+		`len(g())`,
+		`f() + g()`,
+		`f() + len(g())`,
 	}
 
 	for _, code := range codes {
-		err := s.Eval(code)
-		require.Error(t, err)
+		_ = s.Eval(code)
 	}
 
-	assert.Equal(t, "", stdout.String())
+	assert.Equal(t, "5\n105\n", stdout.String())
 	assert.Equal(t, `undefined: foo
-invalid argument 100 (type int) for len
+invalid argument f() (type int) for len
+invalid operation: f() + g() (mismatched types int and string)
 `, stderr.String())
 }
