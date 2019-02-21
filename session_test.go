@@ -253,6 +253,7 @@ func TestRun_MultipleValues(t *testing.T) {
 func TestRun_Func(t *testing.T) {
 	stdout, stderr := new(bytes.Buffer), new(bytes.Buffer)
 	s, err := NewSession(stdout, stderr)
+	defer s.Clear()
 	require.NoError(t, err)
 
 	codes := []string{
