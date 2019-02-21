@@ -2,7 +2,6 @@ package main
 
 import (
 	"bytes"
-	"os/exec"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -11,10 +10,6 @@ import (
 
 func TestActionDoc(t *testing.T) {
 	stdout, stderr := new(bytes.Buffer), new(bytes.Buffer)
-	_, err := exec.LookPath("godoc")
-	if err != nil {
-		t.Skipf("godoc not found: %s", err)
-	}
 
 	s, err := NewSession(stdout, stderr)
 	defer s.Clear()

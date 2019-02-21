@@ -288,12 +288,12 @@ func actionDoc(s *Session, in string) error {
 
 	debugf("doc :: %q %q", pkgPath, objName)
 
-	args := []string{pkgPath}
+	args := []string{"doc", pkgPath}
 	if objName != "" {
 		args = append(args, objName)
 	}
 
-	godoc := exec.Command("godoc", args...)
+	godoc := exec.Command("go", args...)
 	godoc.Stderr = s.stderr
 
 	// TODO just use PAGER?
