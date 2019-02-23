@@ -462,30 +462,8 @@ func (s *Session) Eval(in string) error {
 	s.clearQuickFix()
 	s.storeCode()
 
-	var commandRan bool
-	for _, command := range commands {
-		arg := strings.TrimPrefix(in, ":"+command.name)
-		if arg == in {
-			continue
-		}
-
-		if arg == "" || strings.HasPrefix(arg, " ") {
-			arg = strings.TrimSpace(arg)
-			err := command.action(s, arg)
-			if err != nil {
-				if err == ErrQuit {
-					return err
-				}
-				errorf("%s: %s", command.name, err)
-			}
-			commandRan = true
-			break
-		}
-	}
-
-	if commandRan {
-		s.doQuickFix()
-		return nil
+	if invoked, err := s.invokeCommand(in); invoked {
+		return err
 	}
 
 	if _, err := s.evalExpr(in); err != nil {
@@ -530,6 +508,26 @@ func (s *Session) Eval(in string) error {
 	}
 
 	return err
+}
+
+func (s *Session) invokeCommand(in string) (invoked bool, err error) {
+	for _, command := range commands {
+		arg := strings.TrimPrefix(in, ":"+command.name)
+		if arg == in {
+			continue
+		}
+		invoked = true
+		arg = strings.TrimSpace(arg)
+		err = command.action(s, arg)
+		if err != nil {
+			if err == ErrQuit {
+				return
+			}
+			errorf("%s: %s", command.name, err)
+		}
+		return
+	}
+	return
 }
 
 // storeCode stores current state of code so that it can be restored
