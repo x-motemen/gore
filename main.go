@@ -29,6 +29,7 @@ import (
 	"path/filepath"
 	"strings"
 	"syscall"
+	"unicode"
 
 	"go/ast"
 	"go/build"
@@ -511,13 +512,24 @@ func (s *Session) Eval(in string) error {
 }
 
 func (s *Session) invokeCommand(in string) (invoked bool, err error) {
+	in = strings.TrimSpace(in)
+	if !strings.HasPrefix(in, ":") {
+		return
+	}
+	in = strings.TrimLeftFunc(in, func(c rune) bool {
+		return c == ':' || unicode.IsSpace(c)
+	})
+	tokens := strings.Fields(in)
+	if len(tokens) == 0 {
+		return true, nil
+	}
+	cmd := tokens[0]
+	arg := strings.TrimSpace(strings.TrimPrefix(in, cmd))
 	for _, command := range commands {
-		arg := strings.TrimPrefix(in, ":"+command.name)
-		if arg == in {
+		if command.name != cmd {
 			continue
 		}
 		invoked = true
-		arg = strings.TrimSpace(arg)
 		err = command.action(s, arg)
 		if err != nil {
 			if err == ErrQuit {

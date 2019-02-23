@@ -98,7 +98,7 @@ func TestAction_Help(t *testing.T) {
 	defer s.Clear()
 	require.NoError(t, err)
 
-	err = s.Eval(":help")
+	err = s.Eval(": :  :   help  ")
 	require.NoError(t, err)
 
 	assert.Contains(t, stdout.String(), "show this help")
@@ -112,7 +112,7 @@ func TestAction_Quit(t *testing.T) {
 	defer s.Clear()
 	require.NoError(t, err)
 
-	err = s.Eval(":quit")
+	err = s.Eval(" :\t: quit")
 	require.Equal(t, ErrQuit, err)
 
 	assert.Equal(t, "", stdout.String())
