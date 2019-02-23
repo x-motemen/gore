@@ -132,7 +132,8 @@ func main() {
 			} else if err == ErrQuit {
 				break
 			} else if err != ErrCmdRun {
-				fmt.Println(err)
+				rl.Clear()
+				continue
 			}
 		}
 		rl.Accepted()
@@ -382,6 +383,23 @@ func (s *Session) evalFunc(in string) error {
 	return nil
 }
 
+func (s *Session) parseTokens(in string) error {
+	var scanner scanner.Scanner
+	fset := token.NewFileSet()
+	file := fset.AddFile("", fset.Base(), len(in))
+	scanner.Init(file, []byte(in), nil, 0)
+	for {
+		_, tok, lit := scanner.Scan()
+		if tok == token.EOF {
+			break
+		}
+		if tok == token.ILLEGAL {
+			return fmt.Errorf("invalid token: %q", string(lit))
+		}
+	}
+	return nil
+}
+
 func (s *Session) appendStatements(stmts ...ast.Stmt) {
 	s.mainBody.List = append(s.mainBody.List, stmts...)
 }
@@ -481,9 +499,12 @@ func (s *Session) Eval(in string) error {
 			if err != nil {
 				debugf("func :: err = %s", err)
 
-				if _, ok := err.(scanner.ErrorList); ok {
-					return ErrContinue
+				if err := s.parseTokens(in); err != nil {
+					fmt.Fprintf(s.stderr, "%s\n", err)
+					return err
 				}
+
+				return ErrContinue
 			}
 		}
 	}
