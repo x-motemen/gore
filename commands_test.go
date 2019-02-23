@@ -118,3 +118,19 @@ func TestAction_Quit(t *testing.T) {
 	assert.Equal(t, "", stdout.String())
 	assert.Equal(t, "", stderr.String())
 }
+
+func TestAction_CommandNotFound(t *testing.T) {
+	stdout, stderr := new(bytes.Buffer), new(bytes.Buffer)
+	s, err := NewSession(stdout, stderr)
+	defer s.Clear()
+	require.NoError(t, err)
+
+	err = s.Eval(":::")
+	require.NoError(t, err)
+
+	err = s.Eval(":foo")
+	require.Error(t, err)
+
+	assert.Equal(t, "", stdout.String())
+	assert.Equal(t, "command not found: foo\n", stderr.String())
+}
