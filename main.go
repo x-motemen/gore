@@ -29,6 +29,7 @@ import (
 	"path/filepath"
 	"strings"
 	"syscall"
+	"unicode"
 
 	"go/ast"
 	"go/build"
@@ -462,30 +463,12 @@ func (s *Session) Eval(in string) error {
 	s.clearQuickFix()
 	s.storeCode()
 
-	var commandRan bool
-	for _, command := range commands {
-		arg := strings.TrimPrefix(in, ":"+command.name)
-		if arg == in {
-			continue
+	if strings.HasPrefix(strings.TrimSpace(in), ":") {
+		err := s.invokeCommand(in)
+		if err != nil && err != ErrQuit {
+			fmt.Fprintf(s.stderr, "%s\n", err)
 		}
-
-		if arg == "" || strings.HasPrefix(arg, " ") {
-			arg = strings.TrimSpace(arg)
-			err := command.action(s, arg)
-			if err != nil {
-				if err == ErrQuit {
-					return err
-				}
-				errorf("%s: %s", command.name, err)
-			}
-			commandRan = true
-			break
-		}
-	}
-
-	if commandRan {
-		s.doQuickFix()
-		return nil
+		return err
 	}
 
 	if _, err := s.evalExpr(in); err != nil {
@@ -530,6 +513,32 @@ func (s *Session) Eval(in string) error {
 	}
 
 	return err
+}
+
+func (s *Session) invokeCommand(in string) (err error) {
+	in = strings.TrimLeftFunc(in, func(c rune) bool {
+		return c == ':' || unicode.IsSpace(c)
+	})
+	tokens := strings.Fields(in)
+	if len(tokens) == 0 {
+		return
+	}
+	cmd := tokens[0]
+	arg := strings.TrimSpace(strings.TrimPrefix(in, cmd))
+	for _, command := range commands {
+		if command.name != cmd {
+			continue
+		}
+		err = command.action(s, arg)
+		if err != nil {
+			if err == ErrQuit {
+				return
+			}
+			err = fmt.Errorf("%s: %s", command.name, err)
+		}
+		return
+	}
+	return fmt.Errorf("command not found: %s", cmd)
 }
 
 // storeCode stores current state of code so that it can be restored
