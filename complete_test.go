@@ -30,11 +30,31 @@ func TestSession_completeWord(t *testing.T) {
 	assert.Equal(t, []string{"        "}, cands)
 	assert.Equal(t, post, "x")
 
+	pre, cands, post = s.completeWord(" : :", 4)
+	assert.Equal(t, "", pre)
+	assert.Equal(t, []string{" : :import ", " : :print", " : :write ", " : :clear", " : :doc ", " : :help", " : :quit"}, cands)
+	assert.Equal(t, post, "")
+
+	pre, cands, post = s.completeWord(" : : i", 6)
+	assert.Equal(t, "", pre)
+	assert.Equal(t, []string{" : : import "}, cands)
+	assert.Equal(t, post, "")
+
+	pre, cands, post = s.completeWord(" : : q", 6)
+	assert.Equal(t, "", pre)
+	assert.Equal(t, []string{" : : quit"}, cands)
+	assert.Equal(t, post, "")
+
 	err = actionImport(s, "fmt")
 	require.NoError(t, err)
 
 	pre, cands, post = s.completeWord("fmt.p", 5)
 	assert.Equal(t, "fmt.", pre)
 	assert.Contains(t, cands, "Println(")
+	assert.Equal(t, post, "")
+
+	pre, cands, post = s.completeWord(" ::: doc  f", 11)
+	assert.Equal(t, " ::: doc ", pre)
+	assert.Equal(t, []string{" fmt"}, cands)
 	assert.Equal(t, post, "")
 }
