@@ -378,7 +378,7 @@ func (s *Session) invokeCommand(in string) (err error) {
 	cmd := tokens[0]
 	arg := strings.TrimSpace(strings.TrimPrefix(in, cmd))
 	for _, command := range commands {
-		if command.name != cmd {
+		if !command.name.matches(cmd) {
 			continue
 		}
 		err = command.action(s, arg)

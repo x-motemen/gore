@@ -21,7 +21,7 @@ import (
 )
 
 type command struct {
-	name     string
+	name     commandName
 	action   func(*Session, string) error
 	complete func(*Session, string) []string
 	arg      string
@@ -37,43 +37,43 @@ var commands []command
 func init() {
 	commands = []command{
 		{
-			name:     "import",
+			name:     commandName("i[mport]"),
 			action:   actionImport,
 			complete: completeImport,
 			arg:      "<package>",
 			document: "import a package",
 		},
 		{
-			name:     "print",
+			name:     commandName("print"),
 			action:   actionPrint,
 			document: "print current source",
 		},
 		{
-			name:     "write",
+			name:     commandName("w[rite]"),
 			action:   actionWrite,
 			complete: nil, // TODO implement
 			arg:      "[<file>]",
 			document: "write out current source",
 		},
 		{
-			name:     "clear",
+			name:     commandName("clear"),
 			action:   actionClear,
 			document: "clear the codes",
 		},
 		{
-			name:     "doc",
+			name:     commandName("d[oc]"),
 			action:   actionDoc,
 			complete: completeDoc,
 			arg:      "<expr or pkg>",
 			document: "show documentation",
 		},
 		{
-			name:     "help",
+			name:     commandName("h[elp]"),
 			action:   actionHelp,
 			document: "show this help",
 		},
 		{
-			name:     "quit",
+			name:     commandName("q[uit]"),
 			action:   actionQuit,
 			document: "quit the session",
 		},
@@ -335,7 +335,7 @@ func actionDoc(s *Session, in string) error {
 func actionHelp(s *Session, _ string) error {
 	w := tabwriter.NewWriter(s.stdout, 0, 8, 4, ' ', 0)
 	for _, command := range commands {
-		cmd := ":" + command.name
+		cmd := fmt.Sprintf(":%s", command.name)
 		if command.arg != "" {
 			cmd = cmd + " " + command.arg
 		}
