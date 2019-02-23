@@ -60,3 +60,31 @@ func TestActionImport(t *testing.T) {
 	assert.Contains(t, stdout.String(), "json.Encoder")
 	assert.Equal(t, "", stderr.String())
 }
+
+func TestActionClear(t *testing.T) {
+	stdout, stderr := new(bytes.Buffer), new(bytes.Buffer)
+	s, err := NewSession(stdout, stderr)
+	defer s.Clear()
+	require.NoError(t, err)
+
+	codes := []string{
+		`x := 10`,
+		`x`,
+		`:clear`,
+		`x := "foo"`,
+		`x`,
+		`:clear`,
+		`x`,
+	}
+
+	for _, code := range codes {
+		_ = s.Eval(code)
+	}
+
+	assert.Equal(t, `10
+10
+"foo"
+"foo"
+`, stdout.String())
+	assert.Equal(t, "undefined: x\n", stderr.String())
+}
