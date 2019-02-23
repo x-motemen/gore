@@ -45,6 +45,10 @@ func (s *Session) completeWord(line string, pos int) (string, []string, string) 
 		return "", nil, ""
 	}
 
+	if strings.TrimSpace(line[:pos]) == "" {
+		return "", []string{line[:pos] + indent}, line[pos:]
+	}
+
 	// code completion
 	pos, cands, err := s.completeCode(line, pos, true)
 	if err != nil {
