@@ -91,3 +91,17 @@ func TestAction_Clear(t *testing.T) {
 `, stdout.String())
 	assert.Equal(t, "undefined: x\n", stderr.String())
 }
+
+func TestAction_Help(t *testing.T) {
+	stdout, stderr := new(bytes.Buffer), new(bytes.Buffer)
+	s, err := NewSession(stdout, stderr)
+	defer s.Clear()
+	require.NoError(t, err)
+
+	err = s.Eval(":help")
+	require.NoError(t, err)
+
+	assert.Contains(t, stdout.String(), "show this help")
+	assert.Contains(t, stdout.String(), "quit the session")
+	assert.Equal(t, "", stderr.String())
+}
