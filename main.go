@@ -463,7 +463,11 @@ func (s *Session) Eval(in string) error {
 	s.clearQuickFix()
 	s.storeCode()
 
-	if invoked, err := s.invokeCommand(in); invoked {
+	if strings.HasPrefix(strings.TrimSpace(in), ":") {
+		err := s.invokeCommand(in)
+		if err != nil && err != ErrQuit {
+			fmt.Fprintf(s.stderr, "%s\n", err)
+		}
 		return err
 	}
 
@@ -511,17 +515,13 @@ func (s *Session) Eval(in string) error {
 	return err
 }
 
-func (s *Session) invokeCommand(in string) (invoked bool, err error) {
-	in = strings.TrimSpace(in)
-	if !strings.HasPrefix(in, ":") {
-		return
-	}
+func (s *Session) invokeCommand(in string) (err error) {
 	in = strings.TrimLeftFunc(in, func(c rune) bool {
 		return c == ':' || unicode.IsSpace(c)
 	})
 	tokens := strings.Fields(in)
 	if len(tokens) == 0 {
-		return true, nil
+		return
 	}
 	cmd := tokens[0]
 	arg := strings.TrimSpace(strings.TrimPrefix(in, cmd))
@@ -529,17 +529,16 @@ func (s *Session) invokeCommand(in string) (invoked bool, err error) {
 		if command.name != cmd {
 			continue
 		}
-		invoked = true
 		err = command.action(s, arg)
 		if err != nil {
 			if err == ErrQuit {
 				return
 			}
-			errorf("%s: %s", command.name, err)
+			err = fmt.Errorf("%s: %s", command.name, err)
 		}
 		return
 	}
-	return
+	return fmt.Errorf("command not found: %s", cmd)
 }
 
 // storeCode stores current state of code so that it can be restored
