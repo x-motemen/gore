@@ -8,26 +8,25 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestActionDoc(t *testing.T) {
+func TestAction_Doc(t *testing.T) {
 	stdout, stderr := new(bytes.Buffer), new(bytes.Buffer)
-
 	s, err := NewSession(stdout, stderr)
 	defer s.Clear()
 	require.NoError(t, err)
 
-	err = actionImport(s, "encoding/json")
+	err = s.Eval(":import encoding/json")
 	require.NoError(t, err)
-	err = actionImport(s, "fmt")
+	err = s.Eval(":import fmt")
 	require.NoError(t, err)
 
 	test := func() {
-		err = actionDoc(s, "fmt")
+		err = s.Eval(":doc fmt")
 		require.NoError(t, err)
 
-		err = actionDoc(s, "fmt.Print")
+		err = s.Eval(":doc fmt.Print")
 		require.NoError(t, err)
 
-		err = actionDoc(s, "json.NewEncoder(nil).Encode")
+		err = s.Eval(":doc json.NewEncoder(nil).Encode")
 		require.NoError(t, err)
 	}
 
@@ -45,23 +44,27 @@ func TestActionDoc(t *testing.T) {
 	assert.Equal(t, "", stderr.String())
 }
 
-func TestActionImport(t *testing.T) {
+func TestAction_Import(t *testing.T) {
 	stdout, stderr := new(bytes.Buffer), new(bytes.Buffer)
 	s, err := NewSession(stdout, stderr)
 	defer s.Clear()
 	require.NoError(t, err)
 
-	require.NoError(t, actionImport(s, "encoding/json fmt"))
+	err = s.Eval(":import encoding/json fmt")
+	require.NoError(t, err)
 
-	require.NoError(t, s.Eval("fmt.Print"))
-	require.NoError(t, s.Eval("json.Encoder{}"))
+	err = s.Eval("fmt.Print")
+	require.NoError(t, err)
+
+	err = s.Eval("json.Encoder{}")
+	require.NoError(t, err)
 
 	assert.Contains(t, stdout.String(), "(func(...interface {}) (int, error))")
 	assert.Contains(t, stdout.String(), "json.Encoder")
 	assert.Equal(t, "", stderr.String())
 }
 
-func TestActionClear(t *testing.T) {
+func TestAction_Clear(t *testing.T) {
 	stdout, stderr := new(bytes.Buffer), new(bytes.Buffer)
 	s, err := NewSession(stdout, stderr)
 	defer s.Clear()
