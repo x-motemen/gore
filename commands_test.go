@@ -105,3 +105,16 @@ func TestAction_Help(t *testing.T) {
 	assert.Contains(t, stdout.String(), "quit the session")
 	assert.Equal(t, "", stderr.String())
 }
+
+func TestAction_Quit(t *testing.T) {
+	stdout, stderr := new(bytes.Buffer), new(bytes.Buffer)
+	s, err := NewSession(stdout, stderr)
+	defer s.Clear()
+	require.NoError(t, err)
+
+	err = s.Eval(":quit")
+	require.Equal(t, ErrQuit, err)
+
+	assert.Equal(t, "", stdout.String())
+	assert.Equal(t, "", stderr.String())
+}
