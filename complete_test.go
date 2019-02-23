@@ -10,7 +10,7 @@ import (
 	"github.com/motemen/gore/gocode"
 )
 
-func TestSession_completeCode(t *testing.T) {
+func TestSession_completeWord(t *testing.T) {
 	if gocode.Available() == false {
 		t.Skipf("gocode unavailable")
 	}
@@ -20,19 +20,21 @@ func TestSession_completeCode(t *testing.T) {
 	defer s.Clear()
 	require.NoError(t, err)
 
-	keep, cands, err := s.completeCode("", 0, true)
-	require.NoError(t, err)
+	pre, cands, post := s.completeWord("", 0)
+	assert.Equal(t, "", pre)
+	assert.Equal(t, []string{"    "}, cands)
+	assert.Equal(t, post, "")
 
-	assert.Equal(t, 0, keep)
-	assert.Contains(t, cands, "main(")
-	assert.NotContains(t, cands, printerName+"(")
+	pre, cands, post = s.completeWord("    x", 4)
+	assert.Equal(t, "", pre)
+	assert.Equal(t, []string{"        "}, cands)
+	assert.Equal(t, post, "x")
 
 	err = actionImport(s, "fmt")
 	require.NoError(t, err)
 
-	keep, cands, err = s.completeCode("fmt.p", 5, true)
-	require.NoError(t, err)
-
-	assert.Equal(t, 4, keep)
+	pre, cands, post = s.completeWord("fmt.p", 5)
+	assert.Equal(t, "fmt.", pre)
 	assert.Contains(t, cands, "Println(")
+	assert.Equal(t, post, "")
 }
