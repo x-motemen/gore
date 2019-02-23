@@ -279,7 +279,34 @@ cannot use 100 (type int) as type string in return argument
 `, stderr.String())
 }
 
-func TestRun_Error(t *testing.T) {
+func TestRun_TokenError(t *testing.T) {
+	stdout, stderr := new(bytes.Buffer), new(bytes.Buffer)
+	s, err := NewSession(stdout, stderr)
+	defer s.Clear()
+	require.NoError(t, err)
+
+	codes := []string{
+		`foo\`,
+		`ba # r`,
+		`$ + 3`,
+		`~1`,
+		"`foo",
+		"`foo\nbar`",
+	}
+
+	for _, code := range codes {
+		_ = s.Eval(code)
+	}
+
+	assert.Equal(t, "\"foo\\nbar\"\n", stdout.String())
+	assert.Equal(t, `invalid token: "\\"
+invalid token: "#"
+invalid token: "$"
+invalid token: "~"
+`, stderr.String())
+}
+
+func TestRun_CompileError(t *testing.T) {
 	stdout, stderr := new(bytes.Buffer), new(bytes.Buffer)
 	s, err := NewSession(stdout, stderr)
 	defer s.Clear()
