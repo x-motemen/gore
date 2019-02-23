@@ -40,6 +40,16 @@ func TestSession_completeWord(t *testing.T) {
 	assert.Equal(t, []string{" : : import "}, cands)
 	assert.Equal(t, post, "")
 
+	pre, cands, post = s.completeWord("::i t", 5)
+	assert.Equal(t, "::i ", pre)
+	assert.Equal(t, []string{"testing", "text", "time"}, cands)
+	assert.Equal(t, post, "")
+
+	pre, cands, post = s.completeWord(":c", 2)
+	assert.Equal(t, "", pre)
+	assert.Equal(t, []string{":clear"}, cands)
+	assert.Equal(t, post, "")
+
 	pre, cands, post = s.completeWord(" : : q", 6)
 	assert.Equal(t, "", pre)
 	assert.Equal(t, []string{" : : quit"}, cands)

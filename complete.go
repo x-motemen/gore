@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"strings"
 	"unicode"
 
@@ -27,8 +28,8 @@ func (s *Session) completeWord(line string, pos int) (string, []string, string) 
 			pre, post := line[:idx], line[pos:]
 			var result []string
 			for _, command := range commands {
-				name := pre + command.name
-				if cmd == "" || strings.HasPrefix(command.name, cmd) {
+				name := pre + fmt.Sprint(command.name)
+				if cmd == "" || command.name.matchesPrefix(cmd) {
 					if !strings.HasPrefix(post, " ") && command.arg != "" {
 						name = name + " "
 					}
@@ -40,7 +41,7 @@ func (s *Session) completeWord(line string, pos int) (string, []string, string) 
 
 		// complete command arguments
 		for _, command := range commands {
-			if command.complete == nil || command.name != cmd {
+			if command.complete == nil || !command.name.matches(cmd) {
 				continue
 			}
 			cmdPrefix := line[:idx] + cmd + " "

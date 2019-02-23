@@ -16,7 +16,7 @@ func TestAction_Doc(t *testing.T) {
 
 	err = s.Eval(":import encoding/json")
 	require.NoError(t, err)
-	err = s.Eval(":import fmt")
+	err = s.Eval(":i fmt")
 	require.NoError(t, err)
 
 	test := func() {
@@ -26,7 +26,7 @@ func TestAction_Doc(t *testing.T) {
 		err = s.Eval(":doc fmt.Print")
 		require.NoError(t, err)
 
-		err = s.Eval(":doc json.NewEncoder(nil).Encode")
+		err = s.Eval(":d json.NewEncoder(nil).Encode")
 		require.NoError(t, err)
 	}
 
@@ -101,9 +101,14 @@ func TestAction_Help(t *testing.T) {
 	err = s.Eval(": :  :   help  ")
 	require.NoError(t, err)
 
+	assert.Contains(t, stdout.String(), ":import <package>")
+	assert.Contains(t, stdout.String(), ":write [<file>]")
 	assert.Contains(t, stdout.String(), "show this help")
 	assert.Contains(t, stdout.String(), "quit the session")
 	assert.Equal(t, "", stderr.String())
+
+	err = s.Eval(":h")
+	require.NoError(t, err)
 }
 
 func TestAction_Quit(t *testing.T) {
@@ -117,6 +122,9 @@ func TestAction_Quit(t *testing.T) {
 
 	assert.Equal(t, "", stdout.String())
 	assert.Equal(t, "", stderr.String())
+
+	err = s.Eval(":q")
+	require.Equal(t, ErrQuit, err)
 }
 
 func TestAction_CommandNotFound(t *testing.T) {
@@ -131,6 +139,19 @@ func TestAction_CommandNotFound(t *testing.T) {
 	err = s.Eval(":foo")
 	require.Error(t, err)
 
+	err = s.Eval(":ii")
+	require.Error(t, err)
+
+	err = s.Eval(":docc")
+	require.Error(t, err)
+
+	err = s.Eval(":help]")
+	require.Error(t, err)
+
 	assert.Equal(t, "", stdout.String())
-	assert.Equal(t, "command not found: foo\n", stderr.String())
+	assert.Equal(t, `command not found: foo
+command not found: ii
+command not found: docc
+command not found: help]
+`, stderr.String())
 }
