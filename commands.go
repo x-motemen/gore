@@ -31,7 +31,6 @@ type command struct {
 // TODO
 // - :edit
 // - :undo
-// - :reset
 // - :type
 var commands []command
 
@@ -55,6 +54,11 @@ func init() {
 			complete: nil, // TODO implement
 			arg:      "[<file>]",
 			document: "write out current source",
+		},
+		{
+			name:     "clear",
+			action:   actionClear,
+			document: "clear the codes",
 		},
 		{
 			name:     "doc",
@@ -215,6 +219,10 @@ func actionWrite(s *Session, filename string) error {
 	infof("Source wrote to %s", filename)
 
 	return nil
+}
+
+func actionClear(s *Session, _ string) error {
+	return s.init()
 }
 
 func actionDoc(s *Session, in string) error {
