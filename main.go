@@ -220,20 +220,27 @@ var printerPkgs = []struct {
 func NewSession(stdout, stderr io.Writer) (*Session, error) {
 	var err error
 
-	s := &Session{
-		Fset: token.NewFileSet(),
-		Types: &types.Config{
-			Importer: importer.Default(),
-		},
-		stdout: stdout,
-		stderr: stderr,
-	}
+	s := &Session{stdout: stdout, stderr: stderr}
 
 	s.tempDir, err = ioutil.TempDir("", "gore-")
 	if err != nil {
 		return nil, err
 	}
 	s.tempFilePath = filepath.Join(s.tempDir, "gore_session.go")
+
+	if err = s.init(); err != nil {
+		return nil, err
+	}
+
+	return s, nil
+}
+
+func (s *Session) init() (err error) {
+	s.Fset = token.NewFileSet()
+	s.Types = &types.Config{Importer: importer.Default()}
+	s.TypeInfo = types.Info{}
+	s.ExtraFilePaths = nil
+	s.ExtraFiles = nil
 
 	var initialSource string
 	for _, pp := range printerPkgs {
@@ -246,17 +253,19 @@ func NewSession(stdout, stderr io.Writer) (*Session, error) {
 	}
 
 	if initialSource == "" {
-		return nil, fmt.Errorf(`Could not load pretty printing package (even "fmt"; something is wrong)`)
+		return fmt.Errorf(`Could not load pretty printing package (even "fmt"; something is wrong)`)
 	}
 
 	s.File, err = parser.ParseFile(s.Fset, "gore_session.go", initialSource, parser.Mode(0))
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	s.mainBody = s.mainFunc().Body
 
-	return s, nil
+	s.lastStmts = nil
+	s.lastDecls = nil
+	return nil
 }
 
 func (s *Session) mainFunc() *ast.FuncDecl {
