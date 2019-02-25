@@ -28,10 +28,6 @@ type command struct {
 	document string
 }
 
-// TODO
-// - :edit
-// - :undo
-// - :type
 var commands []command
 
 func init() {
