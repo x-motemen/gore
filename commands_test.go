@@ -8,6 +8,45 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+func TestAction_Type(t *testing.T) {
+	stdout, stderr := new(bytes.Buffer), new(bytes.Buffer)
+	s, err := NewSession(stdout, stderr)
+	defer s.Clear()
+	require.NoError(t, err)
+
+	codes := []string{
+		`:type "hello"`,
+		":type 128",
+		":type 3.14",
+		"func f() []int { return nil }",
+		":t f",
+		":t f()",
+		":i fmt encoding/json",
+		":t fmt.Sprint",
+		":t fmt.Println",
+		":t json.NewEncoder",
+		":t x",
+		":t fmt",
+	}
+
+	for _, code := range codes {
+		_ = s.Eval(code)
+	}
+
+	assert.Equal(t, `string
+int
+float64
+func() []int
+[]int
+func(a ...interface{}) string
+func(a ...interface{}) (n int, err error)
+func(w io.Writer) *encoding/json.Encoder
+`, stdout.String())
+	assert.Equal(t, `type: cannot get type: x
+type: cannot get type: fmt
+`, stderr.String())
+}
+
 func TestAction_Doc(t *testing.T) {
 	stdout, stderr := new(bytes.Buffer), new(bytes.Buffer)
 	s, err := NewSession(stdout, stderr)
