@@ -44,6 +44,13 @@ func init() {
 			document: "import a package",
 		},
 		{
+			name:     commandName("t[ype]"),
+			action:   actionType,
+			arg:      "<expr>",
+			complete: completeDoc,
+			document: "print the type of expression",
+		},
+		{
 			name:     commandName("print"),
 			action:   actionPrint,
 			document: "print current source",
@@ -198,6 +205,39 @@ func actionPrint(s *Session, _ string) error {
 
 	fmt.Println(source)
 
+	return nil
+}
+
+func actionType(s *Session, in string) error {
+	s.clearQuickFix()
+
+	s.storeCode()
+	defer s.restoreCode()
+
+	expr, err := s.evalExpr(in)
+	if err != nil {
+		return err
+	}
+
+	s.TypeInfo = types.Info{
+		Types:  make(map[ast.Expr]types.TypeAndValue),
+		Uses:   make(map[*ast.Ident]types.Object),
+		Defs:   make(map[*ast.Ident]types.Object),
+		Scopes: make(map[ast.Node]*types.Scope),
+	}
+	_, err = s.Types.Check("_tmp", s.Fset, []*ast.File{s.File}, &s.TypeInfo)
+	if err != nil {
+		debugf("typecheck error (ignored): %s", err)
+	}
+
+	typ := s.TypeInfo.TypeOf(expr)
+	if typ == nil {
+		return fmt.Errorf("cannot get type: %v", expr)
+	}
+	if typ, ok := typ.(*types.Basic); ok && typ.Kind() == types.Invalid {
+		return fmt.Errorf("cannot get type: %v", expr)
+	}
+	fmt.Fprintf(s.stdout, "%v\n", typ)
 	return nil
 }
 
