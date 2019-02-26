@@ -69,7 +69,7 @@ func (s *Session) completeWord(line string, pos int) (string, []string, string) 
 	return line[0:pos], cands, ""
 }
 
-// completeCode does code completion within the session using gocode (https://github.com/nsf/gocode).
+// completeCode does code completion within the session using gocode.
 // in and pos specifies the current input and the cursor position (0 <= pos <= len(in)) respectively.
 // If exprMode is set to true, the completion is done as an expression (e.g. appends "(" to functions).
 // Return value keep specifies how many characters of in should be kept and candidates are what follow in[0:keep].

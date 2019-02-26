@@ -3,7 +3,7 @@ go:
   - 1.x
 install:
   - make build
-  - go get github.com/nsf/gocode
+  - go get github.com/mdempsky/gocode
 script:
   - make lint
   - make test

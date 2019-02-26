@@ -21,7 +21,7 @@ To quit the session, type `Ctrl-D`.
 * Package importing with completion
 * Evaluates any expressions or statements
 * No "evaluated but not used"
-* Code completion (requires https://github.com/nsf/gocode[gocode])
+* Code completion (requires https://github.com/mdempsky/gocode[gocode])
 * Pretty printing (https://github.com/k0kubun/pp[pp] or https://github.com/davecgh/go-spew[spew] recommended)
 * Showing documents (requires https://golang.org/x/tools/cmd/godoc[godoc])
 * Auto-importing
@@ -47,7 +47,7 @@ Make sure `$GOPATH/bin` is in your `$PATH`.
 
 Also recommended:
 
-    go get -u github.com/nsf/gocode # for code completion
+    go get -u github.com/mdempsky/gocode # for code completion
     go get -u github.com/k0kubun/pp # or github.com/davecgh/go-spew/spew
     go get -u golang.org/x/tools/cmd/godoc # for using with the :doc colon-command
 
