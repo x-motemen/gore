@@ -58,7 +58,7 @@ Also recommended:
 * If you see `too many arguments in call to mainScope.LookupParent` while installing gore,
   run `go get -u golang.org/x/tools/go/types`.
 * gore runs code using `go run` for each input. If you have entered time-consuming code,
-  gore will run it for each input and take some time. Also errors shows the line where the actual code run is. 
+  gore will run it for each input and take some time. Also errors shows the line where the actual code run is.
 * To import a local package, first fetch it with `go get my/package`, then `:import` will work properly
 
 == TODO
