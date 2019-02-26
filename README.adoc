@@ -31,8 +31,10 @@ To quit the session, type `Ctrl-D`.
 Some functionalities are provided as colon-commands:
 
     :import <package path>  Import package
+    :type <expr>            Print the type of expression
     :print                  Show current source
     :write [<filename>]     Write out current source to file
+    :clear                  Clear the codes
     :doc <expr or pkg>      Show document (requires godoc)
     :help                   List commands
     :quit                   Quit the session
@@ -56,7 +58,7 @@ Also recommended:
 * If you see `too many arguments in call to mainScope.LookupParent` while installing gore,
   run `go get -u golang.org/x/tools/go/types`.
 * gore runs code using `go run` for each input. If you have entered time-consuming code,
-  gore will run it for each input and take some time. Also errors shows the line where the actual code run is. 
+  gore will run it for each input and take some time. Also errors shows the line where the actual code run is.
 * To import a local package, first fetch it with `go get my/package`, then `:import` will work properly
 
 == TODO
