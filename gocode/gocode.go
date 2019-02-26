@@ -1,4 +1,3 @@
-// Package gocode is an interface to github.com/nsf/gocode.
 package gocode
 
 import (
