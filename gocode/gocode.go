@@ -1,6 +1,7 @@
 package gocode
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -67,7 +68,7 @@ func (c *Completer) Query(source []byte, cursor int) (*Result, error) {
 			// cannot invoke gocode
 			c.unavailable = true
 		}
-		return nil, err
+		return nil, fmt.Errorf("%s: %s", string(bytes.TrimSpace(out)), err)
 	}
 
 	var result Result
