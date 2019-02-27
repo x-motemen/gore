@@ -15,8 +15,8 @@ func TestCliRun_Version(t *testing.T) {
 	err := c.run([]string{"-version"})
 	require.Equal(t, err, flag.ErrHelp)
 
-	assert.Equal(t, "", stdout.String())
-	assert.Contains(t, stderr.String(), "gore "+version)
+	assert.Contains(t, stdout.String(), "gore "+version)
+	assert.Equal(t, "", stderr.String())
 }
 
 func TestCliRun_Help(t *testing.T) {

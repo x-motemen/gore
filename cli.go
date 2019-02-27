@@ -55,7 +55,7 @@ Options:
 	}
 
 	if showVersion {
-		fmt.Fprintf(c.errWriter, "gore %s (rev: %s/%s)\n", version, revision, runtime.Version())
+		fmt.Fprintf(c.outWriter, "gore %s (rev: %s/%s)\n", version, revision, runtime.Version())
 		return nil, flag.ErrHelp
 	}
 
