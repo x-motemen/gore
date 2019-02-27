@@ -80,12 +80,12 @@ func NewSession(stdout, stderr io.Writer) (*Session, error) {
 
 	s.tempDir, err = ioutil.TempDir("", "gore-")
 	if err != nil {
-		return nil, err
+		return s, err
 	}
 	s.tempFilePath = filepath.Join(s.tempDir, "gore_session.go")
 
 	if err = s.init(); err != nil {
-		return nil, err
+		return s, err
 	}
 
 	return s, nil
