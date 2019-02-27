@@ -1,4 +1,4 @@
-package main
+package gore
 
 import (
 	"bytes"
@@ -99,9 +99,7 @@ func TestRun_FixImports(t *testing.T) {
 	s, err := NewSession(stdout, stderr)
 	defer s.Clear()
 	require.NoError(t, err)
-
-	autoimport := true
-	flagAutoImport = &autoimport
+	s.autoImport = true
 
 	codes := []string{
 		`filepath.Join("a", "b")`,

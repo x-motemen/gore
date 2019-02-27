@@ -1,7 +1,6 @@
-package main
+package gore
 
 import (
-	"flag"
 	"fmt"
 	"io"
 	"os"
@@ -11,34 +10,30 @@ import (
 	"github.com/mitchellh/go-homedir"
 )
 
-const version = "0.3.0"
-const printerName = "__gore_p"
+type gore struct {
+	autoImport           bool
+	extFiles             string
+	packageName          string
+	outWriter, errWriter io.Writer
+}
 
-var (
-	flagAutoImport = flag.Bool("autoimport", false, "formats and adjusts imports automatically")
-	flagExtFiles   = flag.String("context", "",
-		"import packages, functions, variables and constants from external golang source files")
-	flagPkg = flag.String("pkg", "", "specify a package where the session will be run inside")
-)
-
-func main() {
-	flag.Parse()
-
-	s, err := NewSession(os.Stdout, os.Stderr)
+func (g *gore) run() error {
+	s, err := NewSession(g.outWriter, g.errWriter)
 	defer s.Clear()
 	if err != nil {
-		panic(err)
+		return err
 	}
+	s.autoImport = g.autoImport
 
-	fmt.Fprintf(os.Stderr, "gore version %s  :help for help\n", version)
+	fmt.Fprintf(g.errWriter, "gore version %s  :help for help\n", version)
 
-	if *flagExtFiles != "" {
-		extFiles := strings.Split(*flagExtFiles, ",")
+	if g.extFiles != "" {
+		extFiles := strings.Split(g.extFiles, ",")
 		s.includeFiles(extFiles)
 	}
 
-	if *flagPkg != "" {
-		err := s.includePackage(*flagPkg)
+	if g.packageName != "" {
+		err := s.includePackage(g.packageName)
 		if err != nil {
 			errorf("-pkg: %s", err)
 			os.Exit(1)
@@ -77,7 +72,7 @@ func main() {
 			if err == io.EOF {
 				break
 			}
-			fmt.Fprintf(os.Stderr, "fatal: %s", err)
+			fmt.Fprintf(g.errWriter, "fatal: %s", err)
 			os.Exit(1)
 		}
 
@@ -86,7 +81,7 @@ func main() {
 		}
 
 		if err := rl.Reindent(); err != nil {
-			fmt.Fprintf(os.Stderr, "error: %s\n", err)
+			fmt.Fprintf(g.errWriter, "error: %s\n", err)
 			rl.Clear()
 			continue
 		}
@@ -122,6 +117,8 @@ func main() {
 			}
 		}
 	}
+
+	return nil
 }
 
 func homeDir() (home string, err error) {

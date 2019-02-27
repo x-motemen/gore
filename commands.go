@@ -1,4 +1,4 @@
-package main
+package gore
 
 import (
 	"fmt"
@@ -104,12 +104,12 @@ func actionImport(s *Session, arg string) error {
 	path := strings.Trim(arg, `"`)
 
 	// check if the package specified by path is importable
-	_, err := s.Types.Importer.Import(path)
+	_, err := s.types.Importer.Import(path)
 	if err != nil {
 		return err
 	}
 
-	astutil.AddImport(s.Fset, s.File, path)
+	astutil.AddImport(s.fset, s.file, path)
 
 	return nil
 }
@@ -215,18 +215,18 @@ func actionType(s *Session, in string) error {
 		return err
 	}
 
-	s.TypeInfo = types.Info{
+	s.typeInfo = types.Info{
 		Types:  make(map[ast.Expr]types.TypeAndValue),
 		Uses:   make(map[*ast.Ident]types.Object),
 		Defs:   make(map[*ast.Ident]types.Object),
 		Scopes: make(map[ast.Node]*types.Scope),
 	}
-	_, err = s.Types.Check("_tmp", s.Fset, []*ast.File{s.File}, &s.TypeInfo)
+	_, err = s.types.Check("_tmp", s.fset, []*ast.File{s.file}, &s.typeInfo)
 	if err != nil {
 		debugf("typecheck error (ignored): %s", err)
 	}
 
-	typ := s.TypeInfo.TypeOf(expr)
+	typ := s.typeInfo.TypeOf(expr)
 	if typ == nil {
 		return fmt.Errorf("cannot get type: %v", expr)
 	}
@@ -272,13 +272,13 @@ func actionDoc(s *Session, in string) error {
 		return err
 	}
 
-	s.TypeInfo = types.Info{
+	s.typeInfo = types.Info{
 		Types:  make(map[ast.Expr]types.TypeAndValue),
 		Uses:   make(map[*ast.Ident]types.Object),
 		Defs:   make(map[*ast.Ident]types.Object),
 		Scopes: make(map[ast.Node]*types.Scope),
 	}
-	_, err = s.Types.Check("_tmp", s.Fset, []*ast.File{s.File}, &s.TypeInfo)
+	_, err = s.types.Check("_tmp", s.fset, []*ast.File{s.file}, &s.typeInfo)
 	if err != nil {
 		debugf("typecheck error (ignored): %s", err)
 	}
@@ -290,8 +290,8 @@ func actionDoc(s *Session, in string) error {
 	var docObj types.Object
 	if sel, ok := expr.(*ast.SelectorExpr); ok {
 		// package member, package type member
-		docObj = s.TypeInfo.ObjectOf(sel.Sel)
-	} else if t := s.TypeInfo.TypeOf(expr); t != nil && t != types.Typ[types.Invalid] {
+		docObj = s.typeInfo.ObjectOf(sel.Sel)
+	} else if t := s.typeInfo.TypeOf(expr); t != nil && t != types.Typ[types.Invalid] {
 		for {
 			if pt, ok := t.(*types.Pointer); ok {
 				t = pt.Elem()
@@ -308,7 +308,7 @@ func actionDoc(s *Session, in string) error {
 		}
 	} else if ident, ok := expr.(*ast.Ident); ok {
 		// package name
-		mainScope := s.TypeInfo.Scopes[s.mainFunc().Type]
+		mainScope := s.typeInfo.Scopes[s.mainFunc().Type]
 		_, docObj = mainScope.LookupParent(ident.Name, ident.NamePos)
 	}
 
