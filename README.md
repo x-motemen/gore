@@ -17,15 +17,15 @@ To quit the session, type `Ctrl-D`.
 ## Features
 
 - Line editing with history
-- Multiline inputs
+- Multi-line input
 - Package importing with completion
-- Evaluates any expressions or statements
-- No "evaluated but not used"
+- Evaluates any expressions, statements and function declarations
+- No "evaluated but not used" errors
 - Code completion (requires [gocode](https://github.com/mdempsky/gocode))
 - Pretty printing ([pp](https://github.com/k0kubun/pp) or
   [spew](https://github.com/davecgh/go-spew) recommended)
 - Showing documents (requires [godoc](https://golang.org/x/tools/cmd/godoc))
-- Auto-importing
+- Auto-importing (`gore -autoimport`)
 
 ## REPL Commands
 
@@ -44,7 +44,7 @@ Some functionalities are provided as colon-commands:
 
 ## Installation
 
-gore uses Go toolchains, so I don’t provide binaries.
+Installation of gore requires Go tool-chains, so standalone binary is not distributed.
 
 ```sh
 go get -u github.com/motemen/gore
@@ -55,8 +55,8 @@ Make sure `$GOPATH/bin` is in your `$PATH`.
 Also recommended:
 
 ```sh
-go get -u github.com/mdempsky/gocode # for code completion
-go get -u github.com/k0kubun/pp # or github.com/davecgh/go-spew/spew
+go get -u github.com/mdempsky/gocode   # for code completion
+go get -u github.com/k0kubun/pp        # or github.com/davecgh/go-spew/spew
 go get -u golang.org/x/tools/cmd/godoc # for using with the :doc colon-command
 ```
 
@@ -68,7 +68,7 @@ go get -u golang.org/x/tools/cmd/godoc # for using with the :doc colon-command
   time-consuming code, gore will run it for each input and take some
   time. Also errors shows the line where the actual code run is.
 - To import a local package, first fetch it with `go get my/package`,
-  then `:import` will work properly
+  then `:import` will work properly.
 
 ## TODO
 
