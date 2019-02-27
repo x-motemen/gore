@@ -47,7 +47,7 @@ Some functionalities are provided as colon-commands:
 Installation of gore requires Go tool-chains, so standalone binary is not distributed.
 
 ```sh
-go get -u github.com/motemen/gore
+go get -u github.com/motemen/gore/cmd/gore
 ```
 
 Make sure `$GOPATH/bin` is in your `$PATH`.
