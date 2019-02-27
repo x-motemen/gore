@@ -16,7 +16,11 @@ func (c *cli) run(args []string) error {
 	if err != nil {
 		return err
 	}
-	return g.run()
+	if err := g.run(); err != nil {
+		fmt.Fprintf(c.errWriter, "gore: %s\n", err)
+		return err
+	}
+	return nil
 }
 
 func (c *cli) parseArgs(args []string) (*gore, error) {
