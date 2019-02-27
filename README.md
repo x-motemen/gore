@@ -10,9 +10,9 @@
 ```sh
 gore
 ```
-After a prompt is shown, enter any Go expressions/statements or commands described below.
+After a prompt is shown, enter any Go expressions/statements/functions or commands described below.
 
-To quit the session, type `Ctrl-D`.
+To quit the session, type `Ctrl-D` or use `:q` command.
 
 ## Features
 
@@ -29,7 +29,7 @@ To quit the session, type `Ctrl-D`.
 
 ## REPL Commands
 
-Some functionalities are provided as colon-commands:
+Some functionalities are provided as commands in the REPL:
 
 ```
 :import <package path>  Import package
@@ -44,7 +44,7 @@ Some functionalities are provided as colon-commands:
 
 ## Installation
 
-Installation of gore requires Go tool-chains, so standalone binary is not distributed.
+The gore command requires Go tool-chains on runtime, so standalone binary is not distributed.
 
 ```sh
 go get -u github.com/motemen/gore/cmd/gore
@@ -65,19 +65,9 @@ go get -u golang.org/x/tools/cmd/godoc # for using with the :doc colon-command
 - If you see `too many arguments in call to mainScope.LookupParent`
   while installing gore, run `go get -u golang.org/x/tools/go/types`.
 - gore runs code using `go run` for each input. If you have entered
-  time-consuming code, gore will run it for each input and take some
-  time. Also errors shows the line where the actual code run is.
+  time-consuming code, gore will run it for each input and take some time.
 - To import a local package, first fetch it with `go get my/package`,
   then `:import` will work properly.
-
-## TODO
-
-- Undoing input
-- Configuration
-- `:write` completion
-- Direct editing of code
-- Using external sources
-- API
 
 ## License
 
