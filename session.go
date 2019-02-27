@@ -36,6 +36,7 @@ type Session struct {
 	TypeInfo       types.Info
 	ExtraFilePaths []string
 	ExtraFiles     []*ast.File
+	autoImport     bool
 
 	mainBody  *ast.BlockStmt
 	lastStmts []ast.Stmt
@@ -43,6 +44,8 @@ type Session struct {
 	stdout    io.Writer
 	stderr    io.Writer
 }
+
+const printerName = "__gore_p"
 
 const initialSourceTemplate = `
 package main
@@ -344,7 +347,7 @@ func (s *Session) Eval(in string) error {
 		}
 	}
 
-	if *flagAutoImport {
+	if s.autoImport {
 		s.fixImports()
 	}
 	s.doQuickFix()
