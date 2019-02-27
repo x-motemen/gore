@@ -42,9 +42,18 @@ Options:
 	fs.StringVar(&g.extFiles, "context", "", "import packages, functions, variables and constants from external golang source files")
 	fs.StringVar(&g.packageName, "pkg", "", "the package where the session will be run inside")
 
+	var showVersion bool
+	fs.BoolVar(&showVersion, "version", false, "print gore version")
+
 	err := fs.Parse(args)
 	if err != nil {
 		return nil, err
 	}
+
+	if showVersion {
+		fmt.Fprintf(c.errWriter, "gore %s (rev: %s/%s)\n", version, revision, runtime.Version())
+		return nil, flag.ErrHelp
+	}
+
 	return g, nil
 }
