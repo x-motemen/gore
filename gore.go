@@ -25,7 +25,7 @@ func (g *gore) run() error {
 	}
 	s.autoImport = g.autoImport
 
-	fmt.Fprintf(os.Stderr, "gore version %s  :help for help\n", version)
+	fmt.Fprintf(g.errWriter, "gore version %s  :help for help\n", version)
 
 	if g.extFiles != "" {
 		extFiles := strings.Split(g.extFiles, ",")
@@ -72,7 +72,7 @@ func (g *gore) run() error {
 			if err == io.EOF {
 				break
 			}
-			fmt.Fprintf(os.Stderr, "fatal: %s", err)
+			fmt.Fprintf(g.errWriter, "fatal: %s", err)
 			os.Exit(1)
 		}
 
@@ -81,7 +81,7 @@ func (g *gore) run() error {
 		}
 
 		if err := rl.Reindent(); err != nil {
-			fmt.Fprintf(os.Stderr, "error: %s\n", err)
+			fmt.Fprintf(g.errWriter, "error: %s\n", err)
 			rl.Clear()
 			continue
 		}
