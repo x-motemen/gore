@@ -5,11 +5,11 @@ all: clean build
 
 .PHONY: build
 build: deps
-	go build -o build/$(BIN) .
+	go build -o build/$(BIN) ./cmd/...
 
 .PHONY: install
 install: deps
-	go install .
+	go install ./cmd/...
 
 .PHONY: deps
 deps:

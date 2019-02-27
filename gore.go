@@ -1,4 +1,4 @@
-package main
+package gore
 
 import (
 	"fmt"
