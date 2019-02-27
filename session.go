@@ -30,19 +30,18 @@ import (
 type Session struct {
 	tempDir        string
 	tempFilePath   string
-	File           *ast.File
-	Fset           *token.FileSet
-	Types          *types.Config
-	TypeInfo       types.Info
-	ExtraFilePaths []string
-	ExtraFiles     []*ast.File
+	file           *ast.File
+	fset           *token.FileSet
+	types          *types.Config
+	typeInfo       types.Info
+	extraFilePaths []string
+	extraFiles     []*ast.File
 	autoImport     bool
-
-	mainBody  *ast.BlockStmt
-	lastStmts []ast.Stmt
-	lastDecls []ast.Decl
-	stdout    io.Writer
-	stderr    io.Writer
+	mainBody       *ast.BlockStmt
+	lastStmts      []ast.Stmt
+	lastDecls      []ast.Decl
+	stdout         io.Writer
+	stderr         io.Writer
 }
 
 const printerName = "__gore_p"
@@ -93,15 +92,15 @@ func NewSession(stdout, stderr io.Writer) (*Session, error) {
 }
 
 func (s *Session) init() (err error) {
-	s.Fset = token.NewFileSet()
-	s.Types = &types.Config{Importer: importer.Default()}
-	s.TypeInfo = types.Info{}
-	s.ExtraFilePaths = nil
-	s.ExtraFiles = nil
+	s.fset = token.NewFileSet()
+	s.types = &types.Config{Importer: importer.Default()}
+	s.typeInfo = types.Info{}
+	s.extraFilePaths = nil
+	s.extraFiles = nil
 
 	var initialSource string
 	for _, pp := range printerPkgs {
-		_, err := s.Types.Importer.Import(pp.path)
+		_, err := s.types.Importer.Import(pp.path)
 		if err == nil {
 			initialSource = fmt.Sprintf(initialSourceTemplate, pp.path, pp.code)
 			break
@@ -113,7 +112,7 @@ func (s *Session) init() (err error) {
 		return fmt.Errorf(`Could not load pretty printing package (even "fmt"; something is wrong)`)
 	}
 
-	s.File, err = parser.ParseFile(s.Fset, "gore_session.go", initialSource, parser.Mode(0))
+	s.file, err = parser.ParseFile(s.fset, "gore_session.go", initialSource, parser.Mode(0))
 	if err != nil {
 		return err
 	}
@@ -126,7 +125,7 @@ func (s *Session) init() (err error) {
 }
 
 func (s *Session) mainFunc() *ast.FuncDecl {
-	return s.File.Scope.Lookup("main").Decl.(*ast.FuncDecl)
+	return s.file.Scope.Lookup("main").Decl.(*ast.FuncDecl)
 }
 
 // Run the session.
@@ -137,12 +136,12 @@ func (s *Session) Run() error {
 	}
 	defer f.Close()
 
-	err = printer.Fprint(f, s.Fset, s.File)
+	err = printer.Fprint(f, s.fset, s.file)
 	if err != nil {
 		return err
 	}
 
-	return s.goRun(append(s.ExtraFilePaths, s.tempFilePath))
+	return s.goRun(append(s.extraFilePaths, s.tempFilePath))
 }
 
 func (s *Session) goRun(files []string) error {
@@ -180,7 +179,7 @@ func isNamedIdent(expr ast.Expr, name string) bool {
 
 func (s *Session) evalStmt(in string) error {
 	src := fmt.Sprintf("package P; func F() { %s }", in)
-	f, err := parser.ParseFile(s.Fset, "stmt.go", src, parser.Mode(0))
+	f, err := parser.ParseFile(s.fset, "stmt.go", src, parser.Mode(0))
 	if err != nil {
 		return err
 	}
@@ -189,7 +188,7 @@ func (s *Session) evalStmt(in string) error {
 	stmts := enclosingFunc.Body.List
 
 	if len(stmts) > 0 {
-		debugf("evalStmt :: %s", showNode(s.Fset, stmts))
+		debugf("evalStmt :: %s", showNode(s.fset, stmts))
 		lastStmt := stmts[len(stmts)-1]
 		// print last assigned/defined values
 		if assign, ok := lastStmt.(*ast.AssignStmt); ok {
@@ -218,7 +217,7 @@ func (s *Session) evalStmt(in string) error {
 
 func (s *Session) evalFunc(in string) error {
 	src := fmt.Sprintf("package P; %s", in)
-	f, err := parser.ParseFile(s.Fset, "func.go", src, parser.Mode(0))
+	f, err := parser.ParseFile(s.fset, "func.go", src, parser.Mode(0))
 	if err != nil {
 		return err
 	}
@@ -229,13 +228,13 @@ func (s *Session) evalFunc(in string) error {
 	if !ok {
 		return errors.New("eval func error")
 	}
-	for i, d := range s.File.Decls {
+	for i, d := range s.file.Decls {
 		if d, ok := d.(*ast.FuncDecl); ok && d.Name.String() == newDecl.Name.String() {
-			s.File.Decls = append(s.File.Decls[:i], s.File.Decls[i+1:]...)
+			s.file.Decls = append(s.file.Decls[:i], s.file.Decls[i+1:]...)
 			break
 		}
 	}
-	s.File.Decls = append(s.File.Decls, newDecl)
+	s.file.Decls = append(s.file.Decls, newDecl)
 	return nil
 }
 
@@ -290,7 +289,7 @@ func (s *Session) source(space bool) (string, error) {
 	}
 
 	var buf bytes.Buffer
-	err := config.Fprint(&buf, s.Fset, s.File)
+	err := config.Fprint(&buf, s.fset, s.file)
 	return buf.String(), err
 }
 
@@ -300,12 +299,12 @@ func (s *Session) reset() error {
 		return err
 	}
 
-	file, err := parser.ParseFile(s.Fset, "gore_session.go", source, parser.Mode(0))
+	file, err := parser.ParseFile(s.fset, "gore_session.go", source, parser.Mode(0))
 	if err != nil {
 		return err
 	}
 
-	s.File = file
+	s.file = file
 	s.mainBody = s.mainFunc().Body
 
 	return nil
@@ -399,17 +398,17 @@ func (s *Session) invokeCommand(in string) (err error) {
 // storeCode stores current state of code so that it can be restored
 func (s *Session) storeCode() {
 	s.lastStmts = s.mainBody.List
-	if len(s.lastDecls) != len(s.File.Decls) {
-		s.lastDecls = make([]ast.Decl, len(s.File.Decls))
+	if len(s.lastDecls) != len(s.file.Decls) {
+		s.lastDecls = make([]ast.Decl, len(s.file.Decls))
 	}
-	copy(s.lastDecls, s.File.Decls)
+	copy(s.lastDecls, s.file.Decls)
 }
 
 // restoreCode restores the previous code
 func (s *Session) restoreCode() {
 	s.mainBody.List = s.lastStmts
-	decls := make([]ast.Decl, 0, len(s.File.Decls))
-	for _, d := range s.File.Decls {
+	decls := make([]ast.Decl, 0, len(s.file.Decls))
+	for _, d := range s.file.Decls {
 		if d, ok := d.(*ast.FuncDecl); ok && d.Name.String() != "main" {
 			for _, ld := range s.lastDecls {
 				if ld, ok := ld.(*ast.FuncDecl); ok && ld.Name.String() == d.Name.String() {
@@ -421,7 +420,7 @@ func (s *Session) restoreCode() {
 		}
 		decls = append(decls, d)
 	}
-	s.File.Decls = decls
+	s.file.Decls = decls
 }
 
 // includeFiles imports packages and funcsions from multiple golang source
@@ -452,7 +451,7 @@ func (s *Session) includeFile(file string) {
 
 // importPackages includes packages defined on external file into main file
 func (s *Session) importPackages(src []byte) error {
-	astf, err := parser.ParseFile(s.Fset, "", src, parser.Mode(0))
+	astf, err := parser.ParseFile(s.fset, "", src, parser.Mode(0))
 	if err != nil {
 		return err
 	}
@@ -475,7 +474,7 @@ func (s *Session) importFile(src []byte) error {
 
 	ext := tmp.Name() + ".go"
 
-	f, err := parser.ParseFile(s.Fset, ext, src, parser.Mode(0))
+	f, err := parser.ParseFile(s.fset, ext, src, parser.Mode(0))
 	if err != nil {
 		return err
 	}
@@ -490,7 +489,7 @@ func (s *Session) importFile(src []byte) error {
 				f.Decls = append(f.Decls[0:i], f.Decls[i+1:]...)
 				// main() removed from this file, we may have to
 				// remove some unsed import's
-				quickfix.QuickFix(s.Fset, []*ast.File{f})
+				quickfix.QuickFix(s.fset, []*ast.File{f})
 				break
 			}
 		}
@@ -502,14 +501,14 @@ func (s *Session) importFile(src []byte) error {
 	}
 	defer out.Close()
 
-	err = printer.Fprint(out, s.Fset, f)
+	err = printer.Fprint(out, s.fset, f)
 	if err != nil {
 		return err
 	}
 
 	debugf("import file: %s", ext)
-	s.ExtraFilePaths = append(s.ExtraFilePaths, ext)
-	s.ExtraFiles = append(s.ExtraFiles, f)
+	s.extraFilePaths = append(s.extraFilePaths, ext)
+	s.extraFiles = append(s.extraFiles, f)
 
 	return nil
 }
@@ -518,7 +517,7 @@ func (s *Session) importFile(src []byte) error {
 func (s *Session) fixImports() error {
 
 	var buf bytes.Buffer
-	err := printer.Fprint(&buf, s.Fset, s.File)
+	err := printer.Fprint(&buf, s.fset, s.file)
 	if err != nil {
 		return err
 	}
@@ -528,7 +527,7 @@ func (s *Session) fixImports() error {
 		return err
 	}
 
-	s.File, err = parser.ParseFile(s.Fset, "", formatted, parser.Mode(0))
+	s.file, err = parser.ParseFile(s.fset, "", formatted, parser.Mode(0))
 	if err != nil {
 		return err
 	}

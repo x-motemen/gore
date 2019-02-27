@@ -20,17 +20,17 @@ func (s *Session) doQuickFix() error {
 
 quickFixAttempt:
 	for i := 0; i < maxAttempts; i++ {
-		s.TypeInfo = types.Info{
+		s.typeInfo = types.Info{
 			Types: make(map[ast.Expr]types.TypeAndValue),
 		}
 
-		files := s.ExtraFiles
-		files = append(files, s.File)
+		files := s.extraFiles
+		files = append(files, s.file)
 
 		config := quickfix.Config{
-			Fset:     s.Fset,
+			Fset:     s.fset,
 			Files:    files,
-			TypeInfo: &s.TypeInfo,
+			TypeInfo: &s.typeInfo,
 		}
 		_, err := config.QuickFixOnce()
 		if err == nil {
@@ -58,7 +58,7 @@ quickFixAttempt:
 			// to
 			//   funcWithSideEffectReturningNoValue()
 			if strings.HasSuffix(err.Msg, " used as value") {
-				nodepath, _ := astutil.PathEnclosingInterval(s.File, err.Pos, err.Pos)
+				nodepath, _ := astutil.PathEnclosingInterval(s.file, err.Pos, err.Pos)
 
 				for _, node := range nodepath {
 					stmt, ok := node.(ast.Stmt)
@@ -93,7 +93,7 @@ quickFixAttempt:
 
 func (s *Session) clearQuickFix() {
 	// make all import specs explicit (i.e. no "_").
-	for _, imp := range s.File.Imports {
+	for _, imp := range s.file.Imports {
 		imp.Name = nil
 	}
 
@@ -127,7 +127,7 @@ func (s *Session) clearQuickFix() {
 			s.mainBody.List, trailing = s.mainBody.List[0:i], s.mainBody.List[i+1:]
 			for _, expr := range exprs {
 				if !s.isPureExpr(expr) {
-					t := s.TypeInfo.TypeOf(expr)
+					t := s.typeInfo.TypeOf(expr)
 					var lhs []ast.Expr
 					if t, ok := t.(*types.Tuple); ok {
 						lhs = make([]ast.Expr, t.Len())
@@ -150,7 +150,7 @@ func (s *Session) clearQuickFix() {
 		i++
 	}
 
-	debugf("clearQuickFix :: %s", showNode(s.Fset, s.mainBody))
+	debugf("clearQuickFix :: %s", showNode(s.fset, s.mainBody))
 }
 
 // isPureAssignStmt returns assignment is pure and omittable.
@@ -222,7 +222,7 @@ func (s *Session) isPureExpr(expr ast.Expr) bool {
 	case *ast.BinaryExpr:
 		return s.isPureExpr(expr.X) && s.isPureExpr(expr.Y)
 	case *ast.CallExpr:
-		tv := s.TypeInfo.Types[expr.Fun]
+		tv := s.typeInfo.Types[expr.Fun]
 		for _, arg := range expr.Args {
 			if s.isPureExpr(arg) == false {
 				return false
