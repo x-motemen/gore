@@ -1,15 +1,17 @@
 BIN := gore
+CURRENT_REVISION := $(shell git rev-parse --short HEAD)
+BUILD_LDFLAGS := "-s -w -X github.com/motemen/gore.revision=$(CURRENT_REVISION)"
 
 .PHONY: all
 all: clean build
 
 .PHONY: build
 build: deps
-	go build -o build/$(BIN) ./cmd/...
+	go build -ldflags=$(BUILD_LDFLAGS) -o build/$(BIN) ./cmd/...
 
 .PHONY: install
 install: deps
-	go install ./cmd/...
+	go install -ldflags=$(BUILD_LDFLAGS) ./cmd/...
 
 .PHONY: deps
 deps:
