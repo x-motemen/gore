@@ -170,9 +170,7 @@ func TestSessionEval_Copy(t *testing.T) {
 		`a := []string{"hello", "world"}`,
 		`b := []string{"goodbye", "world"}`,
 		`copy(a, b)`,
-		`if (a[0] != "goodbye") {
-			panic("should be copied")
-		}`,
+		`a[0]`,
 	}
 
 	for _, code := range codes {
@@ -183,6 +181,7 @@ func TestSessionEval_Copy(t *testing.T) {
 	assert.Equal(t, `[]string{"hello", "world"}
 []string{"goodbye", "world"}
 2
+"goodbye"
 `, stdout.String())
 	assert.Equal(t, "", stderr.String())
 }
