@@ -18,7 +18,7 @@ func init() {
 	}
 }
 
-func TestRun_import(t *testing.T) {
+func TestSessionEval_import(t *testing.T) {
 	stdout, stderr := new(bytes.Buffer), new(bytes.Buffer)
 	s, err := NewSession(stdout, stderr)
 	defer s.Clear()
@@ -42,7 +42,7 @@ func TestRun_import(t *testing.T) {
 	assert.Equal(t, "", stderr.String())
 }
 
-func TestRun_QuickFix_evaluated_but_not_used(t *testing.T) {
+func TestSessionEval_QuickFix_evaluated_but_not_used(t *testing.T) {
 	stdout, stderr := new(bytes.Buffer), new(bytes.Buffer)
 	s, err := NewSession(stdout, stderr)
 	defer s.Clear()
@@ -73,7 +73,7 @@ func TestRun_QuickFix_evaluated_but_not_used(t *testing.T) {
 	assert.Equal(t, "", stderr.String())
 }
 
-func TestRun_QuickFix_used_as_value(t *testing.T) {
+func TestSessionEval_QuickFix_used_as_value(t *testing.T) {
 	stdout, stderr := new(bytes.Buffer), new(bytes.Buffer)
 	s, err := NewSession(stdout, stderr)
 	defer s.Clear()
@@ -94,7 +94,40 @@ func TestRun_QuickFix_used_as_value(t *testing.T) {
 	assert.Equal(t, "", stderr.String())
 }
 
-func TestRun_FixImports(t *testing.T) {
+func TestSessionEval_QuickFix_no_new_variables(t *testing.T) {
+	stdout, stderr := new(bytes.Buffer), new(bytes.Buffer)
+	s, err := NewSession(stdout, stderr)
+	defer s.Clear()
+	require.NoError(t, err)
+
+	codes := []string{
+		`var a, b int`,
+		`a := 2`,
+		`b := a * 2`,
+		`a := 3`,
+		`c := a * b`,
+		`c := b * c`,
+		`b := c * a`,
+		`a * b * c`,
+	}
+
+	for _, code := range codes {
+		err := s.Eval(code)
+		require.NoError(t, err)
+	}
+
+	assert.Equal(t, `2
+4
+3
+12
+48
+144
+20736
+`, stdout.String())
+	assert.Equal(t, "", stderr.String())
+}
+
+func TestSessionEval_AutoImport(t *testing.T) {
 	stdout, stderr := new(bytes.Buffer), new(bytes.Buffer)
 	s, err := NewSession(stdout, stderr)
 	defer s.Clear()
@@ -114,7 +147,7 @@ func TestRun_FixImports(t *testing.T) {
 	assert.Equal(t, "", stderr.String())
 }
 
-func TestIncludePackage(t *testing.T) {
+func TestSession_IncludePackage(t *testing.T) {
 	stdout, stderr := new(bytes.Buffer), new(bytes.Buffer)
 	s, err := NewSession(stdout, stderr)
 	defer s.Clear()
@@ -127,7 +160,7 @@ func TestIncludePackage(t *testing.T) {
 	require.NoError(t, err)
 }
 
-func TestRun_Copy(t *testing.T) {
+func TestSessionEval_Copy(t *testing.T) {
 	stdout, stderr := new(bytes.Buffer), new(bytes.Buffer)
 	s, err := NewSession(stdout, stderr)
 	defer s.Clear()
@@ -137,9 +170,7 @@ func TestRun_Copy(t *testing.T) {
 		`a := []string{"hello", "world"}`,
 		`b := []string{"goodbye", "world"}`,
 		`copy(a, b)`,
-		`if (a[0] != "goodbye") {
-			panic("should be copied")
-		}`,
+		`a[0]`,
 	}
 
 	for _, code := range codes {
@@ -150,11 +181,12 @@ func TestRun_Copy(t *testing.T) {
 	assert.Equal(t, `[]string{"hello", "world"}
 []string{"goodbye", "world"}
 2
+"goodbye"
 `, stdout.String())
 	assert.Equal(t, "", stderr.String())
 }
 
-func TestRun_Const(t *testing.T) {
+func TestSessionEval_Const(t *testing.T) {
 	stdout, stderr := new(bytes.Buffer), new(bytes.Buffer)
 	s, err := NewSession(stdout, stderr)
 	defer s.Clear()
@@ -175,7 +207,7 @@ func TestRun_Const(t *testing.T) {
 	assert.Equal(t, "", stderr.String())
 }
 
-func TestRun_NotUsed(t *testing.T) {
+func TestSessionEval_NotUsed(t *testing.T) {
 	stdout, stderr := new(bytes.Buffer), new(bytes.Buffer)
 	s, err := NewSession(stdout, stderr)
 	defer s.Clear()
@@ -210,7 +242,7 @@ func TestRun_NotUsed(t *testing.T) {
 	assert.Equal(t, "", stderr.String())
 }
 
-func TestRun_MultipleValues(t *testing.T) {
+func TestSessionEval_MultipleValues(t *testing.T) {
 	stdout, stderr := new(bytes.Buffer), new(bytes.Buffer)
 	s, err := NewSession(stdout, stderr)
 	defer s.Clear()
@@ -248,7 +280,7 @@ func TestRun_MultipleValues(t *testing.T) {
 	assert.Equal(t, "", stderr.String())
 }
 
-func TestRun_Func(t *testing.T) {
+func TestSessionEval_Func(t *testing.T) {
 	stdout, stderr := new(bytes.Buffer), new(bytes.Buffer)
 	s, err := NewSession(stdout, stderr)
 	defer s.Clear()
@@ -277,7 +309,7 @@ cannot use 100 (type int) as type string in return argument
 `, stderr.String())
 }
 
-func TestRun_TokenError(t *testing.T) {
+func TestSessionEval_TokenError(t *testing.T) {
 	stdout, stderr := new(bytes.Buffer), new(bytes.Buffer)
 	s, err := NewSession(stdout, stderr)
 	defer s.Clear()
@@ -304,7 +336,7 @@ invalid token: "~"
 `, stderr.String())
 }
 
-func TestRun_CompileError(t *testing.T) {
+func TestSessionEval_CompileError(t *testing.T) {
 	stdout, stderr := new(bytes.Buffer), new(bytes.Buffer)
 	s, err := NewSession(stdout, stderr)
 	defer s.Clear()
