@@ -94,6 +94,39 @@ func TestSessionEval_QuickFix_used_as_value(t *testing.T) {
 	assert.Equal(t, "", stderr.String())
 }
 
+func TestSessionEval_QuickFix_no_new_variables(t *testing.T) {
+	stdout, stderr := new(bytes.Buffer), new(bytes.Buffer)
+	s, err := NewSession(stdout, stderr)
+	defer s.Clear()
+	require.NoError(t, err)
+
+	codes := []string{
+		`var a, b int`,
+		`a := 2`,
+		`b := a * 2`,
+		`a := 3`,
+		`c := a * b`,
+		`c := b * c`,
+		`b := c * a`,
+		`a * b * c`,
+	}
+
+	for _, code := range codes {
+		err := s.Eval(code)
+		require.NoError(t, err)
+	}
+
+	assert.Equal(t, `2
+4
+3
+12
+48
+144
+20736
+`, stdout.String())
+	assert.Equal(t, "", stderr.String())
+}
+
 func TestSessionEval_AutoImport(t *testing.T) {
 	stdout, stderr := new(bytes.Buffer), new(bytes.Buffer)
 	s, err := NewSession(stdout, stderr)
