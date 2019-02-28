@@ -150,7 +150,9 @@ func (s *Session) goRun(files []string) error {
 	cmd := exec.Command("go", args...)
 	cmd.Stdin = os.Stdin
 	cmd.Stdout = s.stdout
-	cmd.Stderr = newErrFilter(s.stderr)
+	ef := newErrFilter(s.stderr)
+	cmd.Stderr = ef
+	defer ef.Close()
 	return cmd.Run()
 }
 

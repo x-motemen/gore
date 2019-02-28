@@ -3,44 +3,47 @@ package gore
 import (
 	"bytes"
 	"io"
+
+	"golang.org/x/text/transform"
 )
 
-type errFilter struct {
-	w   io.Writer
-	buf []byte
+func newErrFilter(w io.Writer) io.WriteCloser {
+	return transform.NewWriter(w, &errTransformer{})
 }
 
-func newErrFilter(w io.Writer) *errFilter {
-	return &errFilter{w, nil}
-}
+type errTransformer struct{}
 
-func (w *errFilter) Write(p []byte) (n int, err error) {
-	var m, i int
+func (w *errTransformer) Transform(dst, src []byte, atEOF bool) (nDst, nSrc int, err error) {
+	var i int
 	for {
-		i = bytes.IndexRune(p, '\n')
-		if i < 0 {
-			break
-		}
-		if len(w.buf) > 0 {
-			m, err = w.w.Write(w.replace(w.buf))
-			n += m
-			w.buf = nil
-			if err != nil {
-				return
+		if atEOF {
+			if i = len(src) - 1; i < 0 {
+				break
+			}
+		} else {
+			if i = bytes.IndexByte(src, '\n'); i < 0 {
+				err = transform.ErrShortSrc
+				break
 			}
 		}
-		m, err = w.w.Write(w.replace(p[:i+1]))
-		n += m
-		if err != nil {
-			return
+		res := replaceErrMsg(src[:i+1])
+		if nDst+len(res) > len(dst) {
+			err = transform.ErrShortDst
+			break
 		}
-		p = p[i+1:]
+		src = src[i+1:]
+		nSrc += i + 1
+		nDst += copy(dst[nDst:], res)
+		if len(src) == 0 {
+			break
+		}
 	}
-	w.buf = p
 	return
 }
 
-func (w *errFilter) replace(p []byte) []byte {
+func (w *errTransformer) Reset() {}
+
+func replaceErrMsg(p []byte) []byte {
 	if bytes.HasPrefix(p, []byte("# command-line-arguments")) {
 		return nil
 	}
