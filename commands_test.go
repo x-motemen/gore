@@ -194,3 +194,25 @@ command not found: docc
 command not found: help]
 `, stderr.String())
 }
+
+func TestAction_ArgumentRequired(t *testing.T) {
+	stdout, stderr := new(bytes.Buffer), new(bytes.Buffer)
+	s, err := NewSession(stdout, stderr)
+	defer s.Clear()
+	require.NoError(t, err)
+
+	err = s.Eval(":import")
+	require.Error(t, err)
+
+	err = s.Eval(":type")
+	require.Error(t, err)
+
+	err = s.Eval(":doc")
+	require.Error(t, err)
+
+	assert.Equal(t, "", stdout.String())
+	assert.Equal(t, `import: argument is required
+type: argument is required
+doc: argument is required
+`, stderr.String())
+}
