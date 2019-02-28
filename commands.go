@@ -85,7 +85,7 @@ func init() {
 
 func actionImport(s *Session, arg string) error {
 	if arg == "" {
-		return fmt.Errorf("arg required")
+		return fmt.Errorf("argument is required")
 	}
 
 	if strings.Contains(arg, " ") {
