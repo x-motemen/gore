@@ -205,6 +205,10 @@ func actionPrint(s *Session, _ string) error {
 }
 
 func actionType(s *Session, in string) error {
+	if in == "" {
+		return fmt.Errorf("argument is required")
+	}
+
 	s.clearQuickFix()
 
 	s.storeCode()
@@ -262,6 +266,10 @@ func actionClear(s *Session, _ string) error {
 }
 
 func actionDoc(s *Session, in string) error {
+	if in == "" {
+		return fmt.Errorf("argument is required")
+	}
+
 	s.clearQuickFix()
 
 	s.storeCode()
