@@ -197,6 +197,13 @@ func (s *Session) evalStmt(in string) error {
 				stmts = append(stmts, s)
 			}
 		}
+		if decl, ok := lastStmt.(*ast.DeclStmt); ok {
+			if decl, ok := decl.Decl.(*ast.GenDecl); ok {
+				if s := buildPrintStmtOfDecl(decl); s != nil {
+					stmts = append(stmts, s)
+				}
+			}
+		}
 	}
 
 	s.appendStatements(stmts...)
@@ -220,6 +227,27 @@ func buildPrintStmt(exprs []ast.Expr) ast.Stmt {
 			Args: vs,
 		},
 	}
+}
+
+func buildPrintStmtOfDecl(decl *ast.GenDecl) ast.Stmt {
+	var cnt int
+	for _, s := range decl.Specs {
+		if vs, ok := s.(*ast.ValueSpec); ok {
+			cnt += len(vs.Values)
+		}
+	}
+	if cnt == 0 {
+		return nil
+	}
+	exprs := make([]ast.Expr, 0, cnt)
+	for _, s := range decl.Specs {
+		if vs, ok := s.(*ast.ValueSpec); ok {
+			for _, name := range vs.Names {
+				exprs = append(exprs, ast.Expr(name))
+			}
+		}
+	}
+	return buildPrintStmt(exprs)
 }
 
 func (s *Session) evalFunc(in string) error {
