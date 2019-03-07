@@ -203,7 +203,34 @@ func TestSessionEval_Const(t *testing.T) {
 		require.NoError(t, err)
 	}
 
-	assert.Equal(t, "0\n1\n", stdout.String())
+	assert.Equal(t, "0\n1\n0\n1\n", stdout.String())
+	assert.Equal(t, "", stderr.String())
+}
+
+func TestSessionEval_Declarations(t *testing.T) {
+	stdout, stderr := new(bytes.Buffer), new(bytes.Buffer)
+	s, err := NewSession(stdout, stderr)
+	defer s.Clear()
+	require.NoError(t, err)
+
+	codes := []string{
+		`var a, b int = 10, 20`,
+		`var (x int = 10; y string = "hello"; z uint64; w error; v func(string)int)`,
+	}
+
+	for _, code := range codes {
+		err := s.Eval(code)
+		require.NoError(t, err)
+	}
+
+	assert.Equal(t, `10
+20
+10
+"hello"
+0x0
+<nil>
+(func(string) int)(nil)
+`, stdout.String())
 	assert.Equal(t, "", stderr.String())
 }
 
