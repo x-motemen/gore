@@ -192,22 +192,9 @@ func (s *Session) evalStmt(in string) error {
 	if len(stmts) > 0 {
 		debugf("evalStmt :: %s", showNode(s.fset, stmts))
 		lastStmt := stmts[len(stmts)-1]
-		// print last assigned/defined values
 		if assign, ok := lastStmt.(*ast.AssignStmt); ok {
-			vs := []ast.Expr{}
-			for _, v := range assign.Lhs {
-				if !isNamedIdent(v, "_") {
-					vs = append(vs, v)
-				}
-			}
-			if len(vs) > 0 {
-				printLastValues := &ast.ExprStmt{
-					X: &ast.CallExpr{
-						Fun:  ast.NewIdent(printerName),
-						Args: vs,
-					},
-				}
-				stmts = append(stmts, printLastValues)
+			if s := buildPrintStmt(assign.Lhs); s != nil {
+				stmts = append(stmts, s)
 			}
 		}
 	}
@@ -215,6 +202,24 @@ func (s *Session) evalStmt(in string) error {
 	s.appendStatements(stmts...)
 
 	return nil
+}
+
+func buildPrintStmt(exprs []ast.Expr) ast.Stmt {
+	vs := make([]ast.Expr, 0, len(exprs))
+	for _, v := range exprs {
+		if !isNamedIdent(v, "_") {
+			vs = append(vs, v)
+		}
+	}
+	if len(vs) == 0 {
+		return nil
+	}
+	return &ast.ExprStmt{
+		X: &ast.CallExpr{
+			Fun:  ast.NewIdent(printerName),
+			Args: vs,
+		},
+	}
 }
 
 func (s *Session) evalFunc(in string) error {
