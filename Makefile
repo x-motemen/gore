@@ -29,7 +29,7 @@ testdeps:
 lint: lintdeps build
 	golint -set_exit_status ./...
 
-.PHONY: testdeps
+.PHONY: lintdeps
 lintdeps:
 	command -v golint >/dev/null || go get -u golang.org/x/lint/golint
 
