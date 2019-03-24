@@ -24,7 +24,7 @@ To quit the session, type `Ctrl-D` or use `:q` command.
 - Code completion (requires [gocode](https://github.com/mdempsky/gocode))
 - Pretty printing ([pp](https://github.com/k0kubun/pp) or
   [spew](https://github.com/davecgh/go-spew) recommended)
-- Showing documents (requires [godoc](https://golang.org/x/tools/cmd/godoc))
+- Showing documents
 - Auto-importing (`gore -autoimport`)
 
 ## REPL Commands
@@ -37,7 +37,7 @@ Some functionalities are provided as commands in the REPL:
 :print                  Show current source
 :write [<filename>]     Write out current source to file
 :clear                  Clear the codes
-:doc <expr or pkg>      Show document (requires godoc)
+:doc <expr or pkg>      Show document
 :help                   List commands
 :quit                   Quit the session
 ```
@@ -57,7 +57,6 @@ Also recommended:
 ```sh
 go get -u github.com/mdempsky/gocode   # for code completion
 go get -u github.com/k0kubun/pp        # or github.com/davecgh/go-spew/spew
-go get -u golang.org/x/tools/cmd/godoc # for using with the :doc colon-command
 ```
 
 ## FAQ/Caveats
