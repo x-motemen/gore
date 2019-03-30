@@ -26,11 +26,12 @@ testdeps:
 	go get -d -v -t ./...
 
 .PHONY: lint
-lint: lintdeps build
+lint: lintdeps
+	go vet ./...
 	golint -set_exit_status ./...
 
 .PHONY: lintdeps
-lintdeps:
+lintdeps: testdeps
 	command -v golint >/dev/null || go get -u golang.org/x/lint/golint
 
 .PHONY: clean
