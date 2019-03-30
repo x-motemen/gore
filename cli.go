@@ -24,7 +24,6 @@ func (c *cli) run(args []string) error {
 }
 
 func (c *cli) parseArgs(args []string) (*Gore, error) {
-	g := &Gore{outWriter: c.outWriter, errWriter: c.errWriter}
 	fs := flag.NewFlagSet("gore", flag.ContinueOnError)
 	fs.SetOutput(c.errWriter)
 	fs.Usage = func() {
@@ -42,9 +41,14 @@ Options:
 		fs.PrintDefaults()
 	}
 
-	fs.BoolVar(&g.autoImport, "autoimport", false, "formats and adjusts imports automatically")
-	fs.StringVar(&g.extFiles, "context", "", "import packages, functions, variables and constants from external golang source files")
-	fs.StringVar(&g.packageName, "pkg", "", "the package where the session will be run inside")
+	var autoImport bool
+	fs.BoolVar(&autoImport, "autoimport", false, "formats and adjusts imports automatically")
+
+	var extFiles string
+	fs.StringVar(&extFiles, "context", "", "import packages, functions, variables and constants from external golang source files")
+
+	var packageName string
+	fs.StringVar(&packageName, "pkg", "", "the package where the session will be run inside")
 
 	var showVersion bool
 	fs.BoolVar(&showVersion, "version", false, "print gore version")
@@ -59,5 +63,11 @@ Options:
 		return nil, flag.ErrHelp
 	}
 
-	return g, nil
+	return New(
+		AutoImport(autoImport),
+		ExtFiles(extFiles),
+		PackageName(packageName),
+		OutWriter(c.outWriter),
+		ErrWriter(c.errWriter),
+	), nil
 }

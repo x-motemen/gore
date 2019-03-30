@@ -18,6 +18,15 @@ type Gore struct {
 	outWriter, errWriter io.Writer
 }
 
+// New Gore
+func New(opts ...Option) *Gore {
+	g := &Gore{outWriter: os.Stdout, errWriter: os.Stderr}
+	for _, opt := range opts {
+		opt(g)
+	}
+	return g
+}
+
 // Run ...
 func (g *Gore) Run() error {
 	s, err := NewSession(g.outWriter, g.errWriter)
