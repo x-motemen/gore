@@ -11,20 +11,28 @@ import (
 
 var revision = "HEAD"
 
+const (
+	exitCodeOK = iota
+	exitCodeErr
+)
+
 type cli struct {
 	outWriter, errWriter io.Writer
 }
 
-func (c *cli) run(args []string) error {
+func (c *cli) run(args []string) int {
 	g, err := c.parseArgs(args)
 	if err != nil {
-		return err
+		if err != flag.ErrHelp {
+			return exitCodeErr
+		}
+		return exitCodeOK
 	}
 	if err := g.Run(); err != nil {
 		fmt.Fprintf(c.errWriter, "gore: %s\n", err)
-		return err
+		return exitCodeErr
 	}
-	return nil
+	return exitCodeOK
 }
 
 func (c *cli) parseArgs(args []string) (*gore.Gore, error) {

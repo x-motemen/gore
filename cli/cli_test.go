@@ -2,7 +2,6 @@ package cli
 
 import (
 	"bytes"
-	"flag"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -14,8 +13,8 @@ import (
 func TestCliRun_Version(t *testing.T) {
 	stdout, stderr := new(bytes.Buffer), new(bytes.Buffer)
 	c := &cli{stdout, stderr}
-	err := c.run([]string{"-version"})
-	require.Equal(t, err, flag.ErrHelp)
+	code := c.run([]string{"-version"})
+	require.Equal(t, exitCodeOK, code)
 
 	assert.Contains(t, stdout.String(), "gore "+gore.Version)
 	assert.Equal(t, "", stderr.String())
@@ -24,8 +23,8 @@ func TestCliRun_Version(t *testing.T) {
 func TestCliRun_Help(t *testing.T) {
 	stdout, stderr := new(bytes.Buffer), new(bytes.Buffer)
 	c := &cli{stdout, stderr}
-	err := c.run([]string{"-help"})
-	require.Equal(t, err, flag.ErrHelp)
+	code := c.run([]string{"-help"})
+	require.Equal(t, exitCodeOK, code)
 
 	assert.Contains(t, stdout.String(), "gore -")
 	assert.Contains(t, stdout.String(), "Options:")
@@ -35,8 +34,8 @@ func TestCliRun_Help(t *testing.T) {
 func TestCliRun_Unknown(t *testing.T) {
 	stdout, stderr := new(bytes.Buffer), new(bytes.Buffer)
 	c := &cli{stdout, stderr}
-	err := c.run([]string{"-foobar"})
-	require.Error(t, err)
+	code := c.run([]string{"-foobar"})
+	require.Equal(t, exitCodeErr, code)
 
 	assert.Contains(t, stdout.String(), "gore -")
 	assert.Contains(t, stderr.String(), "flag provided but not defined: -foobar")

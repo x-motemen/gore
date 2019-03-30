@@ -1,18 +1,11 @@
 package cli
 
-import (
-	"flag"
-	"os"
-)
+import "os"
 
 // Run gore.
-func Run(args []string) error {
-	err := (&cli{outWriter: os.Stdout, errWriter: os.Stderr}).run(args)
-	if err != nil {
-		if err == flag.ErrHelp {
-			return nil
-		}
-		return err
-	}
-	return nil
+func Run(args []string) int {
+	return (&cli{
+		outWriter: os.Stdout,
+		errWriter: os.Stderr,
+	}).run(args)
 }
