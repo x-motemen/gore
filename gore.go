@@ -10,14 +10,16 @@ import (
 	"github.com/mitchellh/go-homedir"
 )
 
-type gore struct {
+// Gore ...
+type Gore struct {
 	autoImport           bool
 	extFiles             string
 	packageName          string
 	outWriter, errWriter io.Writer
 }
 
-func (g *gore) run() error {
+// Run ...
+func (g *Gore) Run() error {
 	s, err := NewSession(g.outWriter, g.errWriter)
 	defer s.Clear()
 	if err != nil {

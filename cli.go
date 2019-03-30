@@ -16,15 +16,15 @@ func (c *cli) run(args []string) error {
 	if err != nil {
 		return err
 	}
-	if err := g.run(); err != nil {
+	if err := g.Run(); err != nil {
 		fmt.Fprintf(c.errWriter, "gore: %s\n", err)
 		return err
 	}
 	return nil
 }
 
-func (c *cli) parseArgs(args []string) (*gore, error) {
-	g := &gore{outWriter: c.outWriter, errWriter: c.errWriter}
+func (c *cli) parseArgs(args []string) (*Gore, error) {
+	g := &Gore{outWriter: c.outWriter, errWriter: c.errWriter}
 	fs := flag.NewFlagSet("gore", flag.ContinueOnError)
 	fs.SetOutput(c.errWriter)
 	fs.Usage = func() {
