@@ -75,7 +75,7 @@ quickFixAttempt:
 
 						stmts := s.mainBody.List[0:i]
 						for _, expr := range exprs {
-							stmts = append(stmts, &ast.ExprStmt{expr})
+							stmts = append(stmts, &ast.ExprStmt{X: expr})
 						}
 
 						s.mainBody.List = append(stmts, s.mainBody.List[i+1:]...)
