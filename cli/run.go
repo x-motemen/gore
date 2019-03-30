@@ -1,4 +1,4 @@
-package gore
+package cli
 
 import (
 	"flag"

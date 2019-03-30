@@ -10,6 +10,9 @@ import (
 	"github.com/mitchellh/go-homedir"
 )
 
+// Version of gore.
+const Version = "0.4.0"
+
 // Gore ...
 type Gore struct {
 	autoImport           bool
@@ -36,7 +39,7 @@ func (g *Gore) Run() error {
 	}
 	s.autoImport = g.autoImport
 
-	fmt.Fprintf(g.errWriter, "gore version %s  :help for help\n", version)
+	fmt.Fprintf(g.errWriter, "gore version %s  :help for help\n", Version)
 
 	if g.extFiles != "" {
 		extFiles := strings.Split(g.extFiles, ",")

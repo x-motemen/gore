@@ -1,6 +1,6 @@
 BIN := gore
 CURRENT_REVISION := $(shell git rev-parse --short HEAD)
-BUILD_LDFLAGS := "-s -w -X github.com/motemen/gore.revision=$(CURRENT_REVISION)"
+BUILD_LDFLAGS := "-s -w -X github.com/motemen/$(BIN)/cli.revision=$(CURRENT_REVISION)"
 
 .PHONY: all
 all: clean build

@@ -1,11 +1,15 @@
-package gore
+package cli
 
 import (
 	"flag"
 	"fmt"
 	"io"
 	"runtime"
+
+	"github.com/motemen/gore"
 )
+
+var revision = "HEAD"
 
 type cli struct {
 	outWriter, errWriter io.Writer
@@ -23,7 +27,7 @@ func (c *cli) run(args []string) error {
 	return nil
 }
 
-func (c *cli) parseArgs(args []string) (*Gore, error) {
+func (c *cli) parseArgs(args []string) (*gore.Gore, error) {
 	fs := flag.NewFlagSet("gore", flag.ContinueOnError)
 	fs.SetOutput(c.errWriter)
 	fs.Usage = func() {
@@ -37,7 +41,7 @@ Synopsis:
     %% gore
 
 Options:
-`, version, revision, runtime.Version())
+`, gore.Version, revision, runtime.Version())
 		fs.PrintDefaults()
 	}
 
@@ -59,15 +63,15 @@ Options:
 	}
 
 	if showVersion {
-		fmt.Fprintf(c.outWriter, "gore %s (rev: %s/%s)\n", version, revision, runtime.Version())
+		fmt.Fprintf(c.outWriter, "gore %s (rev: %s/%s)\n", gore.Version, revision, runtime.Version())
 		return nil, flag.ErrHelp
 	}
 
-	return New(
-		AutoImport(autoImport),
-		ExtFiles(extFiles),
-		PackageName(packageName),
-		OutWriter(c.outWriter),
-		ErrWriter(c.errWriter),
+	return gore.New(
+		gore.AutoImport(autoImport),
+		gore.ExtFiles(extFiles),
+		gore.PackageName(packageName),
+		gore.OutWriter(c.outWriter),
+		gore.ErrWriter(c.errWriter),
 	), nil
 }

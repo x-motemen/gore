@@ -1,4 +1,4 @@
-package gore
+package cli
 
 import (
 	"bytes"
@@ -7,6 +7,8 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	"github.com/motemen/gore"
 )
 
 func TestCliRun_Version(t *testing.T) {
@@ -15,7 +17,7 @@ func TestCliRun_Version(t *testing.T) {
 	err := c.run([]string{"-version"})
 	require.Equal(t, err, flag.ErrHelp)
 
-	assert.Contains(t, stdout.String(), "gore "+version)
+	assert.Contains(t, stdout.String(), "gore "+gore.Version)
 	assert.Equal(t, "", stderr.String())
 }
 
