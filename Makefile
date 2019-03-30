@@ -27,6 +27,7 @@ testdeps:
 
 .PHONY: lint
 lint: lintdeps build
+	go vet ./...
 	golint -set_exit_status ./...
 
 .PHONY: lintdeps
