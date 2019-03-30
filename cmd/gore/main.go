@@ -3,11 +3,9 @@ package main
 import (
 	"os"
 
-	"github.com/motemen/gore"
+	"github.com/motemen/gore/cli"
 )
 
 func main() {
-	if gore.Run(os.Args[1:]) != nil {
-		os.Exit(1)
-	}
+	os.Exit(cli.Run())
 }

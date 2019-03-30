@@ -10,14 +10,28 @@ import (
 	"github.com/mitchellh/go-homedir"
 )
 
-type gore struct {
+// Version of gore.
+const Version = "0.4.0"
+
+// Gore ...
+type Gore struct {
 	autoImport           bool
 	extFiles             string
 	packageName          string
 	outWriter, errWriter io.Writer
 }
 
-func (g *gore) run() error {
+// New Gore
+func New(opts ...Option) *Gore {
+	g := &Gore{outWriter: os.Stdout, errWriter: os.Stderr}
+	for _, opt := range opts {
+		opt(g)
+	}
+	return g
+}
+
+// Run ...
+func (g *Gore) Run() error {
 	s, err := NewSession(g.outWriter, g.errWriter)
 	defer s.Clear()
 	if err != nil {
@@ -25,7 +39,7 @@ func (g *gore) run() error {
 	}
 	s.autoImport = g.autoImport
 
-	fmt.Fprintf(g.errWriter, "gore version %s  :help for help\n", version)
+	fmt.Fprintf(g.errWriter, "gore version %s  :help for help\n", Version)
 
 	if g.extFiles != "" {
 		extFiles := strings.Split(g.extFiles, ",")
