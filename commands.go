@@ -105,7 +105,8 @@ func actionImport(s *Session, arg string) error {
 
 	// check if the package specified by path is importable
 	_, err := s.types.Importer.Import(path)
-	if err != nil {
+	// the importer cannot check go mod package, skip
+	if err != nil && !s.useGoMod {
 		return err
 	}
 

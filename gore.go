@@ -16,6 +16,7 @@ const Version = "0.4.1"
 // Gore ...
 type Gore struct {
 	autoImport           bool
+	useGoMod             bool
 	extFiles             string
 	packageName          string
 	outWriter, errWriter io.Writer
@@ -38,6 +39,11 @@ func (g *Gore) Run() error {
 		return err
 	}
 	s.autoImport = g.autoImport
+	s.useGoMod = g.useGoMod
+
+	if g.useGoMod {
+		s.initGoMod()
+	}
 
 	fmt.Fprintf(g.errWriter, "gore version %s  :help for help\n", Version)
 

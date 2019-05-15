@@ -30,6 +30,7 @@ import (
 type Session struct {
 	tempDir        string
 	tempFilePath   string
+	useGoMod       bool
 	file           *ast.File
 	fset           *token.FileSet
 	types          *types.Config
@@ -89,6 +90,13 @@ func NewSession(stdout, stderr io.Writer) (*Session, error) {
 	}
 
 	return s, nil
+}
+
+func (s *Session) initGoMod() (err error) {
+	tempModule := filepath.Base(s.tempDir)
+	goModPath := filepath.Join(s.tempDir, "go.mod")
+
+	return ioutil.WriteFile(goModPath, []byte("module "+tempModule), 0644)
 }
 
 func (s *Session) init() (err error) {

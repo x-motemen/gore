@@ -56,6 +56,9 @@ Options:
 	var autoImport bool
 	fs.BoolVar(&autoImport, "autoimport", false, "formats and adjusts imports automatically")
 
+	var useGoMod bool
+	fs.BoolVar(&useGoMod, "usegomod", false, "enable go mod support")
+
 	var extFiles string
 	fs.StringVar(&extFiles, "context", "", "import packages, functions, variables and constants from external golang source files")
 
@@ -77,6 +80,7 @@ Options:
 
 	return gore.New(
 		gore.AutoImport(autoImport),
+		gore.UseGoMod(useGoMod),
 		gore.ExtFiles(extFiles),
 		gore.PackageName(packageName),
 		gore.OutWriter(c.outWriter),
