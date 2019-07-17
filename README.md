@@ -47,7 +47,7 @@ Some functionalities are provided as commands in the REPL:
 The gore command requires Go tool-chains on runtime, so standalone binary is not distributed.
 
 ```sh
-go get -u github.com/motemen/gore/cmd/gore
+GO111MODULE=off go get -u github.com/motemen/gore/cmd/gore
 ```
 
 Make sure `$GOPATH/bin` is in your `$PATH`.
@@ -55,8 +55,8 @@ Make sure `$GOPATH/bin` is in your `$PATH`.
 Also recommended:
 
 ```sh
-go get -u github.com/mdempsky/gocode   # for code completion
-go get -u github.com/k0kubun/pp        # or github.com/davecgh/go-spew/spew
+GO111MODULE=off go get -u github.com/mdempsky/gocode   # for code completion
+GO111MODULE=off go get -u github.com/k0kubun/pp        # or github.com/davecgh/go-spew/spew
 ```
 
 ## FAQ/Caveats
