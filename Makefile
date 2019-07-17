@@ -1,38 +1,31 @@
 BIN := gore
 CURRENT_REVISION := $(shell git rev-parse --short HEAD)
 BUILD_LDFLAGS := "-s -w -X github.com/motemen/$(BIN)/cli.revision=$(CURRENT_REVISION)"
+GOBIN ?= $(shell go env GOPATH)/bin
+export GO111MODULE=on
 
 .PHONY: all
 all: clean build
 
 .PHONY: build
-build: deps
+build:
 	go build -ldflags=$(BUILD_LDFLAGS) -o build/$(BIN) ./cmd/...
 
 .PHONY: install
-install: deps
+install:
 	go install -ldflags=$(BUILD_LDFLAGS) ./cmd/...
 
-.PHONY: deps
-deps:
-	go get -d -v ./...
-
 .PHONY: test
-test: build testdeps
+test: build
 	go test -v ./...
 
-.PHONY: testdeps
-testdeps:
-	go get -d -v -t ./...
-
 .PHONY: lint
-lint: lintdeps
+lint: $(GOBIN)/golint
 	go vet ./...
 	golint -set_exit_status ./...
 
-.PHONY: lintdeps
-lintdeps: testdeps
-	command -v golint >/dev/null || go get -u golang.org/x/lint/golint
+$(GOBIN)/golint:
+	GO111MODULE=off go get golang.org/x/lint/golint
 
 .PHONY: clean
 clean:
