@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"go/ast"
 	"go/build"
-	"go/importer"
 	"go/parser"
 	"go/printer"
 	"go/scanner"
@@ -22,6 +21,7 @@ import (
 	"syscall"
 	"unicode"
 
+	"golang.org/x/tools/go/packages"
 	"golang.org/x/tools/imports"
 
 	"github.com/motemen/go-quickfix"
@@ -148,14 +148,13 @@ func getModReplaces() (hasMod bool, replaces []string, err error) {
 
 func (s *Session) init() (err error) {
 	s.fset = token.NewFileSet()
-	s.types = &types.Config{Importer: importer.Default()}
 	s.typeInfo = types.Info{}
 	s.extraFilePaths = nil
 	s.extraFiles = nil
 
 	var initialSource string
 	for _, pp := range printerPkgs {
-		_, err := s.types.Importer.Import(pp.path)
+		_, err := packages.Load(&packages.Config{}, pp.path)
 		if err == nil {
 			initialSource = fmt.Sprintf(initialSourceTemplate, pp.path, pp.code)
 			break
