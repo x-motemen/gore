@@ -38,7 +38,6 @@ func (g *Gore) Run() error {
 		return err
 	}
 	s.autoImport = g.autoImport
-	s.initGoMod()
 
 	fmt.Fprintf(g.errWriter, "gore version %s  :help for help\n", Version)
 

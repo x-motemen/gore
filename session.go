@@ -31,7 +31,6 @@ import (
 type Session struct {
 	tempDir        string
 	tempFilePath   string
-	useGoMod       bool
 	file           *ast.File
 	fset           *token.FileSet
 	types          *types.Config
@@ -99,8 +98,6 @@ func (s *Session) initGoMod() (err error) {
 		return
 	}
 
-	s.useGoMod = true
-
 	tempModule := filepath.Base(s.tempDir)
 	goModPath := filepath.Join(s.tempDir, "go.mod")
 
@@ -161,6 +158,8 @@ func (s *Session) init() (err error) {
 		}
 		debugf("could not import %q: %s", pp.path, err)
 	}
+
+	s.initGoMod()
 
 	if initialSource == "" {
 		return fmt.Errorf(`Could not load pretty printing package (even "fmt"; something is wrong)`)
