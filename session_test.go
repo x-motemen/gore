@@ -389,3 +389,8 @@ invalid argument f() (type int) for len
 invalid operation: f() + g() (mismatched types int and string)
 `, stderr.String())
 }
+
+func TestGetCurrentModule(t *testing.T) {
+	_, mod, _ := getCurrentModule()
+	assert.Equal(t, "github.com/motemen/gore", mod)
+}

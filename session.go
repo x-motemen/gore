@@ -1,6 +1,7 @@
 package gore
 
 import (
+	"bufio"
 	"bytes"
 	"errors"
 	"fmt"
@@ -93,10 +94,49 @@ func NewSession(stdout, stderr io.Writer) (*Session, error) {
 }
 
 func (s *Session) initGoMod() (err error) {
+	pwd, module, err := getCurrentModule()
+	if err != nil || module == "" {
+		return
+	}
+
+	s.useGoMod = true
+
 	tempModule := filepath.Base(s.tempDir)
 	goModPath := filepath.Join(s.tempDir, "go.mod")
 
-	return ioutil.WriteFile(goModPath, []byte("module "+tempModule), 0644)
+	mod := fmt.Sprintf("module %s\nrequire %s v0.0.0\nreplace %s => %s\n", tempModule, module, module, pwd)
+
+	return ioutil.WriteFile(goModPath, []byte(mod), 0644)
+}
+
+func getCurrentModule() (pwd, module string, err error) {
+	pwd, err = os.Getwd()
+	if err != nil {
+		return
+	}
+
+	file, err := os.Open(pwd + "/go.mod")
+	if err != nil {
+		if os.IsNotExist(err) {
+			err = nil
+		}
+		return
+	}
+	defer file.Close()
+
+	r := bufio.NewReader(file)
+	l, err := r.ReadString('\n')
+	if err != nil {
+		return
+	}
+	fs := strings.Fields(l)
+	if len(fs) != 2 {
+		return
+	}
+
+	module = fs[1]
+
+	return
 }
 
 func (s *Session) init() (err error) {

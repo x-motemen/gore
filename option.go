@@ -12,13 +12,6 @@ func AutoImport(autoImport bool) Option {
 	}
 }
 
-// UseGoMod option
-func UseGoMod(useGoMod bool) Option {
-	return func(g *Gore) {
-		g.useGoMod = useGoMod
-	}
-}
-
 // ExtFiles option
 func ExtFiles(extFiles string) Option {
 	return func(g *Gore) {
