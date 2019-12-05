@@ -94,8 +94,8 @@ func NewSession(stdout, stderr io.Writer) (*Session, error) {
 }
 
 func (s *Session) initGoMod() (err error) {
-	pwd, module, err := getCurrentModule()
-	if err != nil || module == "" {
+	hasMod, replaces, err := getModReplaces()
+	if err != nil || !hasMod {
 		return
 	}
 
@@ -104,13 +104,13 @@ func (s *Session) initGoMod() (err error) {
 	tempModule := filepath.Base(s.tempDir)
 	goModPath := filepath.Join(s.tempDir, "go.mod")
 
-	mod := fmt.Sprintf("module %s\nrequire %s v0.0.0\nreplace %s => %s\n", tempModule, module, module, pwd)
+	mod := "module " + tempModule + "\n" + strings.Join(replaces, "\n")
 
 	return ioutil.WriteFile(goModPath, []byte(mod), 0644)
 }
 
-func getCurrentModule() (pwd, module string, err error) {
-	pwd, err = os.Getwd()
+func getModReplaces() (hasMod bool, replaces []string, err error) {
+	pwd, err := os.Getwd()
 	if err != nil {
 		return
 	}
@@ -124,17 +124,24 @@ func getCurrentModule() (pwd, module string, err error) {
 	}
 	defer file.Close()
 
-	r := bufio.NewReader(file)
-	l, err := r.ReadString('\n')
-	if err != nil {
-		return
-	}
-	fs := strings.Fields(l)
-	if len(fs) != 2 {
+	out, err := exec.Command("go", "list", "-m", "all").Output()
+	s := bufio.NewScanner(bytes.NewReader(out))
+
+	s.Scan()
+	module := s.Text()
+	if module == "" {
 		return
 	}
 
-	module = fs[1]
+	hasMod = true
+	replaces = append(replaces, "replace "+module+" => "+pwd)
+
+	for s.Scan() {
+		replace := s.Text()
+		if strings.Contains(replace, "=>") {
+			replaces = append(replaces, "replace "+replace)
+		}
+	}
 
 	return
 }

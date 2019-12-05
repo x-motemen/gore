@@ -2,6 +2,7 @@ package gore
 
 import (
 	"bytes"
+	"os"
 	"regexp"
 	"testing"
 
@@ -391,6 +392,8 @@ invalid operation: f() + g() (mismatched types int and string)
 }
 
 func TestGetCurrentModule(t *testing.T) {
-	_, mod, _ := getCurrentModule()
-	assert.Equal(t, "github.com/motemen/gore", mod)
+	_, replaces, _ := getModReplaces()
+	pwd, _ := os.Getwd()
+	expected := "replace github.com/motemen/gore => " + pwd
+	assert.Equal(t, expected, replaces[0])
 }
