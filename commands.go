@@ -346,6 +346,7 @@ func actionDoc(s *Session, in string) error {
 	}
 
 	godoc := exec.Command("go", args...)
+	godoc.Dir = s.tempDir
 	godoc.Stderr = s.stderr
 
 	// TODO just use PAGER?
