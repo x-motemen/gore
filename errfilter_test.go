@@ -36,6 +36,11 @@ func TestErrFilter(t *testing.T) {
 			"# command-line-arguments foo\n/tmp/gore_session.go:10:24: undefined: foo",
 			"undefined: foo",
 		},
+		{
+			"no module dependencies warning",
+			"warning: pattern \"all\" matched no module dependencies\nwarning: pattern \"all\" matched no module dependencie",
+			"warning: pattern \"all\" matched no module dependencie",
+		},
 	}
 	for _, tc := range testCases {
 		t.Run(tc.id, func(t *testing.T) {

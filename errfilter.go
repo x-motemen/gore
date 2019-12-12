@@ -47,6 +47,9 @@ func replaceErrMsg(p []byte) []byte {
 	if bytes.HasPrefix(p, []byte("# command-line-arguments")) {
 		return nil
 	}
+	if bytes.HasPrefix(p, []byte(`warning: pattern "all" matched no module dependencies`)) {
+		return nil
+	}
 	if i := bytes.Index(p, []byte("gore_session.go")); i >= 0 {
 		if j := bytes.IndexRune(p[i:], ' '); j >= 0 {
 			return p[i+j+1:]

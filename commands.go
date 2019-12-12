@@ -347,7 +347,10 @@ func actionDoc(s *Session, in string) error {
 
 	godoc := exec.Command("go", args...)
 	godoc.Dir = s.tempDir
-	godoc.Stderr = s.stderr
+	godoc.Env = append(os.Environ(), "GO111MODULE=on")
+	ef := newErrFilter(s.stderr)
+	godoc.Stderr = ef
+	defer ef.Close()
 
 	// TODO just use PAGER?
 	if pagerCmd := os.Getenv("GORE_PAGER"); pagerCmd != "" {
