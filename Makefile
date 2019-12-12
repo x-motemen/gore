@@ -9,7 +9,7 @@ all: clean build
 
 .PHONY: build
 build:
-	go build -ldflags=$(BUILD_LDFLAGS) -o build/$(BIN) ./cmd/...
+	go build -ldflags=$(BUILD_LDFLAGS) -o $(BIN) ./cmd/...
 
 .PHONY: install
 install:
