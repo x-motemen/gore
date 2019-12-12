@@ -6,8 +6,6 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
-
-	"github.com/mitchellh/go-homedir"
 )
 
 // Version of gore.
@@ -141,7 +139,7 @@ func homeDir() (home string, err error) {
 		return
 	}
 
-	home, err = homedir.Dir()
+	home, err = os.UserHomeDir()
 	if err != nil {
 		return
 	}
