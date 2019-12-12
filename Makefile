@@ -29,5 +29,5 @@ $(GOBIN)/golint:
 
 .PHONY: clean
 clean:
-	rm -rf build
+	rm -f $(BIN)
 	go clean
