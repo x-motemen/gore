@@ -25,7 +25,7 @@ lint: $(GOBIN)/golint
 	golint -set_exit_status ./...
 
 $(GOBIN)/golint:
-	GO111MODULE=off go get golang.org/x/lint/golint
+	cd && go get golang.org/x/lint/golint
 
 .PHONY: clean
 clean:
