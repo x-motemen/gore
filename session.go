@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"go/ast"
 	"go/build"
+	"go/importer"
 	"go/parser"
 	"go/printer"
 	"go/scanner"
@@ -145,6 +146,7 @@ func getModReplaces() (hasMod bool, replaces []string, err error) {
 
 func (s *Session) init() (err error) {
 	s.fset = token.NewFileSet()
+	s.types = &types.Config{Importer: importer.Default()}
 	s.typeInfo = types.Info{}
 	s.extraFilePaths = nil
 	s.extraFiles = nil
