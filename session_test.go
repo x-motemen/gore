@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"os"
 	"regexp"
+	"strconv"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -394,6 +395,6 @@ invalid operation: f() + g() (mismatched types int and string)
 func TestGetCurrentModule(t *testing.T) {
 	_, replaces, _ := getModReplaces()
 	pwd, _ := os.Getwd()
-	expected := "replace github.com/motemen/gore => " + pwd
+	expected := "replace github.com/motemen/gore => " + strconv.Quote(pwd)
 	assert.Equal(t, expected, replaces[0])
 }

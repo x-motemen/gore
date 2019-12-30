@@ -18,6 +18,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"syscall"
 	"unicode"
@@ -132,7 +133,7 @@ func getModReplaces() (hasMod bool, replaces []string, err error) {
 	}
 
 	hasMod = true
-	replaces = append(replaces, "replace "+module+" => "+pwd)
+	replaces = append(replaces, "replace "+module+" => "+strconv.Quote(pwd))
 
 	for s.Scan() {
 		replace := s.Text()
