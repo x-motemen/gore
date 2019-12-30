@@ -18,6 +18,7 @@ import (
 	"go/types"
 
 	"golang.org/x/tools/go/ast/astutil"
+	"golang.org/x/tools/go/packages"
 )
 
 type command struct {
@@ -104,7 +105,8 @@ func actionImport(s *Session, arg string) error {
 	path := strings.Trim(arg, `"`)
 
 	// check if the package specified by path is importable
-	_, err := s.types.Importer.Import(path)
+	_, err := packages.Load(&packages.Config{}, path)
+	// the importer cannot check go mod package, skip
 	if err != nil {
 		return err
 	}

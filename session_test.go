@@ -2,6 +2,7 @@ package gore
 
 import (
 	"bytes"
+	"os"
 	"regexp"
 	"testing"
 
@@ -388,4 +389,11 @@ func TestSessionEval_CompileError(t *testing.T) {
 invalid argument f() (type int) for len
 invalid operation: f() + g() (mismatched types int and string)
 `, stderr.String())
+}
+
+func TestGetCurrentModule(t *testing.T) {
+	_, replaces, _ := getModReplaces()
+	pwd, _ := os.Getwd()
+	expected := "replace github.com/motemen/gore => " + pwd
+	assert.Equal(t, expected, replaces[0])
 }

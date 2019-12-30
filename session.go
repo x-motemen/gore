@@ -1,6 +1,7 @@
 package gore
 
 import (
+	"bufio"
 	"bytes"
 	"errors"
 	"fmt"
@@ -21,6 +22,7 @@ import (
 	"syscall"
 	"unicode"
 
+	"golang.org/x/tools/go/packages"
 	"golang.org/x/tools/imports"
 
 	"github.com/motemen/go-quickfix"
@@ -91,6 +93,57 @@ func NewSession(stdout, stderr io.Writer) (*Session, error) {
 	return s, nil
 }
 
+func (s *Session) initGoMod() (err error) {
+	hasMod, replaces, err := getModReplaces()
+	if err != nil || !hasMod {
+		return
+	}
+
+	tempModule := filepath.Base(s.tempDir)
+	goModPath := filepath.Join(s.tempDir, "go.mod")
+
+	mod := "module " + tempModule + "\n" + strings.Join(replaces, "\n")
+
+	return ioutil.WriteFile(goModPath, []byte(mod), 0644)
+}
+
+func getModReplaces() (hasMod bool, replaces []string, err error) {
+	pwd, err := os.Getwd()
+	if err != nil {
+		return
+	}
+
+	file, err := os.Open(pwd + "/go.mod")
+	if err != nil {
+		if os.IsNotExist(err) {
+			err = nil
+		}
+		return
+	}
+	defer file.Close()
+
+	out, err := exec.Command("go", "list", "-m", "all").Output()
+	s := bufio.NewScanner(bytes.NewReader(out))
+
+	s.Scan()
+	module := s.Text()
+	if module == "" {
+		return
+	}
+
+	hasMod = true
+	replaces = append(replaces, "replace "+module+" => "+pwd)
+
+	for s.Scan() {
+		replace := s.Text()
+		if strings.Contains(replace, "=>") {
+			replaces = append(replaces, "replace "+replace)
+		}
+	}
+
+	return
+}
+
 func (s *Session) init() (err error) {
 	s.fset = token.NewFileSet()
 	s.types = &types.Config{Importer: importer.Default()}
@@ -100,13 +153,15 @@ func (s *Session) init() (err error) {
 
 	var initialSource string
 	for _, pp := range printerPkgs {
-		_, err := s.types.Importer.Import(pp.path)
+		_, err := packages.Load(&packages.Config{}, pp.path)
 		if err == nil {
 			initialSource = fmt.Sprintf(initialSourceTemplate, pp.path, pp.code)
 			break
 		}
 		debugf("could not import %q: %s", pp.path, err)
 	}
+
+	s.initGoMod()
 
 	if initialSource == "" {
 		return fmt.Errorf(`Could not load pretty printing package (even "fmt"; something is wrong)`)
