@@ -19,6 +19,12 @@ func chdir(dir string) func() {
 	return func() { os.Chdir(d) }
 }
 
+func setenv(name, value string) func() {
+	v := os.Getenv(name)
+	os.Setenv(name, value)
+	return func() { os.Setenv(name, v) }
+}
+
 func gomodSetup(t *testing.T) func() {
 	tempDir, err := ioutil.TempDir("", "gore-")
 	require.NoError(t, err)
@@ -133,8 +139,29 @@ func TestSessionEval_Gomod_DeepDir(t *testing.T) {
 	assert.Equal(t, ``, stderr.String())
 }
 
+func TestSessionEval_Gomod_Outside(t *testing.T) {
+	stdout, stderr := new(bytes.Buffer), new(bytes.Buffer)
+	tempDir, _ := ioutil.TempDir("", "gore-")
+	defer chdir(tempDir)()
+	defer os.RemoveAll(tempDir)
+	s, err := NewSession(stdout, stderr)
+	defer s.Clear()
+	require.NoError(t, err)
+
+	codes := []string{
+		`:i github.com/motemen/gore`,
+		`gore.Session{}`,
+	}
+
+	for _, code := range codes {
+		_ = s.Eval(code)
+	}
+
+	assert.Equal(t, ``, stderr.String())
+}
+
 func TestGetCurrentModule(t *testing.T) {
-	_, replaces, _ := getModReplaces()
+	replaces, _ := getModReplaces()
 	pwd, _ := os.Getwd()
 	expected := "replace github.com/motemen/gore => " + strconv.Quote(pwd)
 	assert.Equal(t, expected, replaces[0])

@@ -12,8 +12,8 @@ import (
 )
 
 func (s *Session) initGoMod() error {
-	hasMod, replaces, err := getModReplaces()
-	if err != nil || !hasMod {
+	replaces, err := getModReplaces()
+	if err != nil {
 		return err
 	}
 
@@ -25,7 +25,7 @@ func (s *Session) initGoMod() error {
 	return ioutil.WriteFile(goModPath, []byte(mod), 0644)
 }
 
-func getModReplaces() (hasMod bool, replaces []string, err error) {
+func getModReplaces() (replaces []string, err error) {
 	pwd, err := os.Getwd()
 	if err != nil {
 		return
@@ -45,7 +45,6 @@ func getModReplaces() (hasMod bool, replaces []string, err error) {
 		return
 	}
 
-	hasMod = true
 	replaces = append(replaces, "replace "+module+" => "+strconv.Quote(root))
 
 	for s.Scan() {
