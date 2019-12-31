@@ -87,6 +87,7 @@ quickFixAttempt:
 		}
 
 		debugf("quickFix :: give up: %#v", err)
+		break
 	}
 
 	return nil
