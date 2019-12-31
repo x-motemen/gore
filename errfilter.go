@@ -47,6 +47,9 @@ func replaceErrMsg(p []byte) []byte {
 	if bytes.HasPrefix(p, []byte("# command-line-arguments")) {
 		return nil
 	}
+	if cs := "build command-line-arguments: "; bytes.HasPrefix(p, []byte(cs)) {
+		return p[len(cs):]
+	}
 	if bytes.HasPrefix(p, []byte(`warning: pattern "all" matched no module dependencies`)) {
 		return nil
 	}

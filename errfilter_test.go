@@ -23,8 +23,8 @@ func TestErrFilter(t *testing.T) {
 		},
 		{
 			"command-line-arguments",
-			"# command-line-arguments foo\nbar\n# command-line-arguments baz\nqux",
-			"bar\nqux",
+			"# command-line-arguments foo\nbar\nbuild command-line-arguments: baz\nqux",
+			"bar\nbaz\nqux",
 		},
 		{
 			"gore_session.go",
