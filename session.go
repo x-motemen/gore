@@ -113,7 +113,7 @@ func getModReplaces() (hasMod bool, replaces []string, err error) {
 		return
 	}
 
-	file, err := os.Open(pwd + "/go.mod")
+	file, err := os.Open(filepath.Join(pwd, "go.mod"))
 	if err != nil {
 		if os.IsNotExist(err) {
 			err = nil
