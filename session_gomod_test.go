@@ -132,3 +132,10 @@ func TestSessionEval_Gomod_DeepDir(t *testing.T) {
 	assert.Equal(t, "10\n20\n10\n30\n", stdout.String())
 	assert.Equal(t, ``, stderr.String())
 }
+
+func TestGetCurrentModule(t *testing.T) {
+	_, replaces, _ := getModReplaces()
+	pwd, _ := os.Getwd()
+	expected := "replace github.com/motemen/gore => " + strconv.Quote(pwd)
+	assert.Equal(t, expected, replaces[0])
+}
