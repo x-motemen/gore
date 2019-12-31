@@ -22,8 +22,6 @@ To quit the session, type `Ctrl-D` or use `:q` command.
 - Evaluates any expressions, statements and function declarations
 - No "evaluated but not used" errors
 - Code completion (requires [gocode](https://github.com/mdempsky/gocode))
-- Pretty printing ([pp](https://github.com/k0kubun/pp) or
-  [spew](https://github.com/davecgh/go-spew) recommended)
 - Showing documents
 - Auto-importing (`gore -autoimport`)
 
@@ -56,7 +54,6 @@ Also recommended:
 
 ```sh
 go get -u github.com/mdempsky/gocode   # for code completion
-go get -u github.com/k0kubun/pp        # or github.com/davecgh/go-spew/spew
 ```
 
 ## FAQ/Caveats

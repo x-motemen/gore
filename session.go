@@ -71,7 +71,6 @@ var printerPkgs = []struct {
 	code string
 }{
 	{"github.com/k0kubun/pp", `pp.Println(x)`},
-	{"github.com/davecgh/go-spew/spew", `spew.Printf("%#v\n", x)`},
 	{"fmt", `fmt.Printf("%#v\n", x)`},
 }
 
