@@ -36,7 +36,9 @@ func getModReplaces() (replaces []string, err error) {
 		return
 	}
 
-	out, err := exec.Command("go", "list", "-m", "all").Output()
+	cmd := exec.Command("go", "list", "-m", "all")
+	cmd.Dir = root
+	out, err := cmd.Output()
 	s := bufio.NewScanner(bytes.NewReader(out))
 
 	s.Scan()
@@ -48,9 +50,8 @@ func getModReplaces() (replaces []string, err error) {
 	replaces = append(replaces, "replace "+module+" => "+strconv.Quote(root))
 
 	for s.Scan() {
-		replace := s.Text()
-		if strings.Contains(replace, "=>") {
-			replaces = append(replaces, "replace "+replace)
+		if line := s.Text(); strings.Contains(line, "=>") {
+			replaces = append(replaces, "replace "+line)
 		}
 	}
 
