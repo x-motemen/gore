@@ -154,7 +154,7 @@ func (s *Session) init() (err error) {
 
 	var initialSource string
 	for _, pp := range printerPkgs {
-		_, err := packages.Load(&packages.Config{}, pp.path)
+		_, err := packages.Load(&packages.Config{Dir: s.tempDir}, pp.path)
 		if err == nil {
 			initialSource = fmt.Sprintf(initialSourceTemplate, pp.path, pp.code)
 			break

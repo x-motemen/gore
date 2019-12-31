@@ -31,6 +31,7 @@ quickFixAttempt:
 			Fset:     s.fset,
 			Files:    files,
 			TypeInfo: &s.typeInfo,
+			Dir:      s.tempDir,
 		}
 		_, err := config.QuickFixOnce()
 		if err == nil {
