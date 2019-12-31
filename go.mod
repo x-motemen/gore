@@ -4,7 +4,7 @@ go 1.13
 
 require (
 	github.com/mattn/go-runewidth v0.0.7 // indirect
-	github.com/motemen/go-quickfix v0.0.0-20191231021355-0cdc77870b56
+	github.com/motemen/go-quickfix v0.0.0-20191231024043-04b1a6b72ca8
 	github.com/peterh/liner v1.1.0
 	github.com/stretchr/testify v1.3.0
 	golang.org/x/text v0.3.2
