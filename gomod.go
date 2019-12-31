@@ -31,14 +31,10 @@ func getModReplaces() (hasMod bool, replaces []string, err error) {
 		return
 	}
 
-	file, err := os.Open(filepath.Join(pwd, "go.mod"))
-	if err != nil {
-		if os.IsNotExist(err) {
-			err = nil
-		}
+	root := findModuleRoot(pwd)
+	if root == "" {
 		return
 	}
-	defer file.Close()
 
 	out, err := exec.Command("go", "list", "-m", "all").Output()
 	s := bufio.NewScanner(bytes.NewReader(out))
@@ -50,7 +46,7 @@ func getModReplaces() (hasMod bool, replaces []string, err error) {
 	}
 
 	hasMod = true
-	replaces = append(replaces, "replace "+module+" => "+strconv.Quote(pwd))
+	replaces = append(replaces, "replace "+module+" => "+strconv.Quote(root))
 
 	for s.Scan() {
 		replace := s.Text()
@@ -60,4 +56,17 @@ func getModReplaces() (hasMod bool, replaces []string, err error) {
 	}
 
 	return
+}
+
+func findModuleRoot(dir string) string {
+	for {
+		if fi, err := os.Stat(filepath.Join(dir, "go.mod")); err == nil && !fi.IsDir() {
+			return dir
+		}
+		d := filepath.Dir(dir)
+		if d == dir {
+			return ""
+		}
+		dir = d
+	}
 }

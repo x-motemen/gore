@@ -104,3 +104,31 @@ func TestSessionEval_Gomod_AutoImport(t *testing.T) {
 	assert.Equal(t, "10\n20\n10\n30\n", stdout.String())
 	assert.Equal(t, ``, stderr.String())
 }
+
+func TestSessionEval_Gomod_DeepDir(t *testing.T) {
+	stdout, stderr := new(bytes.Buffer), new(bytes.Buffer)
+	defer gomodSetup(t)()
+	require.NoError(t, os.Mkdir("tmp", 0700))
+	require.NoError(t, os.Chdir("tmp"))
+	s, err := NewSession(stdout, stderr)
+	defer s.Clear()
+	require.NoError(t, err)
+
+	codes := []string{
+		`:i mod2`,
+		`mod2.Foo()`,
+		`mod2.Foo() + mod2.Foo()`,
+		`:clear`,
+		`:i mod2`,
+		`mod2.Foo()`,
+		`:i mod1`,
+		`3 * mod1.Value`,
+	}
+
+	for _, code := range codes {
+		_ = s.Eval(code)
+	}
+
+	assert.Equal(t, "10\n20\n10\n30\n", stdout.String())
+	assert.Equal(t, ``, stderr.String())
+}
