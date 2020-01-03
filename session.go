@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"go/ast"
 	"go/build"
-	"go/importer"
 	"go/parser"
 	"go/printer"
 	"go/scanner"
@@ -91,9 +90,29 @@ func NewSession(stdout, stderr io.Writer) (*Session, error) {
 	return s, nil
 }
 
+type pkgsImporter struct {
+	dir string
+}
+
+func (i *pkgsImporter) Import(path string) (*types.Package, error) {
+	pkgs, err := packages.Load(&packages.Config{
+		Mode: packages.NeedTypes | packages.NeedDeps,
+		Dir:  i.dir,
+	}, path)
+	if err != nil {
+		return nil, err
+	}
+
+	if len(pkgs) == 0 {
+		return nil, fmt.Errorf("path %s not found", path)
+	}
+
+	return pkgs[0].Types, nil
+}
+
 func (s *Session) init() (err error) {
 	s.fset = token.NewFileSet()
-	s.types = &types.Config{Importer: importer.Default()}
+	s.types = &types.Config{Importer: &pkgsImporter{dir: s.tempDir}}
 	s.typeInfo = types.Info{}
 	s.extraFilePaths = nil
 	s.extraFiles = nil
