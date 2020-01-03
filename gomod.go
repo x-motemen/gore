@@ -1,10 +1,10 @@
 package gore
 
 import (
-	"bufio"
 	"bytes"
+	"encoding/json"
+	"io"
 	"io/ioutil"
-	"os"
 	"os/exec"
 	"path/filepath"
 	"strconv"
@@ -12,61 +12,49 @@ import (
 )
 
 func (s *Session) initGoMod() error {
-	replaces, err := getModReplaces()
-	if err != nil {
-		return err
-	}
-
+	replaces := getModReplaces()
 	tempModule := filepath.Base(s.tempDir)
 	goModPath := filepath.Join(s.tempDir, "go.mod")
 
 	mod := "module " + tempModule + "\n" + strings.Join(replaces, "\n")
-
 	return ioutil.WriteFile(goModPath, []byte(mod), 0644)
 }
 
-func getModReplaces() (replaces []string, err error) {
-	pwd, err := os.Getwd()
+func getModReplaces() (replaces []string) {
+	modules, err := goListAll()
 	if err != nil {
 		return
 	}
-
-	root := findModuleRoot(pwd)
-	if root == "" {
-		return
-	}
-
-	cmd := exec.Command("go", "list", "-m", "all")
-	cmd.Dir = root
-	out, err := cmd.Output()
-	s := bufio.NewScanner(bytes.NewReader(out))
-
-	s.Scan()
-	module := s.Text()
-	if module == "" {
-		return
-	}
-
-	replaces = append(replaces, "replace "+module+" => "+strconv.Quote(root))
-
-	for s.Scan() {
-		if line := s.Text(); strings.Contains(line, "=>") {
-			replaces = append(replaces, "replace "+line)
+	for _, m := range modules {
+		if m.Main || m.Replace != nil {
+			replaces = append(replaces, "replace "+m.Path+" => "+strconv.Quote(m.Dir))
 		}
 	}
-
 	return
 }
 
-func findModuleRoot(dir string) string {
+type goModule struct {
+	Path, Dir, Version string
+	Main               bool
+	Replace            *goModule
+}
+
+func goListAll() ([]*goModule, error) {
+	cmd := exec.Command("go", "list", "-json", "-m", "all")
+	out, err := cmd.Output()
+	if err != nil {
+		return nil, err
+	}
+	d := json.NewDecoder(bytes.NewReader(out))
+	var ms []*goModule
 	for {
-		if fi, err := os.Stat(filepath.Join(dir, "go.mod")); err == nil && !fi.IsDir() {
-			return dir
+		m := new(goModule)
+		if err := d.Decode(m); err != nil {
+			if err == io.EOF {
+				return ms, nil
+			}
+			return nil, err
 		}
-		d := filepath.Dir(dir)
-		if d == dir {
-			return ""
-		}
-		dir = d
+		ms = append(ms, m)
 	}
 }
