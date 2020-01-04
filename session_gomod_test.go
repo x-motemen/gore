@@ -101,13 +101,23 @@ func TestSessionEval_Gomod_AutoImport(t *testing.T) {
 		`:clear`,
 		`mod2.Foo()`,
 		`3 * mod1.Value`,
+		`:t mod2.Foo`,
+		`:d mod2.Foo`,
 	}
 
 	for _, code := range codes {
 		_ = s.Eval(code)
 	}
 
-	assert.Equal(t, "10\n20\n10\n30\n", stdout.String())
+	assert.Equal(t, `10
+20
+10
+30
+func() int
+package mod2 // import "mod2"
+
+func Foo() int
+`, stdout.String())
 	assert.Equal(t, ``, stderr.String())
 }
 
