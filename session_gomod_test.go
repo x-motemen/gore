@@ -54,6 +54,15 @@ func Foo() int {
 }
 `), 0600))
 
+	mod3Dir := filepath.Join(mod2Dir, "mod3")
+	require.NoError(t, os.Mkdir(mod3Dir, 0700))
+	require.NoError(t, ioutil.WriteFile(filepath.Join(mod3Dir, "mod3.go"), []byte(`package mod3
+
+func Bar() string {
+	return "mod3"
+}
+`), 0600))
+
 	restore := chdir(mod2Dir)
 	return func() {
 		defer os.RemoveAll(tempDir)
@@ -103,6 +112,8 @@ func TestSessionEval_Gomod_AutoImport(t *testing.T) {
 		`3 * mod1.Value`,
 		`:t mod2.Foo`,
 		`:d mod2.Foo`,
+		`mod3.Bar()`,
+		`:t mod3.Bar`,
 	}
 
 	for _, code := range codes {
@@ -117,6 +128,8 @@ func() int
 package mod2 // import "mod2"
 
 func Foo() int
+"mod3"
+func() string
 `, stdout.String())
 	assert.Equal(t, ``, stderr.String())
 }
