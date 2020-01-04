@@ -129,42 +129,41 @@ func completeImport(s *Session, prefix string) []string {
 	// complete candidates from the current module
 	if modules, err := goListAll(); err == nil {
 		for _, m := range modules {
-			if m.Main || m.Replace != nil {
 
-				if strings.HasPrefix(m.Path, prefix[p:]) || d == "" && filepath.Base(m.Path) == fn {
-					result = append(result, prefix[:p]+m.Path)
-					seen[m.Path] = true
+			if strings.HasPrefix(m.Path, prefix[p:]) ||
+				d == "" && len(fn) > 1 && strings.HasPrefix(strings.TrimPrefix(filepath.Base(m.Path), "go-"), fn) {
+				result = append(result, prefix[:p]+m.Path)
+				seen[m.Path] = true
+				continue
+			}
+
+			if strings.HasPrefix(d, m.Path) {
+				dir := filepath.Join(m.Dir, strings.Replace(d, m.Path, "", 1))
+				if fi, err := os.Stat(dir); err != nil || !fi.IsDir() {
 					continue
 				}
-
-				if strings.HasPrefix(d, m.Path) {
-					dir := filepath.Join(m.Dir, strings.Replace(d, m.Path, "", 1))
-					if fi, err := os.Stat(dir); err != nil || !fi.IsDir() {
+				entries, err := ioutil.ReadDir(dir)
+				if err != nil {
+					continue
+				}
+				for _, fi := range entries {
+					if !fi.IsDir() {
 						continue
 					}
-					entries, err := ioutil.ReadDir(dir)
-					if err != nil {
+					name := fi.Name()
+					if skipCompleteDir(name) {
 						continue
 					}
-					for _, fi := range entries {
-						if !fi.IsDir() {
-							continue
-						}
-						name := fi.Name()
-						if skipCompleteDir(name) {
-							continue
-						}
-						if strings.HasPrefix(name, fn) {
-							r := path.Join(d, name)
-							if !seen[r] {
-								result = append(result, prefix[:p]+r)
-								seen[r] = true
-							}
+					if strings.HasPrefix(name, fn) {
+						r := path.Join(d, name)
+						if !seen[r] {
+							result = append(result, prefix[:p]+r)
+							seen[r] = true
 						}
 					}
 				}
-
 			}
+
 		}
 	}
 
