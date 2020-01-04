@@ -160,6 +160,19 @@ func TestSessionEval_Gomod_Outside(t *testing.T) {
 	assert.Equal(t, ``, stderr.String())
 }
 
+func TestSessionEval_Gomod_CompleteImport(t *testing.T) {
+	stdout, stderr := new(bytes.Buffer), new(bytes.Buffer)
+	defer gomodSetup(t)()
+	s, err := NewSession(stdout, stderr)
+	defer s.Clear()
+	require.NoError(t, err)
+
+	pre, cands, post := s.completeWord(":i ", 3)
+	assert.Equal(t, ":i ", pre)
+	assert.Subset(t, cands, []string{"mod2", "mod1"})
+	assert.Equal(t, post, "")
+}
+
 func TestGetCurrentModule(t *testing.T) {
 	replaces := getModReplaces()
 	pwd, _ := os.Getwd()

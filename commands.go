@@ -125,6 +125,18 @@ func completeImport(s *Session, prefix string) []string {
 	p := strings.LastIndexFunc(prefix, unicode.IsSpace) + 1
 
 	d, fn := path.Split(prefix[p:])
+
+	if modules, err := goListAll(); err == nil {
+		for _, m := range modules {
+			if m.Main || m.Replace != nil {
+				if strings.HasPrefix(m.Path, prefix) {
+					result = append(result, m.Path)
+					seen[m.Path[len(prefix):]] = true
+				}
+			}
+		}
+	}
+
 	for _, srcDir := range build.Default.SrcDirs() {
 		dir := filepath.Join(srcDir, d)
 
