@@ -131,7 +131,7 @@ func completeImport(s *Session, prefix string) []string {
 		for _, m := range modules {
 			if m.Main || m.Replace != nil {
 
-				if strings.HasPrefix(m.Path, d) {
+				if strings.HasPrefix(m.Path, prefix[p:]) || d == "" && filepath.Base(m.Path) == fn {
 					result = append(result, prefix[:p]+m.Path)
 					seen[m.Path] = true
 					continue

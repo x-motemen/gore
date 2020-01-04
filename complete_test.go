@@ -2,8 +2,6 @@ package gore
 
 import (
 	"bytes"
-	"io/ioutil"
-	"os"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -18,9 +16,6 @@ func TestSession_completeWord(t *testing.T) {
 	}
 
 	stdout, stderr := new(bytes.Buffer), new(bytes.Buffer)
-	tempDir, _ := ioutil.TempDir("", "gore-")
-	defer chdir(tempDir)()
-	defer os.RemoveAll(tempDir)
 	s, err := NewSession(stdout, stderr)
 	defer s.Clear()
 	require.NoError(t, err)
@@ -57,6 +52,16 @@ func TestSession_completeWord(t *testing.T) {
 	pre, cands, post = s.completeWord("::i t", 5)
 	assert.Equal(t, "::i ", pre)
 	assert.Equal(t, []string{"testing", "text", "time"}, cands)
+	assert.Equal(t, post, "")
+
+	pre, cands, post = s.completeWord("::i gor", 7)
+	assert.Equal(t, "::i ", pre)
+	assert.Equal(t, []string{}, cands)
+	assert.Equal(t, post, "")
+
+	pre, cands, post = s.completeWord(":i gore", 7)
+	assert.Equal(t, ":i ", pre)
+	assert.Equal(t, []string{"github.com/motemen/gore"}, cands)
 	assert.Equal(t, post, "")
 
 	pre, cands, post = s.completeWord(":c", 2)
