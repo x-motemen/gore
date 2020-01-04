@@ -126,17 +126,49 @@ func completeImport(s *Session, prefix string) []string {
 
 	d, fn := path.Split(prefix[p:])
 
+	// complete candidates from the current module
 	if modules, err := goListAll(); err == nil {
 		for _, m := range modules {
 			if m.Main || m.Replace != nil {
-				if strings.HasPrefix(m.Path, prefix) {
-					result = append(result, m.Path)
-					seen[m.Path[len(prefix):]] = true
+
+				if strings.HasPrefix(m.Path, d) {
+					result = append(result, prefix[:p]+m.Path)
+					seen[m.Path] = true
+					continue
 				}
+
+				if strings.HasPrefix(d, m.Path) {
+					dir := filepath.Join(m.Dir, strings.Replace(d, m.Path, "", 1))
+					if fi, err := os.Stat(dir); err != nil || !fi.IsDir() {
+						continue
+					}
+					entries, err := ioutil.ReadDir(dir)
+					if err != nil {
+						continue
+					}
+					for _, fi := range entries {
+						if !fi.IsDir() {
+							continue
+						}
+						name := fi.Name()
+						if skipCompleteDir(name) {
+							continue
+						}
+						if strings.HasPrefix(name, fn) {
+							r := path.Join(d, name)
+							if !seen[r] {
+								result = append(result, prefix[:p]+r)
+								seen[r] = true
+							}
+						}
+					}
+				}
+
 			}
 		}
 	}
 
+	// complete candidates from GOPATH/src/
 	for _, srcDir := range build.Default.SrcDirs() {
 		dir := filepath.Join(srcDir, d)
 
@@ -158,7 +190,7 @@ func completeImport(s *Session, prefix string) []string {
 			}
 
 			name := fi.Name()
-			if strings.HasPrefix(name, ".") || strings.HasPrefix(name, "_") || name == "testdata" {
+			if skipCompleteDir(name) {
 				continue
 			}
 
@@ -190,6 +222,10 @@ func completeImport(s *Session, prefix string) []string {
 	}
 
 	return result
+}
+
+func skipCompleteDir(dir string) bool {
+	return strings.HasPrefix(dir, ".") || strings.HasPrefix(dir, "_") || dir == "testdata"
 }
 
 func completeDoc(s *Session, prefix string) []string {

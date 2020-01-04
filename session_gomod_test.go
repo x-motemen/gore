@@ -63,6 +63,9 @@ func Bar() string {
 }
 `), 0600))
 
+	mod4Dir := filepath.Join(mod2Dir, "mod4")
+	require.NoError(t, os.Mkdir(mod4Dir, 0700))
+
 	restore := chdir(mod2Dir)
 	return func() {
 		defer os.RemoveAll(tempDir)
@@ -193,6 +196,11 @@ func TestSessionEval_Gomod_CompleteImport(t *testing.T) {
 	pre, cands, post := s.completeWord(":i ", 3)
 	assert.Equal(t, ":i ", pre)
 	assert.Subset(t, cands, []string{"mod2", "mod1"})
+	assert.Equal(t, post, "")
+
+	pre, cands, post = s.completeWord(":i mod2/", 8)
+	assert.Equal(t, ":i ", pre)
+	assert.Subset(t, cands, []string{"mod2/mod3", "mod2/mod4"})
 	assert.Equal(t, post, "")
 }
 
