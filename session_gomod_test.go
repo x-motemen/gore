@@ -174,8 +174,9 @@ func TestSessionEval_Gomod_CompleteImport(t *testing.T) {
 }
 
 func TestGetCurrentModule(t *testing.T) {
-	replaces := getModReplaces()
+	directives := getModuleDirectives()
 	pwd, _ := os.Getwd()
-	expected := "replace github.com/motemen/gore => " + strconv.Quote(pwd)
-	assert.Equal(t, expected, replaces[0])
+	assert.Equal(t, []string{
+		"replace github.com/motemen/gore => " + strconv.Quote(pwd),
+	}, directives)
 }

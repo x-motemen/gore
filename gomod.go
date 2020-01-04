@@ -3,8 +3,10 @@ package gore
 import (
 	"bytes"
 	"encoding/json"
+	"go/build"
 	"io"
 	"io/ioutil"
+	"os"
 	"os/exec"
 	"path/filepath"
 	"strconv"
@@ -12,22 +14,44 @@ import (
 )
 
 func (s *Session) initGoMod() error {
-	replaces := getModReplaces()
 	tempModule := filepath.Base(s.tempDir)
 	goModPath := filepath.Join(s.tempDir, "go.mod")
+	directives := getModuleDirectives()
 
-	mod := "module " + tempModule + "\n" + strings.Join(replaces, "\n")
+	mod := "module " + tempModule + "\n" + strings.Join(directives, "\n")
 	return ioutil.WriteFile(goModPath, []byte(mod), 0644)
 }
 
-func getModReplaces() (replaces []string) {
+func getModuleDirectives() (directives []string) {
 	modules, err := goListAll()
 	if err != nil {
 		return
 	}
 	for _, m := range modules {
 		if m.Main || m.Replace != nil {
-			replaces = append(replaces, "replace "+m.Path+" => "+strconv.Quote(m.Dir))
+			directives = append(directives, "replace "+m.Path+" => "+strconv.Quote(m.Dir))
+		}
+	}
+	for _, pp := range printerPkgs {
+		if pp.path == "fmt" {
+			continue
+		}
+		found := lookupGoModule(pp.path, pp.version)
+		for _, r := range pp.requires {
+			if found && !lookupGoModule(r.path, r.version) {
+				found = false
+				break
+			}
+		}
+		if found {
+			// Specifying the version of the printer package improves startup
+			// performance by skipping module version fetching. Also allows to
+			// use gore in offline environment.
+			directives = append(directives, "require "+pp.path+" "+pp.version)
+			for _, r := range pp.requires {
+				directives = append(directives, "require "+r.path+" "+r.version)
+			}
+			break
 		}
 	}
 	return
@@ -57,4 +81,10 @@ func goListAll() ([]*goModule, error) {
 		}
 		ms = append(ms, m)
 	}
+}
+
+func lookupGoModule(pkg, version string) bool {
+	modDir := filepath.Join(build.Default.GOPATH, "pkg/mod", pkg+"@"+version)
+	fi, err := os.Stat(modDir)
+	return err == nil && fi.IsDir()
 }

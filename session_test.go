@@ -10,12 +10,7 @@ import (
 )
 
 func init() {
-	printerPkgs = []struct {
-		path string
-		code string
-	}{
-		{"fmt", `fmt.Printf("%#v\n", x)`},
-	}
+	printerPkgs = printerPkgs[1:]
 }
 
 func TestSessionEval_import(t *testing.T) {

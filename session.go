@@ -61,14 +61,19 @@ func main() {
 }
 `
 
-// printerPkgs is a list of packages that provides
-// pretty printing function. Preceding first.
+// printerPkgs is a list of packages that provides pretty printing function
 var printerPkgs = []struct {
-	path string
-	code string
+	path, version string
+	requires      []pathVersion
+	code          string
 }{
-	{"github.com/k0kubun/pp", `pp.Println(x)`},
-	{"fmt", `fmt.Printf("%#v\n", x)`},
+	{path: "github.com/k0kubun/pp", version: "v3.0.1+incompatible", code: `pp.Println(x)`,
+		requires: []pathVersion{{"github.com/mattn/go-colorable", "v0.1.4"}}},
+	{path: "fmt", code: `fmt.Printf("%#v\n", x)`},
+}
+
+type pathVersion struct {
+	path, version string
 }
 
 // NewSession creates a new Session.
@@ -117,6 +122,8 @@ func (s *Session) init() (err error) {
 	s.extraFilePaths = nil
 	s.extraFiles = nil
 
+	s.initGoMod() // this should be before printer load for printer package requirements
+
 	var initialSource string
 	for _, pp := range printerPkgs {
 		_, err := packages.Load(&packages.Config{Dir: s.tempDir}, pp.path)
@@ -126,8 +133,6 @@ func (s *Session) init() (err error) {
 		}
 		debugf("could not import %q: %s", pp.path, err)
 	}
-
-	s.initGoMod()
 
 	if initialSource == "" {
 		return fmt.Errorf(`Could not load pretty printing package (even "fmt"; something is wrong)`)
