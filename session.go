@@ -126,7 +126,7 @@ func (s *Session) init() (err error) {
 
 	var initialSource string
 	for _, pp := range printerPkgs {
-		_, err := packages.Load(&packages.Config{Dir: s.tempDir}, pp.path)
+		_, err = packages.Load(&packages.Config{Dir: s.tempDir}, pp.path)
 		if err == nil {
 			initialSource = fmt.Sprintf(initialSourceTemplate, pp.path, pp.code)
 			break
@@ -135,7 +135,7 @@ func (s *Session) init() (err error) {
 	}
 
 	if initialSource == "" {
-		return fmt.Errorf(`Could not load pretty printing package (even "fmt"; something is wrong)`)
+		return fmt.Errorf("could not load 'fmt' package: %w", err)
 	}
 
 	s.file, err = parser.ParseFile(s.fset, "gore_session.go", initialSource, parser.Mode(0))
