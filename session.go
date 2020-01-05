@@ -51,8 +51,8 @@ package main
 
 import %q
 
-func ` + printerName + `(xx ...interface{}) {
-	for _, x := range xx {
+func ` + printerName + `(xs ...interface{}) {
+	for _, x := range xs {
 		%s
 	}
 }
