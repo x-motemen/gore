@@ -74,6 +74,26 @@ func TestSession_completeWord(t *testing.T) {
 	assert.Equal(t, []string{"github.com/motemen/go-quickfix"}, cands)
 	assert.Equal(t, post, "")
 
+	pre, cands, post = s.completeWord(":i go-qu", 8)
+	assert.Equal(t, ":i ", pre)
+	assert.Equal(t, []string{"github.com/motemen/go-quickfix"}, cands)
+	assert.Equal(t, post, "")
+
+	pre, cands, post = s.completeWord(":i go-", 6)
+	assert.Equal(t, ":i ", pre)
+	assert.Equal(t, []string{
+		"github.com/davecgh/go-spew", "github.com/mattn/go-runewidth",
+		"github.com/motemen/go-quickfix", "github.com/pmezard/go-difflib",
+	}, cands)
+	assert.Equal(t, post, "")
+
+	pre, cands, post = s.completeWord(":i mot", 6)
+	assert.Equal(t, ":i ", pre)
+	assert.Equal(t, []string{
+		"github.com/motemen/gore", "github.com/motemen/go-quickfix",
+	}, cands)
+	assert.Equal(t, post, "")
+
 	pre, cands, post = s.completeWord(":c", 2)
 	assert.Equal(t, "", pre)
 	assert.Equal(t, []string{":clear"}, cands)

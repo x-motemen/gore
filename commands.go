@@ -130,8 +130,18 @@ func completeImport(s *Session, prefix string) []string {
 	if modules, err := goListAll(); err == nil {
 		for _, m := range modules {
 
-			if strings.HasPrefix(m.Path, prefix[p:]) ||
-				d == "" && len(fn) > 1 && strings.HasPrefix(strings.TrimPrefix(filepath.Base(m.Path), "go-"), fn) {
+			matchPath := func(fn string) bool {
+				if len(fn) < 2 {
+					return false
+				}
+				for _, s := range strings.Split(m.Path, "/") {
+					if strings.HasPrefix(s, fn) || strings.HasPrefix(strings.TrimPrefix(s, "go-"), fn) {
+						return true
+					}
+				}
+				return false
+			}
+			if strings.HasPrefix(m.Path, prefix[p:]) || d == "" && matchPath(fn) {
 				result = append(result, prefix[:p]+m.Path)
 				seen[m.Path] = true
 				continue
