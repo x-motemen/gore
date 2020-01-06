@@ -16,31 +16,24 @@ import (
 func (s *Session) initGoMod() error {
 	tempModule := filepath.Base(s.tempDir)
 	goModPath := filepath.Join(s.tempDir, "go.mod")
-	directives := getModuleDirectives()
-
+	directives := listModuleDirectives()
 	mod := "module " + tempModule + "\n" + strings.Join(directives, "\n")
 	return ioutil.WriteFile(goModPath, []byte(mod), 0644)
 }
 
-func getModuleDirectives() (directives []string) {
-	modules, err := goListAll()
-	if err != nil {
-		return
-	}
-	for _, m := range modules {
-		if m.Main || m.Replace != nil {
-			directives = append(directives, "replace "+m.Path+" => "+strconv.Quote(m.Dir))
-		}
-	}
+func listModuleDirectives() []string {
+	var directives []string
 	for _, pp := range printerPkgs {
 		if pp.path == "fmt" {
 			continue
 		}
 		found := lookupGoModule(pp.path, pp.version)
-		for _, r := range pp.requires {
-			if found && !lookupGoModule(r.path, r.version) {
-				found = false
-				break
+		if found {
+			for _, r := range pp.requires {
+				if !lookupGoModule(r.path, r.version) {
+					found = false
+					break
+				}
 			}
 		}
 		if found {
@@ -54,7 +47,16 @@ func getModuleDirectives() (directives []string) {
 			break
 		}
 	}
-	return
+	modules, err := goListAll()
+	if err != nil {
+		return directives
+	}
+	for _, m := range modules {
+		if m.Main || m.Replace != nil {
+			directives = append(directives, "replace "+m.Path+" => "+strconv.Quote(m.Dir))
+		}
+	}
+	return directives
 }
 
 type goModule struct {
