@@ -62,6 +62,7 @@ func main() {
 `
 
 // printerPkgs is a list of packages that provides pretty printing function
+// when changing this, read listModuleDirectives carefully
 var printerPkgs = []struct {
 	path, version string
 	requires      []pathVersion

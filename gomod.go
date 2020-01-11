@@ -6,11 +6,14 @@ import (
 	"go/build"
 	"io"
 	"io/ioutil"
+	"net"
+	"net/url"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"strconv"
 	"strings"
+	"time"
 )
 
 func (s *Session) initGoMod() error {
@@ -23,10 +26,11 @@ func (s *Session) initGoMod() error {
 
 func listModuleDirectives() []string {
 	var directives []string
-	for _, pp := range printerPkgs {
+	for i, pp := range printerPkgs {
 		if pp.path == "fmt" {
 			continue
 		}
+		// Check local module caches.
 		found := lookupGoModule(pp.path, pp.version)
 		if found {
 			for _, r := range pp.requires {
@@ -36,7 +40,7 @@ func listModuleDirectives() []string {
 				}
 			}
 		}
-		if found {
+		if found || canAccessGoproxy() {
 			// Specifying the version of the printer package improves startup
 			// performance by skipping module version fetching. Also allows to
 			// use gore in offline environment.
@@ -44,8 +48,12 @@ func listModuleDirectives() []string {
 			for _, r := range pp.requires {
 				directives = append(directives, "require "+r.path+" "+r.version)
 			}
-			break
+		} else {
+			// If there is no module cache and no network connection, use fmt package.
+			printerPkgs = printerPkgs[i+1:]
 		}
+		// only the first printer is checked (assuming printerPkgs[1] is fmt)
+		break
 	}
 	modules, err := goListAll()
 	if err != nil {
@@ -89,4 +97,28 @@ func lookupGoModule(pkg, version string) bool {
 	modDir := filepath.Join(build.Default.GOPATH, "pkg/mod", pkg+"@"+version)
 	fi, err := os.Stat(modDir)
 	return err == nil && fi.IsDir()
+}
+
+func canAccessGoproxy() bool {
+	var host string
+	if url, err := url.Parse(getGoproxy()); err != nil {
+		host = "proxy.golang.org"
+	} else {
+		host = url.Hostname()
+	}
+	addr := net.JoinHostPort(host, "80")
+	dialer := net.Dialer{Timeout: 5 * time.Second}
+	conn, err := dialer.Dial("tcp", addr)
+	if err != nil {
+		return false
+	}
+	defer conn.Close()
+	return true
+}
+
+func getGoproxy() string {
+	if goproxy := os.Getenv("GOPROXY"); goproxy != "" {
+		return goproxy
+	}
+	return "https://proxy.golang.org/"
 }
