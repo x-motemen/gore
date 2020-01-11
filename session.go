@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"go/ast"
 	"go/build"
-	"go/importer"
 	"go/parser"
 	"go/printer"
 	"go/scanner"
@@ -21,6 +20,7 @@ import (
 	"syscall"
 	"unicode"
 
+	"golang.org/x/tools/go/packages"
 	"golang.org/x/tools/imports"
 
 	"github.com/motemen/go-quickfix"
@@ -51,8 +51,8 @@ package main
 
 import %q
 
-func ` + printerName + `(xx ...interface{}) {
-	for _, x := range xx {
+func ` + printerName + `(xs ...interface{}) {
+	for _, x := range xs {
 		%s
 	}
 }
@@ -61,15 +61,20 @@ func main() {
 }
 `
 
-// printerPkgs is a list of packages that provides
-// pretty printing function. Preceding first.
+// printerPkgs is a list of packages that provides pretty printing function
+// when changing this, read listModuleDirectives carefully
 var printerPkgs = []struct {
-	path string
-	code string
+	path, version string
+	requires      []pathVersion
+	code          string
 }{
-	{"github.com/k0kubun/pp", `pp.Println(x)`},
-	{"github.com/davecgh/go-spew/spew", `spew.Printf("%#v\n", x)`},
-	{"fmt", `fmt.Printf("%#v\n", x)`},
+	{path: "github.com/k0kubun/pp", version: "v3.0.1+incompatible", code: `pp.Println(x)`,
+		requires: []pathVersion{{"github.com/mattn/go-colorable", "v0.1.4"}}},
+	{path: "fmt", code: `fmt.Printf("%#v\n", x)`},
+}
+
+type pathVersion struct {
+	path, version string
 }
 
 // NewSession creates a new Session.
@@ -91,16 +96,38 @@ func NewSession(stdout, stderr io.Writer) (*Session, error) {
 	return s, nil
 }
 
+type pkgsImporter struct {
+	dir string
+}
+
+func (i *pkgsImporter) Import(path string) (*types.Package, error) {
+	pkgs, err := packages.Load(&packages.Config{
+		Mode: packages.NeedTypes | packages.NeedDeps,
+		Dir:  i.dir,
+	}, path)
+	if err != nil {
+		return nil, err
+	}
+
+	if len(pkgs) == 0 {
+		return nil, fmt.Errorf("path %s not found", path)
+	}
+
+	return pkgs[0].Types, nil
+}
+
 func (s *Session) init() (err error) {
 	s.fset = token.NewFileSet()
-	s.types = &types.Config{Importer: importer.Default()}
+	s.types = &types.Config{Importer: &pkgsImporter{dir: s.tempDir}}
 	s.typeInfo = types.Info{}
 	s.extraFilePaths = nil
 	s.extraFiles = nil
 
+	s.initGoMod() // this should be before printer load for printer package requirements
+
 	var initialSource string
 	for _, pp := range printerPkgs {
-		_, err := s.types.Importer.Import(pp.path)
+		_, err = packages.Load(&packages.Config{Dir: s.tempDir}, pp.path)
 		if err == nil {
 			initialSource = fmt.Sprintf(initialSourceTemplate, pp.path, pp.code)
 			break
@@ -109,7 +136,7 @@ func (s *Session) init() (err error) {
 	}
 
 	if initialSource == "" {
-		return fmt.Errorf(`Could not load pretty printing package (even "fmt"; something is wrong)`)
+		return fmt.Errorf("could not load 'fmt' package: %w", err)
 	}
 
 	s.file, err = parser.ParseFile(s.fset, "gore_session.go", initialSource, parser.Mode(0))

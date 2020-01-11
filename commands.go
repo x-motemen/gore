@@ -18,6 +18,7 @@ import (
 	"go/types"
 
 	"golang.org/x/tools/go/ast/astutil"
+	"golang.org/x/tools/go/packages"
 )
 
 type command struct {
@@ -104,7 +105,8 @@ func actionImport(s *Session, arg string) error {
 	path := strings.Trim(arg, `"`)
 
 	// check if the package specified by path is importable
-	_, err := s.types.Importer.Import(path)
+	_, err := packages.Load(&packages.Config{Dir: s.tempDir}, path)
+	// the importer cannot check go mod package, skip
 	if err != nil {
 		return err
 	}
@@ -123,6 +125,59 @@ func completeImport(s *Session, prefix string) []string {
 	p := strings.LastIndexFunc(prefix, unicode.IsSpace) + 1
 
 	d, fn := path.Split(prefix[p:])
+
+	// complete candidates from the current module
+	if modules, err := goListAll(); err == nil {
+		for _, m := range modules {
+
+			matchPath := func(fn string) bool {
+				if len(fn) < 2 {
+					return false
+				}
+				for _, s := range strings.Split(m.Path, "/") {
+					if strings.HasPrefix(s, fn) || strings.HasPrefix(strings.TrimPrefix(s, "go-"), fn) {
+						return true
+					}
+				}
+				return false
+			}
+			if strings.HasPrefix(m.Path, prefix[p:]) || d == "" && matchPath(fn) {
+				result = append(result, prefix[:p]+m.Path)
+				seen[m.Path] = true
+				continue
+			}
+
+			if strings.HasPrefix(d, m.Path) {
+				dir := filepath.Join(m.Dir, strings.Replace(d, m.Path, "", 1))
+				if fi, err := os.Stat(dir); err != nil || !fi.IsDir() {
+					continue
+				}
+				entries, err := ioutil.ReadDir(dir)
+				if err != nil {
+					continue
+				}
+				for _, fi := range entries {
+					if !fi.IsDir() {
+						continue
+					}
+					name := fi.Name()
+					if skipCompleteDir(name) {
+						continue
+					}
+					if strings.HasPrefix(name, fn) {
+						r := path.Join(d, name)
+						if !seen[r] {
+							result = append(result, prefix[:p]+r)
+							seen[r] = true
+						}
+					}
+				}
+			}
+
+		}
+	}
+
+	// complete candidates from GOPATH/src/
 	for _, srcDir := range build.Default.SrcDirs() {
 		dir := filepath.Join(srcDir, d)
 
@@ -144,7 +199,7 @@ func completeImport(s *Session, prefix string) []string {
 			}
 
 			name := fi.Name()
-			if strings.HasPrefix(name, ".") || strings.HasPrefix(name, "_") || name == "testdata" {
+			if skipCompleteDir(name) {
 				continue
 			}
 
@@ -176,6 +231,10 @@ func completeImport(s *Session, prefix string) []string {
 	}
 
 	return result
+}
+
+func skipCompleteDir(dir string) bool {
+	return strings.HasPrefix(dir, ".") || strings.HasPrefix(dir, "_") || dir == "testdata"
 }
 
 func completeDoc(s *Session, prefix string) []string {
