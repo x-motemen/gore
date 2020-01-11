@@ -101,6 +101,13 @@ func TestAction_Import(t *testing.T) {
 	assert.Contains(t, stdout.String(), "(func(...interface {}) (int, error))")
 	assert.Contains(t, stdout.String(), "json.Encoder")
 	assert.Equal(t, "", stderr.String())
+
+	err = s.Eval(":import invalid")
+	require.Error(t, err)
+
+	err = s.Eval("fmt.Sprint")
+	require.NoError(t, err)
+	assert.Equal(t, "import: could not import \"invalid\"\n", stderr.String())
 }
 
 func TestAction_Clear(t *testing.T) {
