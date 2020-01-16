@@ -12,15 +12,13 @@ jobs:
       uses: actions/setup-go@v1
       with:
         go-version: 1.x
+    - name: Add $GOPATH/bin to $PATH
+      run: echo "::add-path::$(go env GOPATH)/bin"
     - name: Install gocode
       run: go get github.com/mdempsky/gocode
     - name: Build
       run: make build
     - name: Test
-      run: |
-        export PATH=$PATH:$(go env GOPATH)/bin
-        make test
+      run: make test
     - name: Lint
-      run: |
-        export PATH=$PATH:$(go env GOPATH)/bin
-        make lint
+      run: make lint
