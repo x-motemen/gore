@@ -1,4 +1,4 @@
-# gore [![Travis Build Status](https://travis-ci.org/motemen/gore.svg?branch=master)](https://travis-ci.org/motemen/gore)
+# gore [![CI Status](https://github.com/motemen/gore/workflows/CI/badge.svg)](https://github.com/motemen/gore/actions)
 ### Yet another Go REPL that works nicely. Featured with line editing, code completion, and more.
 
 ![Screencast](doc/screencast.gif)
