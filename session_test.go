@@ -311,11 +311,11 @@ func TestSessionEval_Func(t *testing.T) {
 	codes := []string{
 		`func f() int { return 100 }`,
 		`func g() string { return "hello, world" }`,
-		`func h() int { return "foo" }`,
+		`func h() int { s := ""; return s }`,
 		`f() + len(g())`,
 		`func f() int { return 200 }`,
 		`f() * len(g())`,
-		`func f() string { return 100 }`,
+		`func f() string { i := 100; return i }`,
 		`f() | len(g())`,
 	}
 
@@ -324,10 +324,10 @@ func TestSessionEval_Func(t *testing.T) {
 	}
 
 	assert.Equal(t, "112\n2400\n204\n", stdout.String())
-	assert.Equal(t, `cannot use "foo" (type string) as type int in return argument
+	assert.Equal(t, `cannot use s (type string) as type int in return argument
 invalid operation: f() + len(g()) (mismatched types string and int)
 invalid operation: f() * len(g()) (mismatched types string and int)
-cannot use 100 (type int) as type string in return argument
+cannot use i (type int) as type string in return argument
 `, stderr.String())
 }
 
