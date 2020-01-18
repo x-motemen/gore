@@ -120,7 +120,7 @@ func actionImport(s *Session, arg string) error {
 	if !found {
 		astutil.AddNamedImport(s.fset, s.file, "_", path)
 		_, err = s.types.Check("_tmp", s.fset, []*ast.File{s.file}, nil)
-		if err != nil {
+		if err != nil && strings.Contains(err.Error(), "could not import "+path) {
 			astutil.DeleteNamedImport(s.fset, s.file, "_", path)
 			return fmt.Errorf("could not import %q", path)
 		}
