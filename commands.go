@@ -106,12 +106,25 @@ func actionImport(s *Session, arg string) error {
 
 	// check if the package specified by path is importable
 	_, err := packages.Load(&packages.Config{Dir: s.tempDir}, path)
-	// the importer cannot check go mod package, skip
 	if err != nil {
 		return err
 	}
 
-	astutil.AddImport(s.fset, s.file, path)
+	var found bool
+	for _, i := range s.file.Imports {
+		if strings.Trim(i.Path.Value, `"`) == path {
+			found = true
+			break
+		}
+	}
+	if !found {
+		astutil.AddNamedImport(s.fset, s.file, "_", path)
+		_, err = s.types.Check("_tmp", s.fset, []*ast.File{s.file}, nil)
+		if err != nil && strings.Contains(err.Error(), "could not import "+path) {
+			astutil.DeleteNamedImport(s.fset, s.file, "_", path)
+			return fmt.Errorf("could not import %q", path)
+		}
+	}
 
 	return nil
 }
