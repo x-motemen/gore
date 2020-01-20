@@ -58,10 +58,16 @@ go get -u github.com/mdempsky/gocode   # for code completion
 
 ## FAQ/Caveats
 
-- If you see `too many arguments in call to mainScope.LookupParent`
-  while installing gore, run `go get -u golang.org/x/tools/go/types`.
-- gore runs code using `go run` for each input. If you have entered
-  time-consuming code, gore will run it for each input and take some time.
+- gore runs code using `go run` for each input. All the inputted lines are
+  evaluated again and again so you can't bind the evaluated time by
+  `time.Now()`, for example. If you don't like this behavior, you may want to use
+  [yaegi](https://github.com/containous/yaegi).
+- gore support Go modules. You can load local modules when you start gore at
+  the project directory. You don't need to `go get` to check the usage of a
+  remote repository, `:import github.com/...` will automatically download that
+  module. Also, you don't need to `go get` the pretty print module anymore. If
+  you want to load a local code from `$GOPATH`, you need to create the modules
+  file (`go mod init ...`) and then start gore at the project directory.
 
 ## License
 
