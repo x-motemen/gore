@@ -529,15 +529,12 @@ func (s *Session) importPackages(src []byte) error {
 
 // importFile adds external golang file to goRun target to use its function
 func (s *Session) importFile(src []byte) error {
-	// Don't need to same directory
-	tmp, err := ioutil.TempFile(s.tempDir, "gore_extarnal_")
+	tmp, err := ioutil.TempFile(s.tempDir, "gore_external_*.go")
 	if err != nil {
 		return err
 	}
 
-	ext := tmp.Name() + ".go"
-
-	f, err := parser.ParseFile(s.fset, ext, src, parser.Mode(0))
+	f, err := parser.ParseFile(s.fset, tmp.Name(), src, parser.Mode(0))
 	if err != nil {
 		return err
 	}
@@ -558,7 +555,7 @@ func (s *Session) importFile(src []byte) error {
 		}
 	}
 
-	out, err := os.Create(ext)
+	out, err := os.Create(tmp.Name())
 	if err != nil {
 		return err
 	}
@@ -569,8 +566,8 @@ func (s *Session) importFile(src []byte) error {
 		return err
 	}
 
-	debugf("import file: %s", ext)
-	s.extraFilePaths = append(s.extraFilePaths, ext)
+	debugf("import file: %s", tmp.Name())
+	s.extraFilePaths = append(s.extraFilePaths, tmp.Name())
 	s.extraFiles = append(s.extraFiles, f)
 
 	return nil
