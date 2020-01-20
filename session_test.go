@@ -2,6 +2,8 @@ package gore
 
 import (
 	"bytes"
+	"io/ioutil"
+	"os"
 	"regexp"
 	"testing"
 
@@ -383,4 +385,35 @@ func TestSessionEval_CompileError(t *testing.T) {
 invalid argument f() (type int) for len
 invalid operation: f() + g() (mismatched types int and string)
 `, stderr.String())
+}
+
+func TestSession_ExtraFiles(t *testing.T) {
+	stdout, stderr := new(bytes.Buffer), new(bytes.Buffer)
+	tempDir, _ := ioutil.TempDir("", "gore-")
+	defer chdir(tempDir)()
+	defer os.RemoveAll(tempDir)
+	require.NoError(t, ioutil.WriteFile("test.go", []byte(`package test
+
+// V is a value
+var V = 42
+`), 0644))
+	s, err := NewSession(stdout, stderr)
+	defer s.Clear()
+	require.NoError(t, err)
+
+	s.includeFiles([]string{"test.go"})
+	codes := []string{
+		`V`,
+		`:type V`,
+		`:doc V`,
+	}
+
+	for _, code := range codes {
+		_ = s.Eval(code)
+	}
+
+	assert.Contains(t, stdout.String(), `42
+int
+package builtin`)
+	assert.Equal(t, ``, stderr.String())
 }

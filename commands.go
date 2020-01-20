@@ -119,7 +119,7 @@ func actionImport(s *Session, arg string) error {
 	}
 	if !found {
 		astutil.AddNamedImport(s.fset, s.file, "_", path)
-		_, err = s.types.Check("_tmp", s.fset, []*ast.File{s.file}, nil)
+		_, err = s.types.Check("_tmp", s.fset, append(s.extraFiles, s.file), nil)
 		if err != nil && strings.Contains(err.Error(), "could not import "+path) {
 			astutil.DeleteNamedImport(s.fset, s.file, "_", path)
 			return fmt.Errorf("could not import %q", path)
@@ -297,7 +297,7 @@ func actionType(s *Session, in string) error {
 		Defs:   make(map[*ast.Ident]types.Object),
 		Scopes: make(map[ast.Node]*types.Scope),
 	}
-	_, err = s.types.Check("_tmp", s.fset, []*ast.File{s.file}, &s.typeInfo)
+	_, err = s.types.Check("_tmp", s.fset, append(s.extraFiles, s.file), &s.typeInfo)
 	if err != nil {
 		debugf("typecheck error (ignored): %s", err)
 	}
@@ -358,7 +358,7 @@ func actionDoc(s *Session, in string) error {
 		Defs:   make(map[*ast.Ident]types.Object),
 		Scopes: make(map[ast.Node]*types.Scope),
 	}
-	_, err = s.types.Check("_tmp", s.fset, []*ast.File{s.file}, &s.typeInfo)
+	_, err = s.types.Check("_tmp", s.fset, append(s.extraFiles, s.file), &s.typeInfo)
 	if err != nil {
 		debugf("typecheck error (ignored): %s", err)
 	}
