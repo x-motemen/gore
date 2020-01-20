@@ -109,9 +109,9 @@ func (cl *contLiner) countDepth() int {
 	depth := 0
 	for {
 		switch sc.Scan() {
-		case '{':
+		case '{', '(':
 			depth++
-		case '}':
+		case '}', ')':
 			depth--
 		case scanner.EOF:
 			return depth
