@@ -58,8 +58,6 @@ go get -u github.com/mdempsky/gocode   # for code completion
 
 ## FAQ/Caveats
 
-- If you see `too many arguments in call to mainScope.LookupParent`
-  while installing gore, run `go get -u golang.org/x/tools/go/types`.
 - gore runs code using `go run` for each input. If you have entered
   time-consuming code, gore will run it for each input and take some time.
 
