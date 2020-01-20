@@ -58,8 +58,10 @@ go get -u github.com/mdempsky/gocode   # for code completion
 
 ## FAQ/Caveats
 
-- gore runs code using `go run` for each input. If you have entered
-  time-consuming code, gore will run it for each input and take some time.
+- gore runs code using `go run` for each input. All the inputted lines are
+  evaluated again and again so you can't bind the evaluated time by
+  `time.Now()`, for example. If you don't like this behavior, you may want to use
+  [yaegi](https://github.com/containous/yaegi).
 
 ## License
 
