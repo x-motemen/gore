@@ -62,6 +62,12 @@ go get -u github.com/mdempsky/gocode   # for code completion
   evaluated again and again so you can't bind the evaluated time by
   `time.Now()`, for example. If you don't like this behavior, you may want to use
   [yaegi](https://github.com/containous/yaegi).
+- gore support Go modules. You can load local modules when you start gore at
+  the project directory. You don't need to `go get` to check the usage of a
+  remote repository, `:import github.com/...` will automatically download that
+  module. Also, you don't need to `go get` the pretty print module anymore. If
+  you want to load a local code from `$GOPATH`, you need to create the modules
+  file (`go mod init ...`) and then start gore at the project directory.
 
 ## License
 
