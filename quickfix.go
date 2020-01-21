@@ -24,12 +24,9 @@ quickFixAttempt:
 			Types: make(map[ast.Expr]types.TypeAndValue),
 		}
 
-		files := s.extraFiles
-		files = append(files, s.file)
-
 		config := quickfix.Config{
 			Fset:     s.fset,
-			Files:    files,
+			Files:    append(s.extraFiles, s.file),
 			TypeInfo: &s.typeInfo,
 			Dir:      s.tempDir,
 		}
