@@ -21,7 +21,7 @@ show-version: $(GOBIN)/gobump
 	@gobump show -r $(VERSION_PATH)
 
 $(GOBIN)/gobump:
-	@cd && go get github.com/motemen/gobump/cmd/gobump
+	@cd && go get github.com/x-motemen/gobump/cmd/gobump
 
 .PHONY: test
 test: build
