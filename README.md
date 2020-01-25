@@ -41,7 +41,7 @@ Some functionalities are provided as commands in the REPL:
 ```
 
 ## Supported Versions
-go1.12 or later.
+Only the latest major version.
 
 ## Installation
 The gore command requires Go tool-chains on runtime, so standalone binary is not distributed.
