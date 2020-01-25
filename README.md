@@ -40,8 +40,10 @@ Some functionalities are provided as commands in the REPL:
 :quit                   Quit the session
 ```
 
-## Installation
+## Supported Versions
+go1.12 or later.
 
+## Installation
 The gore command requires Go tool-chains on runtime, so standalone binary is not distributed.
 
 ```sh
