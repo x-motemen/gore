@@ -58,6 +58,15 @@ Also recommended:
 go get -u github.com/mdempsky/gocode   # for code completion
 ```
 
+Or you can use Docker:
+
+```sh
+git clone https://github.com/motemen/gore.git
+cd gore
+docker build -t gore .
+docker run -it --rm gore
+```
+
 ## FAQ/Caveats
 
 - gore runs code using `go run` for each input. All the inputted lines are
