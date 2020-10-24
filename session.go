@@ -102,8 +102,9 @@ type pkgsImporter struct {
 
 func (i *pkgsImporter) Import(path string) (*types.Package, error) {
 	pkgs, err := packages.Load(&packages.Config{
-		Mode: packages.NeedTypes | packages.NeedDeps,
-		Dir:  i.dir,
+		Mode:       packages.NeedTypes | packages.NeedDeps,
+		Dir:        i.dir,
+		BuildFlags: []string{"-mod=mod"},
 	}, path)
 	if err != nil {
 		return nil, err
@@ -127,7 +128,13 @@ func (s *Session) init() (err error) {
 
 	var initialSource string
 	for _, pp := range printerPkgs {
-		_, err = packages.Load(&packages.Config{Dir: s.tempDir}, pp.path)
+		_, err = packages.Load(
+			&packages.Config{
+				Dir:        s.tempDir,
+				BuildFlags: []string{"-mod=mod"},
+			},
+			pp.path,
+		)
 		if err == nil {
 			initialSource = fmt.Sprintf(initialSourceTemplate, pp.path, pp.code)
 			break

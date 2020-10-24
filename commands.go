@@ -105,7 +105,13 @@ func actionImport(s *Session, arg string) error {
 	path := strings.Trim(arg, `"`)
 
 	// check if the package specified by path is importable
-	_, err := packages.Load(&packages.Config{Dir: s.tempDir}, path)
+	_, err := packages.Load(
+		&packages.Config{
+			Dir:        s.tempDir,
+			BuildFlags: []string{"-mod=mod"},
+		},
+		path,
+	)
 	if err != nil {
 		return err
 	}
