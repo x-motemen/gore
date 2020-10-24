@@ -28,20 +28,21 @@ import (
 
 // Session ...
 type Session struct {
-	tempDir        string
-	tempFilePath   string
-	file           *ast.File
-	fset           *token.FileSet
-	types          *types.Config
-	typeInfo       types.Info
-	extraFilePaths []string
-	extraFiles     []*ast.File
-	autoImport     bool
-	mainBody       *ast.BlockStmt
-	lastStmts      []ast.Stmt
-	lastDecls      []ast.Decl
-	stdout         io.Writer
-	stderr         io.Writer
+	tempDir         string
+	tempFilePath    string
+	file            *ast.File
+	fset            *token.FileSet
+	types           *types.Config
+	typeInfo        types.Info
+	extraFilePaths  []string
+	extraFiles      []*ast.File
+	autoImport      bool
+	requiredModules []string
+	mainBody        *ast.BlockStmt
+	lastStmts       []ast.Stmt
+	lastDecls       []ast.Decl
+	stdout          io.Writer
+	stderr          io.Writer
 }
 
 const printerName = "__gore_p"
@@ -582,6 +583,15 @@ func (s *Session) importFile(src []byte) error {
 
 // fixImports formats and adjusts imports for the current AST.
 func (s *Session) fixImports() error {
+	// Fix against error: no required module provides package ...; try 'go get -d ...'
+	for _, path := range s.requiredModules {
+		cmd := exec.Command("go", "get", "-d", path)
+		cmd.Dir = s.tempDir
+		if err := cmd.Run(); err != nil {
+			debugf("failed to go get -d %q: %s", path, err)
+		}
+	}
+	s.requiredModules = nil
 
 	var buf bytes.Buffer
 	err := printer.Fprint(&buf, s.fset, s.file)

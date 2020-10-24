@@ -203,11 +203,3 @@ func TestSessionEval_Gomod_CompleteImport(t *testing.T) {
 	assert.Subset(t, cands, []string{"mod2/mod3", "mod2/mod4"})
 	assert.Equal(t, post, "")
 }
-
-func TestGetCurrentModule(t *testing.T) {
-	directives := listModuleDirectives()
-	pwd, _ := os.Getwd()
-	assert.Equal(t, []string{
-		"replace github.com/motemen/gore => " + strconv.Quote(pwd),
-	}, directives)
-}
