@@ -19,12 +19,12 @@ import (
 func (s *Session) initGoMod() error {
 	tempModule := filepath.Base(s.tempDir)
 	goModPath := filepath.Join(s.tempDir, "go.mod")
-	directives := listModuleDirectives()
+	directives := s.listModuleDirectives()
 	mod := "module " + tempModule + "\n" + strings.Join(directives, "\n")
 	return ioutil.WriteFile(goModPath, []byte(mod), 0644)
 }
 
-func listModuleDirectives() []string {
+func (s *Session) listModuleDirectives() []string {
 	var directives []string
 	for i, pp := range printerPkgs {
 		if pp.path == "fmt" {
@@ -62,6 +62,7 @@ func listModuleDirectives() []string {
 	for _, m := range modules {
 		if m.Main || m.Replace != nil {
 			directives = append(directives, "replace "+m.Path+" => "+strconv.Quote(m.Dir))
+			s.requiredModules = append(s.requiredModules, m.Path)
 		}
 	}
 	return directives
