@@ -9,7 +9,7 @@ import (
 )
 
 // Version of gore.
-const Version = "0.5.0"
+const Version = "0.5.1"
 
 // Gore ...
 type Gore struct {
