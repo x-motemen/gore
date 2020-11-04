@@ -47,6 +47,7 @@ Only the latest major version.
 The gore command requires Go tool-chains on runtime, so standalone binary is not distributed.
 
 ```sh
+export GO111MODULE=on
 go get github.com/motemen/gore/cmd/gore
 ```
 
