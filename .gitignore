@@ -1,1 +1,4 @@
 /gore
+*.exe
+*.test
+*.out
