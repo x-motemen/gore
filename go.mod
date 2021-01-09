@@ -1,6 +1,6 @@
 module github.com/motemen/gore
 
-go 1.13
+go 1.15
 
 require (
 	github.com/mattn/go-runewidth v0.0.8 // indirect
