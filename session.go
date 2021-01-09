@@ -556,7 +556,7 @@ func (s *Session) importFile(src []byte) error {
 			if isNamedIdent(funcDecl.Name, "main") {
 				f.Decls = append(f.Decls[0:i], f.Decls[i+1:]...)
 				// main() removed from this file, we may have to
-				// remove some unsed import's
+				// remove some unused import's
 				quickfix.QuickFix(s.fset, []*ast.File{f})
 				break
 			}
