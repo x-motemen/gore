@@ -69,8 +69,8 @@ var printerPkgs = []struct {
 	requires      []pathVersion
 	code          string
 }{
-	{path: "github.com/k0kubun/pp", version: "v3.0.1+incompatible", code: `pp.Println(x)`,
-		requires: []pathVersion{{"github.com/mattn/go-colorable", "v0.1.4"}}},
+	{path: "github.com/k0kubun/pp/v3", version: "v3.0.7", code: `pp.Println(x)`,
+		requires: []pathVersion{{"github.com/mattn/go-colorable", "v0.1.7"}}},
 	{path: "fmt", code: `fmt.Printf("%#v\n", x)`},
 }
 
@@ -556,7 +556,7 @@ func (s *Session) importFile(src []byte) error {
 			if isNamedIdent(funcDecl.Name, "main") {
 				f.Decls = append(f.Decls[0:i], f.Decls[i+1:]...)
 				// main() removed from this file, we may have to
-				// remove some unsed import's
+				// remove some unused import's
 				quickfix.QuickFix(s.fset, []*ast.File{f})
 				break
 			}

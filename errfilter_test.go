@@ -38,8 +38,8 @@ func TestErrFilter(t *testing.T) {
 		},
 		{
 			"no module dependencies warning",
-			"warning: pattern \"all\" matched no module dependencies\nwarning: pattern \"all\" matched no module dependencie",
-			"warning: pattern \"all\" matched no module dependencie",
+			"warning: pattern \"all\" matched no module dependencies\nwarning: pattern \"all\" matched no module depend",
+			"warning: pattern \"all\" matched no module depend",
 		},
 	}
 	for _, tc := range testCases {
