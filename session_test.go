@@ -150,7 +150,7 @@ func TestSession_IncludePackage(t *testing.T) {
 	defer s.Clear()
 	require.NoError(t, err)
 
-	err = s.includePackage("github.com/motemen/gore/gocode")
+	err = s.includePackage("github.com/confetti-framework/baker/gocode")
 	require.NoError(t, err)
 
 	err = s.Eval("Completer{}")

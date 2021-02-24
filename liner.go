@@ -11,9 +11,9 @@ import (
 )
 
 const (
-	promptDefault  = "gore> "
-	promptContinue = "..... "
-	indent         = "    "
+	promptDefault  = " > "
+	promptContinue = ".. "
+	indent         = "  "
 )
 
 type contLiner struct {

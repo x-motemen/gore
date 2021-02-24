@@ -5,7 +5,7 @@ import (
 	"strings"
 	"unicode"
 
-	"github.com/motemen/gore/gocode"
+	"github.com/confetti-framework/baker/gocode"
 )
 
 func (s *Session) completeWord(line string, pos int) (string, []string, string) {

@@ -3,7 +3,7 @@ package main
 import (
 	"os"
 
-	"github.com/motemen/gore/cli"
+	"github.com/confetti-framework/baker/cli"
 )
 
 func main() {

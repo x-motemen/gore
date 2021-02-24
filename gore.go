@@ -8,9 +8,6 @@ import (
 	"strings"
 )
 
-// Version of gore.
-const Version = "0.5.2"
-
 // Gore ...
 type Gore struct {
 	autoImport           bool
@@ -37,7 +34,7 @@ func (g *Gore) Run() error {
 	}
 	s.autoImport = g.autoImport
 
-	fmt.Fprintf(g.errWriter, "gore version %s  :help for help\n", Version)
+	fmt.Fprintf(g.errWriter, "Baker  :help for help\n")
 
 	if g.extFiles != "" {
 		extFiles := strings.Split(g.extFiles, ",")
@@ -51,6 +48,7 @@ func (g *Gore) Run() error {
 			os.Exit(1)
 		}
 	}
+
 
 	rl := newContLiner()
 	defer rl.Close()
