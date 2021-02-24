@@ -2,3 +2,4 @@
 *.exe
 *.test
 *.out
+.idea

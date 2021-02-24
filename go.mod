@@ -1,4 +1,4 @@
-module github.com/motemen/gore
+module github.com/confetti-framework/baker
 
 go 1.15
 
