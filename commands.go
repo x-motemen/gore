@@ -460,6 +460,12 @@ func actionDoc(s *Session, in string) error {
 
 func actionHelp(s *Session, _ string) error {
 	w := tabwriter.NewWriter(s.stdout, 0, 8, 4, ' ', 0)
+	w.Write([]byte("\nPackages are automatically imported.\n"))
+	w.Write([]byte("\nVariables:\n"))
+	w.Write([]byte("    app\tinter.App\n"))
+
+	w.Write([]byte("\n"))
+	w.Write([]byte("Commands:\n"))
 	for _, command := range commands {
 		cmd := fmt.Sprintf(":%s", command.name)
 		if command.arg != "" {

@@ -51,6 +51,8 @@ const initialSourceTemplate = `
 package main
 
 import %q
+import "confetti-framework/bootstrap"
+import "fmt"
 
 func ` + printerName + `(xs ...interface{}) {
 	for _, x := range xs {
@@ -59,6 +61,10 @@ func ` + printerName + `(xs ...interface{}) {
 }
 
 func main() {
+	app := bootstrap.NewAppFromBoot()
+	if app == nil {
+		fmt.Println("App not loaded")
+	}
 }
 `
 
