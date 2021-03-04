@@ -51,7 +51,7 @@ const initialSourceTemplate = `
 package main
 
 import %q
-import "confetti-framework/bootstrap"
+import "src/bootstrap"
 import "fmt"
 
 func ` + printerName + `(xs ...interface{}) {
