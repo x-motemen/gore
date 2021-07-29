@@ -87,11 +87,9 @@ func TestSession_completeWord(t *testing.T) {
 	}, cands)
 	assert.Equal(t, post, "")
 
-	pre, cands, post = s.completeWord(":i mot", 6)
+	pre, cands, post = s.completeWord(":i x-", 5)
 	assert.Equal(t, ":i ", pre)
-	assert.Equal(t, []string{
-		"github.com/x-motemen/gore", "github.com/motemen/go-quickfix",
-	}, cands)
+	assert.Equal(t, []string{"github.com/x-motemen/gore"}, cands)
 	assert.Equal(t, post, "")
 
 	pre, cands, post = s.completeWord(":c", 2)
