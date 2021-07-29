@@ -396,7 +396,7 @@ func TestSession_ExtraFiles(t *testing.T) {
 
 // V is a value
 var V = 42
-`), 0644))
+`), 0o644))
 	s, err := NewSession(stdout, stderr)
 	defer s.Clear()
 	require.NoError(t, err)

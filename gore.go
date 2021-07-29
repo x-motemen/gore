@@ -113,7 +113,7 @@ func (g *Gore) Run() error {
 	}
 
 	if historyFile != "" {
-		err := os.MkdirAll(filepath.Dir(historyFile), 0755)
+		err := os.MkdirAll(filepath.Dir(historyFile), 0o755)
 		if err != nil {
 			errorf("%s", err)
 		} else {

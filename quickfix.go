@@ -1,11 +1,10 @@
 package gore
 
 import (
-	"strings"
-
 	"go/ast"
 	"go/token"
 	"go/types"
+	"strings"
 
 	"golang.org/x/tools/go/ast/astutil"
 

@@ -21,7 +21,7 @@ func (s *Session) initGoMod() error {
 	goModPath := filepath.Join(s.tempDir, "go.mod")
 	directives := s.listModuleDirectives()
 	mod := "module " + tempModule + "\n" + strings.Join(directives, "\n")
-	return ioutil.WriteFile(goModPath, []byte(mod), 0644)
+	return ioutil.WriteFile(goModPath, []byte(mod), 0o644)
 }
 
 func (s *Session) listModuleDirectives() []string {

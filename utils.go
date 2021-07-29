@@ -2,7 +2,6 @@ package gore
 
 import (
 	"bytes"
-
 	"go/printer"
 	"go/token"
 )

@@ -3,7 +3,6 @@ package gore
 import (
 	"go/parser"
 	"go/token"
-
 	"testing"
 
 	"github.com/stretchr/testify/require"
