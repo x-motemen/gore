@@ -5,8 +5,10 @@ import (
 	"unsafe"
 )
 
-type short int16
-type word uint16
+type (
+	short int16
+	word  uint16
+)
 
 type coord struct {
 	x short

@@ -1,10 +1,9 @@
 package gore
 
 import (
-	"reflect"
-
 	"go/ast"
 	"go/token"
+	"reflect"
 )
 
 // normalizeNodePos resets all position information of node and its descendants.

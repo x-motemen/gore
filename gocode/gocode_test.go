@@ -2,7 +2,6 @@ package gocode
 
 import (
 	"strings"
-
 	"testing"
 )
 

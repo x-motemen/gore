@@ -23,22 +23,22 @@ func gomodSetup(t *testing.T) func() {
 	tempDir, err := ioutil.TempDir("", "gore-")
 	require.NoError(t, err)
 	mod1Dir := filepath.Join(tempDir, "mod1")
-	require.NoError(t, os.Mkdir(mod1Dir, 0700))
+	require.NoError(t, os.Mkdir(mod1Dir, 0o700))
 	require.NoError(t, ioutil.WriteFile(filepath.Join(mod1Dir, "go.mod"), []byte(`module mod1
-`), 0600))
+`), 0o600))
 	require.NoError(t, ioutil.WriteFile(filepath.Join(mod1Dir, "mod1.go"), []byte(`package mod1
 
 const Value = 10
-`), 0600))
+`), 0o600))
 
 	mod2Dir := filepath.Join(tempDir, "mod2")
-	require.NoError(t, os.Mkdir(mod2Dir, 0700))
+	require.NoError(t, os.Mkdir(mod2Dir, 0o700))
 	require.NoError(t, ioutil.WriteFile(filepath.Join(mod2Dir, "go.mod"), []byte(fmt.Sprintf(`module mod2
 
 replace mod1 => %s
 
 require mod1 v0.0.0-00010101000000-000000000000
-`, strconv.Quote(mod1Dir))), 0600))
+`, strconv.Quote(mod1Dir))), 0o600))
 	require.NoError(t, ioutil.WriteFile(filepath.Join(mod2Dir, "mod2.go"), []byte(`package mod2
 
 import "mod1"
@@ -46,19 +46,19 @@ import "mod1"
 func Foo() int {
 	return mod1.Value
 }
-`), 0600))
+`), 0o600))
 
 	mod3Dir := filepath.Join(mod2Dir, "mod3")
-	require.NoError(t, os.Mkdir(mod3Dir, 0700))
+	require.NoError(t, os.Mkdir(mod3Dir, 0o700))
 	require.NoError(t, ioutil.WriteFile(filepath.Join(mod3Dir, "mod3.go"), []byte(`package mod3
 
 func Bar() string {
 	return "mod3"
 }
-`), 0600))
+`), 0o600))
 
 	mod4Dir := filepath.Join(mod2Dir, "mod4")
-	require.NoError(t, os.Mkdir(mod4Dir, 0700))
+	require.NoError(t, os.Mkdir(mod4Dir, 0o700))
 
 	restore := chdir(mod2Dir)
 	return func() {
@@ -134,7 +134,7 @@ func() string
 func TestSessionEval_Gomod_DeepDir(t *testing.T) {
 	stdout, stderr := new(bytes.Buffer), new(bytes.Buffer)
 	defer gomodSetup(t)()
-	require.NoError(t, os.Mkdir("tmp", 0700))
+	require.NoError(t, os.Mkdir("tmp", 0o700))
 	require.NoError(t, os.Chdir("tmp"))
 	s, err := NewSession(stdout, stderr)
 	defer s.Clear()
