@@ -47,7 +47,7 @@ Only the latest major version.
 The gore command requires Go tool-chains on runtime, so standalone binary is not distributed.
 
 ```sh
-go get github.com/x-motemen/gore/cmd/gore
+go install github.com/x-motemen/gore/cmd/gore@latest
 ```
 
 Make sure `$GOPATH/bin` is in your `$PATH`.
@@ -55,7 +55,7 @@ Make sure `$GOPATH/bin` is in your `$PATH`.
 Also recommended:
 
 ```sh
-go get github.com/mdempsky/gocode   # for code completion
+go install github.com/mdempsky/gocode@latest   # for code completion
 ```
 
 Or you can use Docker:

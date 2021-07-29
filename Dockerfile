@@ -5,6 +5,6 @@ WORKDIR /go/src/github.com/x-motemen/gore/
 COPY . .
 RUN make install
 
-RUN go get -u github.com/mdempsky/gocode   # for code completion
+RUN go install github.com/mdempsky/gocode@latest   # for code completion
 
 ENTRYPOINT ["gore"]

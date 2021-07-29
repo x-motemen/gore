@@ -21,7 +21,7 @@ show-version: $(GOBIN)/gobump
 	@gobump show -r $(VERSION_PATH)
 
 $(GOBIN)/gobump:
-	@cd && go get github.com/x-motemen/gobump/cmd/gobump
+	@go install github.com/x-motemen/gobump/cmd/gobump@latest
 
 .PHONY: test
 test: build
@@ -33,7 +33,7 @@ lint: $(GOBIN)/golint
 	golint -set_exit_status ./...
 
 $(GOBIN)/golint:
-	cd && go get golang.org/x/lint/golint
+	go install golang.org/x/lint/golint@latest
 
 .PHONY: clean
 clean:
