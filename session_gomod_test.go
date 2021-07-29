@@ -19,12 +19,6 @@ func chdir(dir string) func() {
 	return func() { os.Chdir(d) }
 }
 
-func setenv(name, value string) func() {
-	v := os.Getenv(name)
-	os.Setenv(name, value)
-	return func() { os.Setenv(name, v) }
-}
-
 func gomodSetup(t *testing.T) func() {
 	tempDir, err := ioutil.TempDir("", "gore-")
 	require.NoError(t, err)
