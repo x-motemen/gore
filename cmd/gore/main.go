@@ -3,7 +3,7 @@ package main
 import (
 	"os"
 
-	"github.com/motemen/gore/cli"
+	"github.com/x-motemen/gore/cli"
 )
 
 func main() {

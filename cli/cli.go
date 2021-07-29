@@ -6,7 +6,7 @@ import (
 	"io"
 	"runtime"
 
-	"github.com/motemen/gore"
+	"github.com/x-motemen/gore"
 )
 
 var revision = "HEAD"

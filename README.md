@@ -1,4 +1,4 @@
-# gore [![CI Status](https://github.com/motemen/gore/workflows/CI/badge.svg)](https://github.com/motemen/gore/actions)
+# gore [![CI Status](https://github.com/x-motemen/gore/workflows/CI/badge.svg)](https://github.com/x-motemen/gore/actions)
 ### Yet another Go REPL that works nicely. Featured with line editing, code completion, and more.
 
 ![Screencast](doc/screencast.gif)
@@ -47,7 +47,7 @@ Only the latest major version.
 The gore command requires Go tool-chains on runtime, so standalone binary is not distributed.
 
 ```sh
-go get github.com/motemen/gore/cmd/gore
+go get github.com/x-motemen/gore/cmd/gore
 ```
 
 Make sure `$GOPATH/bin` is in your `$PATH`.
@@ -61,7 +61,7 @@ go get github.com/mdempsky/gocode   # for code completion
 Or you can use Docker:
 
 ```sh
-git clone https://github.com/motemen/gore.git
+git clone https://github.com/x-motemen/gore.git
 cd gore
 docker build -t gore .
 docker run -it --rm gore
