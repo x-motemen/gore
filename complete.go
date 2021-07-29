@@ -51,7 +51,7 @@ func (s *Session) completeWord(line string, pos int) (string, []string, string) 
 		return "", nil, ""
 	}
 
-	if gocode.Available() == false {
+	if !gocode.Available() {
 		return "", nil, ""
 	}
 
