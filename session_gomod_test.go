@@ -175,7 +175,7 @@ func TestSessionEval_Gomod_Outside(t *testing.T) {
 	require.NoError(t, err)
 
 	codes := []string{
-		`:i github.com/motemen/gore`,
+		`:i github.com/x-motemen/gore`,
 		`gore.Session{}`,
 	}
 

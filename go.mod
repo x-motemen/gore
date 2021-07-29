@@ -1,4 +1,4 @@
-module github.com/motemen/gore
+module github.com/x-motemen/gore
 
 go 1.15
 

@@ -7,7 +7,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/motemen/gore/gocode"
+	"github.com/x-motemen/gore/gocode"
 )
 
 func TestSession_completeWord(t *testing.T) {
@@ -56,12 +56,12 @@ func TestSession_completeWord(t *testing.T) {
 
 	pre, cands, post = s.completeWord("::i gor", 7)
 	assert.Equal(t, "::i ", pre)
-	assert.Equal(t, []string{"github.com/motemen/gore"}, cands)
+	assert.Equal(t, []string{"github.com/x-motemen/gore"}, cands)
 	assert.Equal(t, post, "")
 
 	pre, cands, post = s.completeWord(":i gore", 7)
 	assert.Equal(t, ":i ", pre)
-	assert.Equal(t, []string{"github.com/motemen/gore"}, cands)
+	assert.Equal(t, []string{"github.com/x-motemen/gore"}, cands)
 	assert.Equal(t, post, "")
 
 	pre, cands, post = s.completeWord(":i to", 5)
@@ -90,7 +90,7 @@ func TestSession_completeWord(t *testing.T) {
 	pre, cands, post = s.completeWord(":i mot", 6)
 	assert.Equal(t, ":i ", pre)
 	assert.Equal(t, []string{
-		"github.com/motemen/gore", "github.com/motemen/go-quickfix",
+		"github.com/x-motemen/gore", "github.com/motemen/go-quickfix",
 	}, cands)
 	assert.Equal(t, post, "")
 
