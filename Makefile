@@ -28,12 +28,12 @@ test: build
 	go test -v ./...
 
 .PHONY: lint
-lint: $(GOBIN)/golint
+lint: $(GOBIN)/staticcheck
 	go vet ./...
-	golint -set_exit_status ./...
+	staticcheck ./...
 
-$(GOBIN)/golint:
-	go install golang.org/x/lint/golint@latest
+$(GOBIN)/staticcheck:
+	go install honnef.co/go/tools/cmd/staticcheck@latest
 
 .PHONY: clean
 clean:
