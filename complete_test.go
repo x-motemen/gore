@@ -11,7 +11,7 @@ import (
 )
 
 func TestSession_completeWord(t *testing.T) {
-	if gocode.Available() == false {
+	if !gocode.Available() {
 		t.Skipf("gocode unavailable")
 	}
 
