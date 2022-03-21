@@ -2,7 +2,6 @@ package gore
 
 import (
 	"bytes"
-	"io/ioutil"
 	"os"
 	"regexp"
 	"testing"
@@ -389,10 +388,10 @@ invalid operation: f() + g() (mismatched types int and string)
 
 func TestSession_ExtraFiles(t *testing.T) {
 	stdout, stderr := new(bytes.Buffer), new(bytes.Buffer)
-	tempDir, _ := ioutil.TempDir("", "gore-")
+	tempDir, _ := os.MkdirTemp("", "gore-")
 	defer chdir(tempDir)()
 	defer os.RemoveAll(tempDir)
-	require.NoError(t, ioutil.WriteFile("test.go", []byte(`package test
+	require.NoError(t, os.WriteFile("test.go", []byte(`package test
 
 // V is a value
 var V = 42

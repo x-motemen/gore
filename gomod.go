@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"go/build"
 	"io"
-	"io/ioutil"
 	"net"
 	"net/url"
 	"os"
@@ -21,7 +20,7 @@ func (s *Session) initGoMod() error {
 	goModPath := filepath.Join(s.tempDir, "go.mod")
 	directives := s.listModuleDirectives()
 	mod := "module " + tempModule + "\n" + strings.Join(directives, "\n")
-	return ioutil.WriteFile(goModPath, []byte(mod), 0o644)
+	return os.WriteFile(goModPath, []byte(mod), 0o644)
 }
 
 func (s *Session) listModuleDirectives() []string {
