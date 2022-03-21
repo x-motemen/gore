@@ -24,7 +24,7 @@ $(GOBIN)/gobump:
 
 .PHONY: test
 test: build
-	go test -v ./...
+	go test -v ./... # we don't use -race which increases much duration
 
 .PHONY: lint
 lint: $(GOBIN)/staticcheck
