@@ -33,14 +33,14 @@ func TestAction_Type(t *testing.T) {
 		_ = s.Eval(code)
 	}
 
-	assert.Equal(t, `string
+	assert.Regexp(t, `string
 int
 float64
-func() []int
-[]int
-func(a ...interface{}) string
-func(a ...interface{}) (n int, err error)
-func(w io.Writer) *encoding/json.Encoder
+func\(\) \[\]int
+\[\]int
+func\(a \.\.\.(?:interface\{\}|any)\) string
+func\(a \.\.\.(?:interface\{\}|any)\) \(n int, err error\)
+func\(w io\.Writer\) \*encoding/json\.Encoder
 `, stdout.String())
 	assert.Equal(t, `type: cannot get type: x
 type: cannot get type: fmt

@@ -2,7 +2,6 @@ package gore
 
 import (
 	"bytes"
-	"io/ioutil"
 	"os"
 	"regexp"
 	"testing"
@@ -326,10 +325,10 @@ func TestSessionEval_Func(t *testing.T) {
 	}
 
 	assert.Equal(t, "112\n2400\n204\n", stdout.String())
-	assert.Equal(t, `cannot use s (type string) as type int in return argument
-invalid operation: f() + len(g()) (mismatched types string and int)
-invalid operation: f() * len(g()) (mismatched types string and int)
-cannot use i (type int) as type string in return argument
+	assert.Regexp(t, `cannot use s \((?:variable of )?type string\) as type int in return (?:argument|statement)
+invalid operation: f\(\) \+ len\(g\(\)\) \(mismatched types string and int\)
+invalid operation: f\(\) \* len\(g\(\)\) \(mismatched types string and int\)
+cannot use i \((?:variable of )?type int\) as type string in return (?:argument|statement)
 `, stderr.String())
 }
 
@@ -343,7 +342,6 @@ func TestSessionEval_TokenError(t *testing.T) {
 		`foo\`,
 		`ba # r`,
 		`$ + 3`,
-		`~1`,
 		"`foo",
 		"`foo\nbar`",
 	}
@@ -356,7 +354,6 @@ func TestSessionEval_TokenError(t *testing.T) {
 	assert.Equal(t, `invalid token: "\\"
 invalid token: "#"
 invalid token: "$"
-invalid token: "~"
 `, stderr.String())
 }
 
@@ -381,18 +378,18 @@ func TestSessionEval_CompileError(t *testing.T) {
 	}
 
 	assert.Equal(t, "5\n105\n", stdout.String())
-	assert.Equal(t, `undefined: foo
-invalid argument f() (type int) for len
-invalid operation: f() + g() (mismatched types int and string)
+	assert.Regexp(t, `undefined: foo
+invalid argument:? f\(\) \((?:value of )?type int\) for len
+invalid operation: f\(\) \+ g\(\) \(mismatched types int and string\)
 `, stderr.String())
 }
 
 func TestSession_ExtraFiles(t *testing.T) {
 	stdout, stderr := new(bytes.Buffer), new(bytes.Buffer)
-	tempDir, _ := ioutil.TempDir("", "gore-")
+	tempDir, _ := os.MkdirTemp("", "gore-")
 	defer chdir(tempDir)()
 	defer os.RemoveAll(tempDir)
-	require.NoError(t, ioutil.WriteFile("test.go", []byte(`package test
+	require.NoError(t, os.WriteFile("test.go", []byte(`package test
 
 // V is a value
 var V = 42

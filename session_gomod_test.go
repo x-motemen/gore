@@ -3,7 +3,6 @@ package gore
 import (
 	"bytes"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -20,26 +19,26 @@ func chdir(dir string) func() {
 }
 
 func gomodSetup(t *testing.T) func() {
-	tempDir, err := ioutil.TempDir("", "gore-")
+	tempDir, err := os.MkdirTemp("", "gore-")
 	require.NoError(t, err)
 	mod1Dir := filepath.Join(tempDir, "mod1")
 	require.NoError(t, os.Mkdir(mod1Dir, 0o700))
-	require.NoError(t, ioutil.WriteFile(filepath.Join(mod1Dir, "go.mod"), []byte(`module mod1
+	require.NoError(t, os.WriteFile(filepath.Join(mod1Dir, "go.mod"), []byte(`module mod1
 `), 0o600))
-	require.NoError(t, ioutil.WriteFile(filepath.Join(mod1Dir, "mod1.go"), []byte(`package mod1
+	require.NoError(t, os.WriteFile(filepath.Join(mod1Dir, "mod1.go"), []byte(`package mod1
 
 const Value = 10
 `), 0o600))
 
 	mod2Dir := filepath.Join(tempDir, "mod2")
 	require.NoError(t, os.Mkdir(mod2Dir, 0o700))
-	require.NoError(t, ioutil.WriteFile(filepath.Join(mod2Dir, "go.mod"), []byte(fmt.Sprintf(`module mod2
+	require.NoError(t, os.WriteFile(filepath.Join(mod2Dir, "go.mod"), []byte(fmt.Sprintf(`module mod2
 
 replace mod1 => %s
 
 require mod1 v0.0.0-00010101000000-000000000000
 `, strconv.Quote(mod1Dir))), 0o600))
-	require.NoError(t, ioutil.WriteFile(filepath.Join(mod2Dir, "mod2.go"), []byte(`package mod2
+	require.NoError(t, os.WriteFile(filepath.Join(mod2Dir, "mod2.go"), []byte(`package mod2
 
 import "mod1"
 
@@ -50,7 +49,7 @@ func Foo() int {
 
 	mod3Dir := filepath.Join(mod2Dir, "mod3")
 	require.NoError(t, os.Mkdir(mod3Dir, 0o700))
-	require.NoError(t, ioutil.WriteFile(filepath.Join(mod3Dir, "mod3.go"), []byte(`package mod3
+	require.NoError(t, os.WriteFile(filepath.Join(mod3Dir, "mod3.go"), []byte(`package mod3
 
 func Bar() string {
 	return "mod3"
@@ -161,7 +160,7 @@ func TestSessionEval_Gomod_DeepDir(t *testing.T) {
 
 func TestSessionEval_Gomod_Outside(t *testing.T) {
 	stdout, stderr := new(bytes.Buffer), new(bytes.Buffer)
-	tempDir, _ := ioutil.TempDir("", "gore-")
+	tempDir, _ := os.MkdirTemp("", "gore-")
 	defer chdir(tempDir)()
 	defer os.RemoveAll(tempDir)
 	s, err := NewSession(stdout, stderr)

@@ -3,7 +3,6 @@ VERSION := $$(make -s show-version)
 CURRENT_REVISION := $(shell git rev-parse --short HEAD)
 BUILD_LDFLAGS := "-s -w -X github.com/x-motemen/$(BIN)/cli.revision=$(CURRENT_REVISION)"
 GOBIN ?= $(shell go env GOPATH)/bin
-export GO111MODULE=on
 
 .PHONY: all
 all: build
@@ -25,15 +24,15 @@ $(GOBIN)/gobump:
 
 .PHONY: test
 test: build
-	go test -v ./...
+	go test -v ./... # we don't use -race which increases much duration
 
 .PHONY: lint
 lint: $(GOBIN)/staticcheck
 	go vet ./...
-	staticcheck ./...
+	staticcheck -checks all,-ST1000 ./...
 
 $(GOBIN)/staticcheck:
-	go install honnef.co/go/tools/cmd/staticcheck@latest
+	go install honnef.co/go/tools/cmd/staticcheck@master
 
 .PHONY: clean
 clean:

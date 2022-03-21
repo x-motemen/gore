@@ -12,7 +12,6 @@ import (
 	"go/token"
 	"go/types"
 	"io"
-	"io/ioutil"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -70,8 +69,8 @@ var printerPkgs = []struct {
 	code          string
 }{
 	{
-		path: "github.com/k0kubun/pp/v3", version: "v3.0.7", code: `pp.Println(x)`,
-		requires: []pathVersion{{"github.com/mattn/go-colorable", "v0.1.7"}},
+		path: "github.com/k0kubun/pp/v3", version: "v3.1.0", code: `pp.Println(x)`,
+		requires: []pathVersion{{"github.com/mattn/go-colorable", "v0.1.12"}},
 	},
 	{path: "fmt", code: `fmt.Printf("%#v\n", x)`},
 }
@@ -86,7 +85,7 @@ func NewSession(stdout, stderr io.Writer) (*Session, error) {
 
 	s := &Session{stdout: stdout, stderr: stderr}
 
-	s.tempDir, err = ioutil.TempDir("", "gore-")
+	s.tempDir, err = os.MkdirTemp("", "gore-")
 	if err != nil {
 		return s, err
 	}
@@ -504,7 +503,7 @@ func (s *Session) includeFiles(files []string) {
 }
 
 func (s *Session) includeFile(file string) {
-	content, err := ioutil.ReadFile(file)
+	content, err := os.ReadFile(file)
 	if err != nil {
 		errorf("%s", err)
 		return
@@ -539,7 +538,7 @@ func (s *Session) importPackages(src []byte) error {
 
 // importFile adds external golang file to goRun target to use its function
 func (s *Session) importFile(src []byte) error {
-	tmp, err := ioutil.TempFile(s.tempDir, "gore_external_*.go")
+	tmp, err := os.CreateTemp(s.tempDir, "gore_external_*.go")
 	if err != nil {
 		return err
 	}
