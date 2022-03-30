@@ -32,7 +32,7 @@ lint: $(GOBIN)/staticcheck
 	staticcheck -checks all,-ST1000 ./...
 
 $(GOBIN)/staticcheck:
-	go install honnef.co/go/tools/cmd/staticcheck@master
+	go install honnef.co/go/tools/cmd/staticcheck@latest
 
 .PHONY: clean
 clean:
