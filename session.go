@@ -181,7 +181,7 @@ func (s *Session) Run() error {
 }
 
 func (s *Session) goRun(files []string) error {
-	args := append([]string{"run"}, files...)
+	args := append([]string{"run", "-mod=mod"}, files...)
 	debugf("go %s", strings.Join(args, " "))
 	cmd := exec.Command("go", args...)
 	cmd.Stdin = os.Stdin
