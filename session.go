@@ -224,25 +224,28 @@ func (s *Session) evalStmt(in string) error {
 	}
 
 	enclosingFunc := f.Scope.Lookup("F").Decl.(*ast.FuncDecl)
-	stmts := enclosingFunc.Body.List
 
-	if len(stmts) > 0 {
-		debugf("evalStmt :: %s", showNode(s.fset, stmts))
-		lastStmt := stmts[len(stmts)-1]
-		if assign, ok := lastStmt.(*ast.AssignStmt); ok {
-			if s := buildPrintStmt(assign.Lhs); s != nil {
-				stmts = append(stmts, s)
+	debugf("evalStmt :: %s", showNode(s.fset, enclosingFunc.Body.List))
+	var stmts []ast.Stmt
+
+	for _, stmt := range enclosingFunc.Body.List {
+		switch stmt := stmt.(type) {
+		case *ast.AssignStmt:
+			if stmt := buildPrintStmt(stmt.Lhs); stmt != nil {
+				stmts = append(stmts, stmt)
 			}
-		}
-		if decl, ok := lastStmt.(*ast.DeclStmt); ok {
-			if decl, ok := decl.Decl.(*ast.GenDecl); ok {
-				if s := buildPrintStmtOfDecl(decl); s != nil {
-					stmts = append(stmts, s)
+		case *ast.DeclStmt:
+			if decl, ok := stmt.Decl.(*ast.GenDecl); ok {
+				if decl.Tok == token.TYPE {
+					s.file.Decls = append(s.file.Decls, decl)
+					continue
+				} else if stmt := buildPrintStmtOfDecl(decl); stmt != nil {
+					stmts = append(stmts, stmt)
 				}
 			}
 		}
+		s.appendStatements(stmt)
 	}
-
 	s.appendStatements(stmts...)
 
 	return nil

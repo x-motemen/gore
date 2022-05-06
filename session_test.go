@@ -303,6 +303,39 @@ func TestSessionEval_MultipleValues(t *testing.T) {
 	assert.Equal(t, "", stderr.String())
 }
 
+func TestSessionEval_Struct(t *testing.T) {
+	stdout, stderr := new(bytes.Buffer), new(bytes.Buffer)
+	s, err := NewSession(stdout, stderr)
+	defer s.Clear()
+	require.NoError(t, err)
+
+	codes := []string{
+		`type X struct { v int }`,
+		`func (x *X) add(v int) { x.v += v }`,
+		`var x X`,
+		`x`,
+		`x.add(1)`,
+		`x`,
+		`x.add(2)`,
+		`x`,
+		`type Y X; type Z Y;`,
+		`func (z *Z) sub(v int) { z.v -= v }`,
+		`var z Z`,
+		`z.sub(3)`,
+		`z`,
+	}
+
+	for _, code := range codes {
+		_ = s.Eval(code)
+	}
+
+	assert.Contains(t, stdout.String(), `main.X{v:0}
+main.X{v:1}
+main.X{v:3}
+main.Z{v:-3}`)
+	assert.Equal(t, ``, stderr.String())
+}
+
 func TestSessionEval_Func(t *testing.T) {
 	stdout, stderr := new(bytes.Buffer), new(bytes.Buffer)
 	s, err := NewSession(stdout, stderr)
