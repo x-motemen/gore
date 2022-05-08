@@ -65,7 +65,7 @@ func TestSessionEval_Gomod(t *testing.T) {
 	stdout, stderr := new(bytes.Buffer), new(bytes.Buffer)
 	gomodSetup(t)
 	s, err := NewSession(stdout, stderr)
-	defer s.Clear()
+	t.Cleanup(func() { s.Clear() })
 	require.NoError(t, err)
 
 	codes := []string{
@@ -91,7 +91,7 @@ func TestSessionEval_Gomod_AutoImport(t *testing.T) {
 	stdout, stderr := new(bytes.Buffer), new(bytes.Buffer)
 	gomodSetup(t)
 	s, err := NewSession(stdout, stderr)
-	defer s.Clear()
+	t.Cleanup(func() { s.Clear() })
 	require.NoError(t, err)
 	s.autoImport = true
 
@@ -131,7 +131,7 @@ func TestSessionEval_Gomod_DeepDir(t *testing.T) {
 	require.NoError(t, os.Mkdir("tmp", 0o700))
 	require.NoError(t, os.Chdir("tmp"))
 	s, err := NewSession(stdout, stderr)
-	defer s.Clear()
+	t.Cleanup(func() { s.Clear() })
 	require.NoError(t, err)
 
 	codes := []string{
@@ -157,7 +157,7 @@ func TestSessionEval_Gomod_Outside(t *testing.T) {
 	stdout, stderr := new(bytes.Buffer), new(bytes.Buffer)
 	_ = newTempDir(t)
 	s, err := NewSession(stdout, stderr)
-	defer s.Clear()
+	t.Cleanup(func() { s.Clear() })
 	require.NoError(t, err)
 
 	codes := []string{
@@ -176,7 +176,7 @@ func TestSessionEval_Gomod_CompleteImport(t *testing.T) {
 	stdout, stderr := new(bytes.Buffer), new(bytes.Buffer)
 	gomodSetup(t)
 	s, err := NewSession(stdout, stderr)
-	defer s.Clear()
+	t.Cleanup(func() { s.Clear() })
 	require.NoError(t, err)
 
 	pre, cands, post := s.completeWord(":i ", 3)

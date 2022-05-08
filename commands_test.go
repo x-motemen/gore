@@ -11,7 +11,7 @@ import (
 func TestAction_Type(t *testing.T) {
 	stdout, stderr := new(bytes.Buffer), new(bytes.Buffer)
 	s, err := NewSession(stdout, stderr)
-	defer s.Clear()
+	t.Cleanup(func() { s.Clear() })
 	require.NoError(t, err)
 
 	codes := []string{
@@ -50,7 +50,7 @@ type: cannot get type: fmt
 func TestAction_Doc(t *testing.T) {
 	stdout, stderr := new(bytes.Buffer), new(bytes.Buffer)
 	s, err := NewSession(stdout, stderr)
-	defer s.Clear()
+	t.Cleanup(func() { s.Clear() })
 	require.NoError(t, err)
 
 	err = s.Eval(":import encoding/json")
@@ -86,7 +86,7 @@ func TestAction_Doc(t *testing.T) {
 func TestAction_Import(t *testing.T) {
 	stdout, stderr := new(bytes.Buffer), new(bytes.Buffer)
 	s, err := NewSession(stdout, stderr)
-	defer s.Clear()
+	t.Cleanup(func() { s.Clear() })
 	require.NoError(t, err)
 
 	err = s.Eval(":import encoding/json fmt")
@@ -113,7 +113,7 @@ func TestAction_Import(t *testing.T) {
 func TestAction_Clear(t *testing.T) {
 	stdout, stderr := new(bytes.Buffer), new(bytes.Buffer)
 	s, err := NewSession(stdout, stderr)
-	defer s.Clear()
+	t.Cleanup(func() { s.Clear() })
 	require.NoError(t, err)
 
 	codes := []string{
@@ -141,7 +141,7 @@ func TestAction_Clear(t *testing.T) {
 func TestAction_Help(t *testing.T) {
 	stdout, stderr := new(bytes.Buffer), new(bytes.Buffer)
 	s, err := NewSession(stdout, stderr)
-	defer s.Clear()
+	t.Cleanup(func() { s.Clear() })
 	require.NoError(t, err)
 
 	err = s.Eval(": :  :   help  ")
@@ -160,7 +160,7 @@ func TestAction_Help(t *testing.T) {
 func TestAction_Quit(t *testing.T) {
 	stdout, stderr := new(bytes.Buffer), new(bytes.Buffer)
 	s, err := NewSession(stdout, stderr)
-	defer s.Clear()
+	t.Cleanup(func() { s.Clear() })
 	require.NoError(t, err)
 
 	err = s.Eval(" :\t: quit")
@@ -176,7 +176,7 @@ func TestAction_Quit(t *testing.T) {
 func TestAction_CommandNotFound(t *testing.T) {
 	stdout, stderr := new(bytes.Buffer), new(bytes.Buffer)
 	s, err := NewSession(stdout, stderr)
-	defer s.Clear()
+	t.Cleanup(func() { s.Clear() })
 	require.NoError(t, err)
 
 	err = s.Eval(":::")
@@ -205,7 +205,7 @@ command not found: help]
 func TestAction_ArgumentRequired(t *testing.T) {
 	stdout, stderr := new(bytes.Buffer), new(bytes.Buffer)
 	s, err := NewSession(stdout, stderr)
-	defer s.Clear()
+	t.Cleanup(func() { s.Clear() })
 	require.NoError(t, err)
 
 	err = s.Eval(":import")
