@@ -1,11 +1,11 @@
 package gore
 
 import (
-	"bytes"
 	"fmt"
 	"os"
 	"path/filepath"
 	"strconv"
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -62,9 +62,9 @@ func Bar() string {
 }
 
 func TestSessionEval_Gomod(t *testing.T) {
-	stdout, stderr := new(bytes.Buffer), new(bytes.Buffer)
+	var stdout, stderr strings.Builder
 	gomodSetup(t)
-	s, err := NewSession(stdout, stderr)
+	s, err := NewSession(&stdout, &stderr)
 	t.Cleanup(func() { s.Clear() })
 	require.NoError(t, err)
 
@@ -88,9 +88,9 @@ func TestSessionEval_Gomod(t *testing.T) {
 }
 
 func TestSessionEval_Gomod_AutoImport(t *testing.T) {
-	stdout, stderr := new(bytes.Buffer), new(bytes.Buffer)
+	var stdout, stderr strings.Builder
 	gomodSetup(t)
-	s, err := NewSession(stdout, stderr)
+	s, err := NewSession(&stdout, &stderr)
 	t.Cleanup(func() { s.Clear() })
 	require.NoError(t, err)
 	s.autoImport = true
@@ -126,11 +126,11 @@ func() string
 }
 
 func TestSessionEval_Gomod_DeepDir(t *testing.T) {
-	stdout, stderr := new(bytes.Buffer), new(bytes.Buffer)
+	var stdout, stderr strings.Builder
 	gomodSetup(t)
 	require.NoError(t, os.Mkdir("tmp", 0o700))
 	require.NoError(t, os.Chdir("tmp"))
-	s, err := NewSession(stdout, stderr)
+	s, err := NewSession(&stdout, &stderr)
 	t.Cleanup(func() { s.Clear() })
 	require.NoError(t, err)
 
@@ -154,9 +154,9 @@ func TestSessionEval_Gomod_DeepDir(t *testing.T) {
 }
 
 func TestSessionEval_Gomod_Outside(t *testing.T) {
-	stdout, stderr := new(bytes.Buffer), new(bytes.Buffer)
+	var stdout, stderr strings.Builder
 	_ = newTempDir(t)
-	s, err := NewSession(stdout, stderr)
+	s, err := NewSession(&stdout, &stderr)
 	t.Cleanup(func() { s.Clear() })
 	require.NoError(t, err)
 
@@ -173,9 +173,9 @@ func TestSessionEval_Gomod_Outside(t *testing.T) {
 }
 
 func TestSessionEval_Gomod_CompleteImport(t *testing.T) {
-	stdout, stderr := new(bytes.Buffer), new(bytes.Buffer)
+	var stdout, stderr strings.Builder
 	gomodSetup(t)
-	s, err := NewSession(stdout, stderr)
+	s, err := NewSession(&stdout, &stderr)
 	t.Cleanup(func() { s.Clear() })
 	require.NoError(t, err)
 

@@ -1,7 +1,7 @@
 package cli
 
 import (
-	"bytes"
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -11,8 +11,8 @@ import (
 )
 
 func TestCliRun_Version(t *testing.T) {
-	stdout, stderr := new(bytes.Buffer), new(bytes.Buffer)
-	c := &cli{stdout, stderr}
+	var stdout, stderr strings.Builder
+	c := &cli{&stdout, &stderr}
 	code := c.run([]string{"-version"})
 	require.Equal(t, exitCodeOK, code)
 
@@ -21,8 +21,8 @@ func TestCliRun_Version(t *testing.T) {
 }
 
 func TestCliRun_Help(t *testing.T) {
-	stdout, stderr := new(bytes.Buffer), new(bytes.Buffer)
-	c := &cli{stdout, stderr}
+	var stdout, stderr strings.Builder
+	c := &cli{&stdout, &stderr}
 	code := c.run([]string{"-help"})
 	require.Equal(t, exitCodeOK, code)
 
@@ -32,8 +32,8 @@ func TestCliRun_Help(t *testing.T) {
 }
 
 func TestCliRun_Unknown(t *testing.T) {
-	stdout, stderr := new(bytes.Buffer), new(bytes.Buffer)
-	c := &cli{stdout, stderr}
+	var stdout, stderr strings.Builder
+	c := &cli{&stdout, &stderr}
 	code := c.run([]string{"-foobar"})
 	require.Equal(t, exitCodeErr, code)
 

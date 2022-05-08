@@ -1,7 +1,7 @@
 package gore
 
 import (
-	"bytes"
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -15,8 +15,8 @@ func TestSession_completeWord(t *testing.T) {
 		t.Skipf("gocode unavailable")
 	}
 
-	stdout, stderr := new(bytes.Buffer), new(bytes.Buffer)
-	s, err := NewSession(stdout, stderr)
+	var stdout, stderr strings.Builder
+	s, err := NewSession(&stdout, &stderr)
 	t.Cleanup(func() { s.Clear() })
 	require.NoError(t, err)
 

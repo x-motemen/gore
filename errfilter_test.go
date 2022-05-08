@@ -1,7 +1,7 @@
 package gore
 
 import (
-	"bytes"
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -44,8 +44,8 @@ func TestErrFilter(t *testing.T) {
 	}
 	for _, tc := range testCases {
 		t.Run(tc.id, func(t *testing.T) {
-			out := new(bytes.Buffer)
-			w := newErrFilter(out)
+			var out strings.Builder
+			w := newErrFilter(&out)
 			_, err := w.Write([]byte(tc.src))
 			require.NoError(t, err)
 			err = w.Close()

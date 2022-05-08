@@ -363,9 +363,9 @@ func (s *Session) source(space bool) (string, error) {
 		}
 	}
 
-	var buf bytes.Buffer
-	err := config.Fprint(&buf, s.fset, s.file)
-	return buf.String(), err
+	var sb strings.Builder
+	err := config.Fprint(&sb, s.fset, s.file)
+	return sb.String(), err
 }
 
 func (s *Session) reset() error {
