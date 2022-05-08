@@ -17,7 +17,7 @@ func TestSession_completeWord(t *testing.T) {
 
 	stdout, stderr := new(bytes.Buffer), new(bytes.Buffer)
 	s, err := NewSession(stdout, stderr)
-	defer s.Clear()
+	t.Cleanup(func() { s.Clear() })
 	require.NoError(t, err)
 
 	pre, cands, post := s.completeWord("", 0)
