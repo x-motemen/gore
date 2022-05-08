@@ -18,9 +18,8 @@ func chdir(dir string) func() {
 	return func() { os.Chdir(d) }
 }
 
-func gomodSetup(t *testing.T) func() {
-	tempDir, err := os.MkdirTemp("", "gore-")
-	require.NoError(t, err)
+func gomodSetup(t *testing.T) {
+	tempDir := newTempDir(t)
 	mod1Dir := filepath.Join(tempDir, "mod1")
 	require.NoError(t, os.Mkdir(mod1Dir, 0o700))
 	require.NoError(t, os.WriteFile(filepath.Join(mod1Dir, "go.mod"), []byte(`module mod1
@@ -59,16 +58,12 @@ func Bar() string {
 	mod4Dir := filepath.Join(mod2Dir, "mod4")
 	require.NoError(t, os.Mkdir(mod4Dir, 0o700))
 
-	restore := chdir(mod2Dir)
-	return func() {
-		defer os.RemoveAll(tempDir)
-		defer restore()
-	}
+	t.Cleanup(chdir(mod2Dir))
 }
 
 func TestSessionEval_Gomod(t *testing.T) {
 	stdout, stderr := new(bytes.Buffer), new(bytes.Buffer)
-	defer gomodSetup(t)()
+	gomodSetup(t)
 	s, err := NewSession(stdout, stderr)
 	defer s.Clear()
 	require.NoError(t, err)
@@ -94,7 +89,7 @@ func TestSessionEval_Gomod(t *testing.T) {
 
 func TestSessionEval_Gomod_AutoImport(t *testing.T) {
 	stdout, stderr := new(bytes.Buffer), new(bytes.Buffer)
-	defer gomodSetup(t)()
+	gomodSetup(t)
 	s, err := NewSession(stdout, stderr)
 	defer s.Clear()
 	require.NoError(t, err)
@@ -132,7 +127,7 @@ func() string
 
 func TestSessionEval_Gomod_DeepDir(t *testing.T) {
 	stdout, stderr := new(bytes.Buffer), new(bytes.Buffer)
-	defer gomodSetup(t)()
+	gomodSetup(t)
 	require.NoError(t, os.Mkdir("tmp", 0o700))
 	require.NoError(t, os.Chdir("tmp"))
 	s, err := NewSession(stdout, stderr)
@@ -160,9 +155,7 @@ func TestSessionEval_Gomod_DeepDir(t *testing.T) {
 
 func TestSessionEval_Gomod_Outside(t *testing.T) {
 	stdout, stderr := new(bytes.Buffer), new(bytes.Buffer)
-	tempDir, _ := os.MkdirTemp("", "gore-")
-	defer chdir(tempDir)()
-	defer os.RemoveAll(tempDir)
+	_ = newTempDir(t)
 	s, err := NewSession(stdout, stderr)
 	defer s.Clear()
 	require.NoError(t, err)
@@ -181,7 +174,7 @@ func TestSessionEval_Gomod_Outside(t *testing.T) {
 
 func TestSessionEval_Gomod_CompleteImport(t *testing.T) {
 	stdout, stderr := new(bytes.Buffer), new(bytes.Buffer)
-	defer gomodSetup(t)()
+	gomodSetup(t)
 	s, err := NewSession(stdout, stderr)
 	defer s.Clear()
 	require.NoError(t, err)

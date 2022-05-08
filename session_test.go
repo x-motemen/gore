@@ -14,6 +14,27 @@ func init() {
 	printerPkgs = printerPkgs[1:]
 }
 
+func newTempDir(t *testing.T) string {
+	dir, err := os.MkdirTemp("", "gore-test-")
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { os.RemoveAll(dir) })
+
+	wd, err := os.Getwd()
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { os.Chdir(wd) })
+
+	err = os.Chdir(dir)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	return dir
+}
+
 func TestSessionEval_import(t *testing.T) {
 	stdout, stderr := new(bytes.Buffer), new(bytes.Buffer)
 	s, err := NewSession(stdout, stderr)
@@ -419,9 +440,7 @@ invalid operation: f\(\) \+ g\(\) \(mismatched types int and string\)
 
 func TestSession_ExtraFiles(t *testing.T) {
 	stdout, stderr := new(bytes.Buffer), new(bytes.Buffer)
-	tempDir, _ := os.MkdirTemp("", "gore-")
-	defer chdir(tempDir)()
-	defer os.RemoveAll(tempDir)
+	_ = newTempDir(t)
 	require.NoError(t, os.WriteFile("test.go", []byte(`package test
 
 // V is a value
