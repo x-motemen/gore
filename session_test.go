@@ -1,9 +1,9 @@
 package gore
 
 import (
-	"bytes"
 	"os"
 	"regexp"
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -36,8 +36,8 @@ func newTempDir(t *testing.T) string {
 }
 
 func TestSessionEval_import(t *testing.T) {
-	stdout, stderr := new(bytes.Buffer), new(bytes.Buffer)
-	s, err := NewSession(stdout, stderr)
+	var stdout, stderr strings.Builder
+	s, err := NewSession(&stdout, &stderr)
 	t.Cleanup(func() { s.Clear() })
 	require.NoError(t, err)
 
@@ -60,8 +60,8 @@ func TestSessionEval_import(t *testing.T) {
 }
 
 func TestSessionEval_QuickFix_evaluated_but_not_used(t *testing.T) {
-	stdout, stderr := new(bytes.Buffer), new(bytes.Buffer)
-	s, err := NewSession(stdout, stderr)
+	var stdout, stderr strings.Builder
+	s, err := NewSession(&stdout, &stderr)
 	t.Cleanup(func() { s.Clear() })
 	require.NoError(t, err)
 
@@ -91,8 +91,8 @@ func TestSessionEval_QuickFix_evaluated_but_not_used(t *testing.T) {
 }
 
 func TestSessionEval_QuickFix_used_as_value(t *testing.T) {
-	stdout, stderr := new(bytes.Buffer), new(bytes.Buffer)
-	s, err := NewSession(stdout, stderr)
+	var stdout, stderr strings.Builder
+	s, err := NewSession(&stdout, &stderr)
 	t.Cleanup(func() { s.Clear() })
 	require.NoError(t, err)
 
@@ -112,8 +112,8 @@ func TestSessionEval_QuickFix_used_as_value(t *testing.T) {
 }
 
 func TestSessionEval_QuickFix_no_new_variables(t *testing.T) {
-	stdout, stderr := new(bytes.Buffer), new(bytes.Buffer)
-	s, err := NewSession(stdout, stderr)
+	var stdout, stderr strings.Builder
+	s, err := NewSession(&stdout, &stderr)
 	t.Cleanup(func() { s.Clear() })
 	require.NoError(t, err)
 
@@ -145,8 +145,8 @@ func TestSessionEval_QuickFix_no_new_variables(t *testing.T) {
 }
 
 func TestSessionEval_AutoImport(t *testing.T) {
-	stdout, stderr := new(bytes.Buffer), new(bytes.Buffer)
-	s, err := NewSession(stdout, stderr)
+	var stdout, stderr strings.Builder
+	s, err := NewSession(&stdout, &stderr)
 	t.Cleanup(func() { s.Clear() })
 	require.NoError(t, err)
 	s.autoImport = true
@@ -165,8 +165,8 @@ func TestSessionEval_AutoImport(t *testing.T) {
 }
 
 func TestSession_IncludePackage(t *testing.T) {
-	stdout, stderr := new(bytes.Buffer), new(bytes.Buffer)
-	s, err := NewSession(stdout, stderr)
+	var stdout, stderr strings.Builder
+	s, err := NewSession(&stdout, &stderr)
 	t.Cleanup(func() { s.Clear() })
 	require.NoError(t, err)
 
@@ -178,8 +178,8 @@ func TestSession_IncludePackage(t *testing.T) {
 }
 
 func TestSessionEval_Copy(t *testing.T) {
-	stdout, stderr := new(bytes.Buffer), new(bytes.Buffer)
-	s, err := NewSession(stdout, stderr)
+	var stdout, stderr strings.Builder
+	s, err := NewSession(&stdout, &stderr)
 	t.Cleanup(func() { s.Clear() })
 	require.NoError(t, err)
 
@@ -204,8 +204,8 @@ func TestSessionEval_Copy(t *testing.T) {
 }
 
 func TestSessionEval_Const(t *testing.T) {
-	stdout, stderr := new(bytes.Buffer), new(bytes.Buffer)
-	s, err := NewSession(stdout, stderr)
+	var stdout, stderr strings.Builder
+	s, err := NewSession(&stdout, &stderr)
 	t.Cleanup(func() { s.Clear() })
 	require.NoError(t, err)
 
@@ -225,8 +225,8 @@ func TestSessionEval_Const(t *testing.T) {
 }
 
 func TestSessionEval_Declarations(t *testing.T) {
-	stdout, stderr := new(bytes.Buffer), new(bytes.Buffer)
-	s, err := NewSession(stdout, stderr)
+	var stdout, stderr strings.Builder
+	s, err := NewSession(&stdout, &stderr)
 	t.Cleanup(func() { s.Clear() })
 	require.NoError(t, err)
 
@@ -252,8 +252,8 @@ func TestSessionEval_Declarations(t *testing.T) {
 }
 
 func TestSessionEval_NotUsed(t *testing.T) {
-	stdout, stderr := new(bytes.Buffer), new(bytes.Buffer)
-	s, err := NewSession(stdout, stderr)
+	var stdout, stderr strings.Builder
+	s, err := NewSession(&stdout, &stderr)
 	t.Cleanup(func() { s.Clear() })
 	require.NoError(t, err)
 
@@ -287,8 +287,8 @@ func TestSessionEval_NotUsed(t *testing.T) {
 }
 
 func TestSessionEval_MultipleValues(t *testing.T) {
-	stdout, stderr := new(bytes.Buffer), new(bytes.Buffer)
-	s, err := NewSession(stdout, stderr)
+	var stdout, stderr strings.Builder
+	s, err := NewSession(&stdout, &stderr)
 	t.Cleanup(func() { s.Clear() })
 	require.NoError(t, err)
 
@@ -325,8 +325,8 @@ func TestSessionEval_MultipleValues(t *testing.T) {
 }
 
 func TestSessionEval_Struct(t *testing.T) {
-	stdout, stderr := new(bytes.Buffer), new(bytes.Buffer)
-	s, err := NewSession(stdout, stderr)
+	var stdout, stderr strings.Builder
+	s, err := NewSession(&stdout, &stderr)
 	t.Cleanup(func() { s.Clear() })
 	require.NoError(t, err)
 
@@ -358,8 +358,8 @@ main.Z{v:-3}`)
 }
 
 func TestSessionEval_Func(t *testing.T) {
-	stdout, stderr := new(bytes.Buffer), new(bytes.Buffer)
-	s, err := NewSession(stdout, stderr)
+	var stdout, stderr strings.Builder
+	s, err := NewSession(&stdout, &stderr)
 	t.Cleanup(func() { s.Clear() })
 	require.NoError(t, err)
 
@@ -387,8 +387,8 @@ cannot use i \((?:variable of )?type int\) as type string in return (?:argument|
 }
 
 func TestSessionEval_TokenError(t *testing.T) {
-	stdout, stderr := new(bytes.Buffer), new(bytes.Buffer)
-	s, err := NewSession(stdout, stderr)
+	var stdout, stderr strings.Builder
+	s, err := NewSession(&stdout, &stderr)
 	t.Cleanup(func() { s.Clear() })
 	require.NoError(t, err)
 
@@ -412,8 +412,8 @@ invalid token: "$"
 }
 
 func TestSessionEval_CompileError(t *testing.T) {
-	stdout, stderr := new(bytes.Buffer), new(bytes.Buffer)
-	s, err := NewSession(stdout, stderr)
+	var stdout, stderr strings.Builder
+	s, err := NewSession(&stdout, &stderr)
 	t.Cleanup(func() { s.Clear() })
 	require.NoError(t, err)
 
@@ -439,14 +439,14 @@ invalid operation: f\(\) \+ g\(\) \(mismatched types int and string\)
 }
 
 func TestSession_ExtraFiles(t *testing.T) {
-	stdout, stderr := new(bytes.Buffer), new(bytes.Buffer)
+	var stdout, stderr strings.Builder
 	_ = newTempDir(t)
 	require.NoError(t, os.WriteFile("test.go", []byte(`package test
 
 // V is a value
 var V = 42
 `), 0o644))
-	s, err := NewSession(stdout, stderr)
+	s, err := NewSession(&stdout, &stderr)
 	t.Cleanup(func() { s.Clear() })
 	require.NoError(t, err)
 

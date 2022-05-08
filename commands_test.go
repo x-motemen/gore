@@ -1,7 +1,7 @@
 package gore
 
 import (
-	"bytes"
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -9,8 +9,8 @@ import (
 )
 
 func TestAction_Type(t *testing.T) {
-	stdout, stderr := new(bytes.Buffer), new(bytes.Buffer)
-	s, err := NewSession(stdout, stderr)
+	var stdout, stderr strings.Builder
+	s, err := NewSession(&stdout, &stderr)
 	t.Cleanup(func() { s.Clear() })
 	require.NoError(t, err)
 
@@ -48,8 +48,8 @@ type: cannot get type: fmt
 }
 
 func TestAction_Doc(t *testing.T) {
-	stdout, stderr := new(bytes.Buffer), new(bytes.Buffer)
-	s, err := NewSession(stdout, stderr)
+	var stdout, stderr strings.Builder
+	s, err := NewSession(&stdout, &stderr)
 	t.Cleanup(func() { s.Clear() })
 	require.NoError(t, err)
 
@@ -84,8 +84,8 @@ func TestAction_Doc(t *testing.T) {
 }
 
 func TestAction_Import(t *testing.T) {
-	stdout, stderr := new(bytes.Buffer), new(bytes.Buffer)
-	s, err := NewSession(stdout, stderr)
+	var stdout, stderr strings.Builder
+	s, err := NewSession(&stdout, &stderr)
 	t.Cleanup(func() { s.Clear() })
 	require.NoError(t, err)
 
@@ -111,8 +111,8 @@ func TestAction_Import(t *testing.T) {
 }
 
 func TestAction_Clear(t *testing.T) {
-	stdout, stderr := new(bytes.Buffer), new(bytes.Buffer)
-	s, err := NewSession(stdout, stderr)
+	var stdout, stderr strings.Builder
+	s, err := NewSession(&stdout, &stderr)
 	t.Cleanup(func() { s.Clear() })
 	require.NoError(t, err)
 
@@ -139,8 +139,8 @@ func TestAction_Clear(t *testing.T) {
 }
 
 func TestAction_Help(t *testing.T) {
-	stdout, stderr := new(bytes.Buffer), new(bytes.Buffer)
-	s, err := NewSession(stdout, stderr)
+	var stdout, stderr strings.Builder
+	s, err := NewSession(&stdout, &stderr)
 	t.Cleanup(func() { s.Clear() })
 	require.NoError(t, err)
 
@@ -158,8 +158,8 @@ func TestAction_Help(t *testing.T) {
 }
 
 func TestAction_Quit(t *testing.T) {
-	stdout, stderr := new(bytes.Buffer), new(bytes.Buffer)
-	s, err := NewSession(stdout, stderr)
+	var stdout, stderr strings.Builder
+	s, err := NewSession(&stdout, &stderr)
 	t.Cleanup(func() { s.Clear() })
 	require.NoError(t, err)
 
@@ -174,8 +174,8 @@ func TestAction_Quit(t *testing.T) {
 }
 
 func TestAction_CommandNotFound(t *testing.T) {
-	stdout, stderr := new(bytes.Buffer), new(bytes.Buffer)
-	s, err := NewSession(stdout, stderr)
+	var stdout, stderr strings.Builder
+	s, err := NewSession(&stdout, &stderr)
 	t.Cleanup(func() { s.Clear() })
 	require.NoError(t, err)
 
@@ -203,8 +203,8 @@ command not found: help]
 }
 
 func TestAction_ArgumentRequired(t *testing.T) {
-	stdout, stderr := new(bytes.Buffer), new(bytes.Buffer)
-	s, err := NewSession(stdout, stderr)
+	var stdout, stderr strings.Builder
+	s, err := NewSession(&stdout, &stderr)
 	t.Cleanup(func() { s.Clear() })
 	require.NoError(t, err)
 
