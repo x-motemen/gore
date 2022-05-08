@@ -1,13 +1,13 @@
 package gore
 
 import (
-	"bytes"
 	"go/printer"
 	"go/token"
+	"strings"
 )
 
 func showNode(fset *token.FileSet, node interface{}) string {
-	var buf bytes.Buffer
-	printer.Fprint(&buf, fset, node)
-	return buf.String()
+	var sb strings.Builder
+	printer.Fprint(&sb, fset, node)
+	return sb.String()
 }
