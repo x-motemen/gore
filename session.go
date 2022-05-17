@@ -12,7 +12,6 @@ import (
 	"go/token"
 	"go/types"
 	"io"
-	"io/ioutil"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -75,8 +74,10 @@ var printerPkgs = []struct {
 	requires      []pathVersion
 	code          string
 }{
-	{path: "github.com/k0kubun/pp/v3", version: "v3.0.7", code: `pp.Println(x)`,
-		requires: []pathVersion{{"github.com/mattn/go-colorable", "v0.1.7"}}},
+	{
+		path: "github.com/k0kubun/pp/v3", version: "v3.1.0", code: `pp.Println(x)`,
+		requires: []pathVersion{{"github.com/mattn/go-colorable", "v0.1.12"}},
+	},
 	{path: "fmt", code: `fmt.Printf("%#v\n", x)`},
 }
 
@@ -90,7 +91,7 @@ func NewSession(stdout, stderr io.Writer) (*Session, error) {
 
 	s := &Session{stdout: stdout, stderr: stderr}
 
-	s.tempDir, err = ioutil.TempDir("", "gore-")
+	s.tempDir, err = os.MkdirTemp("", "gore-")
 	if err != nil {
 		return s, err
 	}
@@ -186,7 +187,7 @@ func (s *Session) Run() error {
 }
 
 func (s *Session) goRun(files []string) error {
-	args := append([]string{"run"}, files...)
+	args := append([]string{"run", "-mod=mod"}, files...)
 	debugf("go %s", strings.Join(args, " "))
 	cmd := exec.Command("go", args...)
 	cmd.Stdin = os.Stdin
@@ -229,25 +230,28 @@ func (s *Session) evalStmt(in string) error {
 	}
 
 	enclosingFunc := f.Scope.Lookup("F").Decl.(*ast.FuncDecl)
-	stmts := enclosingFunc.Body.List
 
-	if len(stmts) > 0 {
-		debugf("evalStmt :: %s", showNode(s.fset, stmts))
-		lastStmt := stmts[len(stmts)-1]
-		if assign, ok := lastStmt.(*ast.AssignStmt); ok {
-			if s := buildPrintStmt(assign.Lhs); s != nil {
-				stmts = append(stmts, s)
+	debugf("evalStmt :: %s", showNode(s.fset, enclosingFunc.Body.List))
+	var stmts []ast.Stmt
+
+	for _, stmt := range enclosingFunc.Body.List {
+		switch stmt := stmt.(type) {
+		case *ast.AssignStmt:
+			if stmt := buildPrintStmt(stmt.Lhs); stmt != nil {
+				stmts = append(stmts, stmt)
 			}
-		}
-		if decl, ok := lastStmt.(*ast.DeclStmt); ok {
-			if decl, ok := decl.Decl.(*ast.GenDecl); ok {
-				if s := buildPrintStmtOfDecl(decl); s != nil {
-					stmts = append(stmts, s)
+		case *ast.DeclStmt:
+			if decl, ok := stmt.Decl.(*ast.GenDecl); ok {
+				if decl.Tok == token.TYPE {
+					s.file.Decls = append(s.file.Decls, decl)
+					continue
+				} else if stmt := buildPrintStmtOfDecl(decl); stmt != nil {
+					stmts = append(stmts, stmt)
 				}
 			}
 		}
+		s.appendStatements(stmt)
 	}
-
 	s.appendStatements(stmts...)
 
 	return nil
@@ -365,9 +369,9 @@ func (s *Session) source(space bool) (string, error) {
 		}
 	}
 
-	var buf bytes.Buffer
-	err := config.Fprint(&buf, s.fset, s.file)
-	return buf.String(), err
+	var sb strings.Builder
+	err := config.Fprint(&sb, s.fset, s.file)
+	return sb.String(), err
 }
 
 func (s *Session) reset() error {
@@ -508,7 +512,7 @@ func (s *Session) includeFiles(files []string) {
 }
 
 func (s *Session) includeFile(file string) {
-	content, err := ioutil.ReadFile(file)
+	content, err := os.ReadFile(file)
 	if err != nil {
 		errorf("%s", err)
 		return
@@ -543,7 +547,7 @@ func (s *Session) importPackages(src []byte) error {
 
 // importFile adds external golang file to goRun target to use its function
 func (s *Session) importFile(src []byte) error {
-	tmp, err := ioutil.TempFile(s.tempDir, "gore_external_*.go")
+	tmp, err := os.CreateTemp(s.tempDir, "gore_external_*.go")
 	if err != nil {
 		return err
 	}

@@ -8,6 +8,9 @@ import (
 	"strings"
 )
 
+// Version of gore.
+const Version = "0.5.5"
+
 // Gore ...
 type Gore struct {
 	autoImport           bool
@@ -111,7 +114,7 @@ func (g *Gore) Run() error {
 	}
 
 	if historyFile != "" {
-		err := os.MkdirAll(filepath.Dir(historyFile), 0755)
+		err := os.MkdirAll(filepath.Dir(historyFile), 0o755)
 		if err != nil {
 			errorf("%s", err)
 		} else {

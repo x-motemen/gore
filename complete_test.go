@@ -1,7 +1,7 @@
 package gore
 
 import (
-	"bytes"
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -11,13 +11,13 @@ import (
 )
 
 func TestSession_completeWord(t *testing.T) {
-	if gocode.Available() == false {
+	if !gocode.Available() {
 		t.Skipf("gocode unavailable")
 	}
 
-	stdout, stderr := new(bytes.Buffer), new(bytes.Buffer)
-	s, err := NewSession(stdout, stderr)
-	defer s.Clear()
+	var stdout, stderr strings.Builder
+	s, err := NewSession(&stdout, &stderr)
+	t.Cleanup(func() { s.Clear() })
 	require.NoError(t, err)
 
 	pre, cands, post := s.completeWord("", 0)
@@ -87,7 +87,7 @@ func TestSession_completeWord(t *testing.T) {
 	}, cands)
 	assert.Equal(t, post, "")
 
-	pre, cands, post = s.completeWord(":i mot", 6)
+	pre, cands, post = s.completeWord(":i x-", 5)
 	assert.Equal(t, ":i ", pre)
 	assert.Equal(t, []string{
 		"github.com/confetti-framework/baker", "github.com/motemen/go-quickfix",

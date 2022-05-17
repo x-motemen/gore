@@ -2,7 +2,9 @@ package gore
 
 import (
 	"fmt"
-	"io/ioutil"
+	"go/ast"
+	"go/build"
+	"go/types"
 	"os"
 	"os/exec"
 	"path"
@@ -12,10 +14,6 @@ import (
 	"text/tabwriter"
 	"time"
 	"unicode"
-
-	"go/ast"
-	"go/build"
-	"go/types"
 
 	"golang.org/x/tools/go/ast/astutil"
 	"golang.org/x/tools/go/packages"
@@ -171,7 +169,7 @@ func completeImport(s *Session, prefix string) []string {
 				if fi, err := os.Stat(dir); err != nil || !fi.IsDir() {
 					continue
 				}
-				entries, err := ioutil.ReadDir(dir)
+				entries, err := os.ReadDir(dir)
 				if err != nil {
 					continue
 				}
@@ -207,7 +205,7 @@ func completeImport(s *Session, prefix string) []string {
 			continue
 		}
 
-		entries, err := ioutil.ReadDir(dir)
+		entries, err := os.ReadDir(dir)
 		if err != nil {
 			errorf("ReadDir %s: %s", dir, err)
 			continue
@@ -329,7 +327,7 @@ func actionWrite(s *Session, filename string) error {
 		filename = fmt.Sprintf("gore_session_%s.go", time.Now().Format("20060102_150405"))
 	}
 
-	err = ioutil.WriteFile(filename, []byte(source), 0644)
+	err = os.WriteFile(filename, []byte(source), 0o644)
 	if err != nil {
 		return err
 	}

@@ -5,7 +5,7 @@ import (
 	"strings"
 	"unicode"
 
-	"github.com/confetti-framework/baker/gocode"
+	"github.com/x-motemen/gore/gocode"
 )
 
 func (s *Session) completeWord(line string, pos int) (string, []string, string) {
@@ -51,7 +51,7 @@ func (s *Session) completeWord(line string, pos int) (string, []string, string) 
 		return "", nil, ""
 	}
 
-	if gocode.Available() == false {
+	if !gocode.Available() {
 		return "", nil, ""
 	}
 

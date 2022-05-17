@@ -1,6 +1,5 @@
 # Baker is a fork of gore
 
-## gore [![CI Status](https://github.com/motemen/gore/workflows/CI/badge.svg)](https://github.com/motemen/gore/actions)
 ### Yet another Go REPL that works nicely. Featured with line editing, code completion, and more.
 
 ![Screencast](doc/screencast.gif)
@@ -49,7 +48,7 @@ Only the latest major version.
 The gore command requires Go tool-chains on runtime, so standalone binary is not distributed.
 
 ```sh
-go get github.com/confetti-framework/baker/cmd/gore
+go install github.com/confetti-framework/baker/cmd/gore@latest
 ```
 
 Make sure `$GOPATH/bin` is in your `$PATH`.
@@ -57,7 +56,7 @@ Make sure `$GOPATH/bin` is in your `$PATH`.
 Also recommended:
 
 ```sh
-go get github.com/mdempsky/gocode   # for code completion
+go install github.com/mdempsky/gocode@latest   # for code completion
 ```
 
 Or you can use Docker:
