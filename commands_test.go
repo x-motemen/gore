@@ -73,8 +73,11 @@ func TestAction_Doc(t *testing.T) {
 
 	// test :doc works after some code
 
-	s.Eval("a := 1")
-	s.Eval("fmt.Print()")
+	err = s.Eval("a := 1")
+	require.NoError(t, err)
+
+	err = s.Eval("fmt.Print()")
+	require.NoError(t, err)
 
 	test()
 

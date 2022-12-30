@@ -10,7 +10,7 @@ import (
 	"runtime"
 )
 
-func debugf(format string, args ...interface{}) {
+func debugf(format string, args ...any) {
 	_, file, line, ok := runtime.Caller(1)
 
 	if ok {

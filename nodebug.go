@@ -3,5 +3,4 @@
 
 package gore
 
-func debugf(format string, args ...interface{}) {
-}
+func debugf(string, ...any) {}

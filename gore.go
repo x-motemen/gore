@@ -45,10 +45,8 @@ func (g *Gore) Run() error {
 	}
 
 	if g.packageName != "" {
-		err := s.includePackage(g.packageName)
-		if err != nil {
-			errorf("-pkg: %s", err)
-			os.Exit(1)
+		if err := s.includePackage(g.packageName); err != nil {
+			return err
 		}
 	}
 
@@ -84,8 +82,7 @@ func (g *Gore) Run() error {
 			if err == io.EOF {
 				break
 			}
-			fmt.Fprintf(g.errWriter, "fatal: %s", err)
-			os.Exit(1)
+			return err
 		}
 
 		if in == "" {

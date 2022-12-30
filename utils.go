@@ -6,7 +6,7 @@ import (
 	"strings"
 )
 
-func showNode(fset *token.FileSet, node interface{}) string {
+func showNode(fset *token.FileSet, node any) string {
 	var sb strings.Builder
 	printer.Fprint(&sb, fset, node)
 	return sb.String()

@@ -12,12 +12,14 @@ import (
 )
 
 // doQuickFix tries to fix the source AST so that it compiles well.
-func (s *Session) doQuickFix() error {
+func (s *Session) doQuickFix() {
 	const maxAttempts = 10
 
-	s.reset()
+	if err := s.reset(); err != nil {
+		debugf("reset :: err = %s", err)
+	}
 
-quickFixAttempt:
+L:
 	for i := 0; i < maxAttempts; i++ {
 		s.typeInfo = types.Info{
 			Types: make(map[ast.Expr]types.TypeAndValue),
@@ -34,7 +36,7 @@ quickFixAttempt:
 			break
 		}
 
-		debugf("quickFix :: err = %#v", err)
+		debugf("quickFix :: err = %s", err)
 
 		errList, ok := err.(quickfix.ErrorList)
 		if !ok {
@@ -76,17 +78,15 @@ quickFixAttempt:
 						}
 
 						s.mainBody.List = append(stmts, s.mainBody.List[i+1:]...)
-						continue quickFixAttempt
+						continue L
 					}
 				}
 			}
 		}
 
-		debugf("quickFix :: give up: %#v", err)
+		debugf("quickFix :: give up: %s", err)
 		break
 	}
-
-	return nil
 }
 
 func (s *Session) clearQuickFix() {

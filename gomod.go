@@ -101,10 +101,10 @@ func lookupGoModule(pkg, version string) bool {
 
 func canAccessGoproxy() bool {
 	var host string
-	if url, err := url.Parse(getGoproxy()); err != nil {
+	if u, err := url.Parse(getGoproxy()); err != nil {
 		host = "proxy.golang.org"
 	} else {
-		host = url.Hostname()
+		host = u.Hostname()
 	}
 	addr := net.JoinHostPort(host, "80")
 	dialer := net.Dialer{Timeout: 5 * time.Second}

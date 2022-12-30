@@ -100,7 +100,7 @@ func actionImport(s *Session, arg string) error {
 		return nil
 	}
 
-	path := strings.Trim(arg, `"`)
+	arg = strings.Trim(arg, `"`)
 
 	// check if the package specified by path is importable
 	_, err := packages.Load(
@@ -108,7 +108,7 @@ func actionImport(s *Session, arg string) error {
 			Dir:        s.tempDir,
 			BuildFlags: []string{"-mod=mod"},
 		},
-		path,
+		arg,
 	)
 	if err != nil {
 		return err
@@ -116,17 +116,17 @@ func actionImport(s *Session, arg string) error {
 
 	var found bool
 	for _, i := range s.file.Imports {
-		if strings.Trim(i.Path.Value, `"`) == path {
+		if strings.Trim(i.Path.Value, `"`) == arg {
 			found = true
 			break
 		}
 	}
 	if !found {
-		astutil.AddNamedImport(s.fset, s.file, "_", path)
+		astutil.AddNamedImport(s.fset, s.file, "_", arg)
 		_, err = s.types.Check("_tmp", s.fset, append(s.extraFiles, s.file), nil)
-		if err != nil && strings.Contains(err.Error(), "could not import "+path) {
-			astutil.DeleteNamedImport(s.fset, s.file, "_", path)
-			return fmt.Errorf("could not import %q", path)
+		if err != nil && strings.Contains(err.Error(), "could not import "+arg) {
+			astutil.DeleteNamedImport(s.fset, s.file, "_", arg)
+			return fmt.Errorf("could not import %q", arg)
 		}
 	}
 
@@ -135,7 +135,7 @@ func actionImport(s *Session, arg string) error {
 
 var gorootSrc = filepath.Join(filepath.Clean(runtime.GOROOT()), "src")
 
-func completeImport(s *Session, prefix string) []string {
+func completeImport(_ *Session, prefix string) []string {
 	result := []string{}
 	seen := map[string]bool{}
 
@@ -235,7 +235,7 @@ func completeImport(s *Session, prefix string) []string {
 						}
 					}
 					if !isRepo {
-						r = r + "/"
+						r += "/"
 					}
 				}
 
@@ -470,6 +470,6 @@ func actionHelp(s *Session, _ string) error {
 	return nil
 }
 
-func actionQuit(s *Session, _ string) error {
+func actionQuit(_ *Session, _ string) error {
 	return ErrQuit
 }
