@@ -13,7 +13,7 @@ func newErrFilter(w io.Writer) io.WriteCloser {
 
 type errTransformer struct{}
 
-func (w *errTransformer) Transform(dst, src []byte, atEOF bool) (nDst, nSrc int, err error) {
+func (*errTransformer) Transform(dst, src []byte, atEOF bool) (nDst, nSrc int, err error) {
 	var i int
 	for {
 		if atEOF {
@@ -41,7 +41,7 @@ func (w *errTransformer) Transform(dst, src []byte, atEOF bool) (nDst, nSrc int,
 	return
 }
 
-func (w *errTransformer) Reset() {}
+func (*errTransformer) Reset() {}
 
 func replaceErrMsg(p []byte) []byte {
 	if bytes.HasPrefix(p, []byte("# command-line-arguments")) {

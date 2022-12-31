@@ -51,7 +51,7 @@ package main
 
 import %q
 
-func ` + printerName + `(xs ...interface{}) {
+func ` + printerName + `(xs ...any) {
 	for _, x := range xs {
 		%s
 	}
@@ -126,7 +126,9 @@ func (s *Session) init() (err error) {
 	s.extraFilePaths = nil
 	s.extraFiles = nil
 
-	s.initGoMod() // this should be before printer load for printer package requirements
+	if err = s.initGoMod(); err != nil { // this should be before printer load for printer package requirements
+		return err
+	}
 
 	var initialSource string
 	for _, pp := range printerPkgs {
@@ -313,13 +315,13 @@ func (s *Session) evalFunc(in string) error {
 	return nil
 }
 
-func (s *Session) parseTokens(in string) error {
-	var scanner scanner.Scanner
+func (*Session) parseTokens(in string) error {
+	var sc scanner.Scanner
 	fset := token.NewFileSet()
 	file := fset.AddFile("", fset.Base(), len(in))
-	scanner.Init(file, []byte(in), nil, 0)
+	sc.Init(file, []byte(in), nil, 0)
 	for {
-		_, tok, lit := scanner.Scan()
+		_, tok, lit := sc.Scan()
 		if tok == token.EOF {
 			break
 		}
@@ -422,7 +424,9 @@ func (s *Session) Eval(in string) error {
 	}
 
 	if s.autoImport {
-		s.fixImports()
+		if err := s.fixImports(); err != nil {
+			debugf("fixImports :: err = %s", err)
+		}
 	}
 	s.doQuickFix()
 
@@ -533,7 +537,9 @@ func (s *Session) importPackages(src []byte) error {
 
 	for _, imt := range astf.Imports {
 		debugf("import package: %s", imt.Path.Value)
-		actionImport(s, imt.Path.Value)
+		if err = actionImport(s, imt.Path.Value); err != nil {
+			return err
+		}
 	}
 
 	return nil

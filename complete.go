@@ -31,7 +31,7 @@ func (s *Session) completeWord(line string, pos int) (string, []string, string) 
 				name := pre + fmt.Sprint(command.name)
 				if cmd == "" || command.name.matchesPrefix(cmd) {
 					if !strings.HasPrefix(post, " ") && command.arg != "" {
-						name = name + " "
+						name += " "
 					}
 					result = append(result, name)
 				}
@@ -99,7 +99,7 @@ func (s *Session) completeCode(in string, pos int, exprMode bool) (keep int, can
 			continue
 		}
 		if exprMode && e.Class == "func" {
-			cand = cand + "("
+			cand += "("
 		}
 		candidates = append(candidates, cand)
 	}
