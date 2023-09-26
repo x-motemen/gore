@@ -379,10 +379,10 @@ func TestSessionEval_Func(t *testing.T) {
 	}
 
 	assert.Equal(t, "112\n2400\n204\n", stdout.String())
-	assert.Regexp(t, `cannot use s \((?:variable of )?type string\) as type int in return (?:argument|statement)
+	assert.Regexp(t, `cannot use s \((?:variable of )?type string\) as (?:type int|int value) in return (?:argument|statement)
 invalid operation: f\(\) \+ len\(g\(\)\) \(mismatched types string and int\)
 invalid operation: f\(\) \* len\(g\(\)\) \(mismatched types string and int\)
-cannot use i \((?:variable of )?type int\) as type string in return (?:argument|statement)
+cannot use i \((?:variable of )?type int\) as (?:type string|string value) in return (?:argument|statement)
 `, stderr.String())
 }
 

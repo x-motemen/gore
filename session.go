@@ -16,7 +16,6 @@ import (
 	"os/exec"
 	"path/filepath"
 	"strings"
-	"syscall"
 	"unicode"
 
 	"golang.org/x/tools/go/packages"
@@ -432,14 +431,9 @@ func (s *Session) Eval(in string) error {
 
 	err := s.Run()
 	if err != nil {
-		if exitErr, ok := err.(*exec.ExitError); ok {
-			// if failed with status 2, remove the last statement
-			if st, ok := exitErr.ProcessState.Sys().(syscall.WaitStatus); ok {
-				if st.ExitStatus() == 2 {
-					debugf("got exit status 2, popping out last input")
-					s.restoreCode()
-				}
-			}
+		if _, ok := err.(*exec.ExitError); ok {
+			debugf("got exit error, popping out last input")
+			s.restoreCode()
 		}
 		debugf("%s", err)
 		err = ErrCmdRun
