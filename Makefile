@@ -23,6 +23,20 @@ show-version: $(GOBIN)/gobump
 $(GOBIN)/gobump:
 	@go install github.com/x-motemen/gobump/cmd/gobump@latest
 
+.PHONY: cross
+cross: $(GOBIN)/goxz CREDITS
+	goxz -n $(BIN) -pv=v$(VERSION) -build-ldflags=$(BUILD_LDFLAGS) ./cmd/$(BIN)
+
+$(GOBIN)/goxz:
+	go install github.com/Songmu/goxz/cmd/goxz@latest
+
+CREDITS: $(GOBIN)/gocredits go.sum
+	go mod tidy
+	gocredits -w .
+
+$(GOBIN)/gocredits:
+	go install github.com/Songmu/gocredits/cmd/gocredits@latest
+
 .PHONY: test
 test: build
 	go test -v ./... # we don't use -race which increases much duration
@@ -37,7 +51,7 @@ $(GOBIN)/staticcheck:
 
 .PHONY: clean
 clean:
-	rm -f $(BIN)
+	rm -f $(BIN) goxz CREDITS
 	go clean
 
 .PHONY: bump
