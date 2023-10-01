@@ -51,7 +51,7 @@ $(GOBIN)/staticcheck:
 
 .PHONY: clean
 clean:
-	rm -f $(BIN) goxz CREDITS
+	rm -rf $(BIN) goxz CREDITS
 	go clean
 
 .PHONY: bump
