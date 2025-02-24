@@ -90,5 +90,5 @@ docker run -it --rm ghcr.io/x-motemen/gore
 
 ## Author
 
-motemen &lt;<motemen@gmail.com>&gt;
-itchyny &lt;<itchyny@cybozu.co.jp>&gt;
+- motemen &lt;<motemen@gmail.com>&gt;
+- itchyny &lt;<itchyny@cybozu.co.jp>&gt;
