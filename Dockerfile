@@ -1,4 +1,4 @@
-FROM golang:1.19.4-alpine3.17
+FROM golang:1.24.0-alpine3.21
 
 RUN apk add --no-cache git make
 WORKDIR /go/src/github.com/x-motemen/gore/
