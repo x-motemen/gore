@@ -324,7 +324,7 @@ func actionWrite(s *Session, filename string) error {
 	}
 
 	if filename == "" {
-		filename = fmt.Sprintf("gore_session_%s.go", time.Now().Format("20060102_150405"))
+		filename = time.Now().Format("gore_session_20060102_150405.go")
 	}
 
 	err = os.WriteFile(filename, []byte(source), 0o644)

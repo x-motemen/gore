@@ -26,27 +26,27 @@ func TestSession_completeWord(t *testing.T) {
 	assert.Equal(t, post, "")
 
 	pre, cands, post = s.completeWord("    x", 4)
-	assert.Equal(t, "", pre)
-	assert.Equal(t, []string{"        "}, cands)
+	assert.Equal(t, "    ", pre)
+	assert.Equal(t, []string{"    "}, cands)
 	assert.Equal(t, post, "x")
 
 	pre, cands, post = s.completeWord(" : :", 4)
-	assert.Equal(t, "", pre)
+	assert.Equal(t, " : :", pre)
 	assert.Equal(t, []string{
-		" : :import ",
-		" : :type ",
-		" : :print",
-		" : :write ",
-		" : :clear",
-		" : :doc ",
-		" : :help",
-		" : :quit",
+		"import ",
+		"type ",
+		"print",
+		"write ",
+		"clear",
+		"doc ",
+		"help",
+		"quit",
 	}, cands)
 	assert.Equal(t, post, "")
 
 	pre, cands, post = s.completeWord(" : : i", 6)
-	assert.Equal(t, "", pre)
-	assert.Equal(t, []string{" : : import "}, cands)
+	assert.Equal(t, " : : ", pre)
+	assert.Equal(t, []string{"import "}, cands)
 	assert.Equal(t, post, "")
 
 	pre, cands, post = s.completeWord("::i t", 5)
@@ -61,6 +61,11 @@ func TestSession_completeWord(t *testing.T) {
 
 	pre, cands, post = s.completeWord(":i gore", 7)
 	assert.Equal(t, ":i ", pre)
+	assert.Equal(t, []string{"github.com/x-motemen/gore"}, cands)
+	assert.Equal(t, post, "")
+
+	pre, cands, post = s.completeWord("::i\u3000gore", 10)
+	assert.Equal(t, "::i\u3000", pre)
 	assert.Equal(t, []string{"github.com/x-motemen/gore"}, cands)
 	assert.Equal(t, post, "")
 
@@ -82,8 +87,11 @@ func TestSession_completeWord(t *testing.T) {
 	pre, cands, post = s.completeWord(":i go-", 6)
 	assert.Equal(t, ":i ", pre)
 	assert.Equal(t, []string{
-		"github.com/davecgh/go-spew", "github.com/mattn/go-runewidth",
-		"github.com/motemen/go-quickfix", "github.com/pmezard/go-difflib",
+		"github.com/davecgh/go-spew",
+		"github.com/google/go-cmp",
+		"github.com/mattn/go-runewidth",
+		"github.com/motemen/go-quickfix",
+		"github.com/pmezard/go-difflib",
 	}, cands)
 	assert.Equal(t, post, "")
 
@@ -93,13 +101,13 @@ func TestSession_completeWord(t *testing.T) {
 	assert.Equal(t, post, "")
 
 	pre, cands, post = s.completeWord(":c", 2)
-	assert.Equal(t, "", pre)
-	assert.Equal(t, []string{":clear"}, cands)
+	assert.Equal(t, ":", pre)
+	assert.Equal(t, []string{"clear"}, cands)
 	assert.Equal(t, post, "")
 
 	pre, cands, post = s.completeWord(" : : q", 6)
-	assert.Equal(t, "", pre)
-	assert.Equal(t, []string{" : : quit"}, cands)
+	assert.Equal(t, " : : ", pre)
+	assert.Equal(t, []string{"quit"}, cands)
 	assert.Equal(t, post, "")
 
 	err = actionImport(s, "fmt")
@@ -111,7 +119,7 @@ func TestSession_completeWord(t *testing.T) {
 	assert.Equal(t, post, "")
 
 	pre, cands, post = s.completeWord(" ::: doc  f", 11)
-	assert.Equal(t, " ::: doc ", pre)
-	assert.Equal(t, []string{" fmt"}, cands)
+	assert.Equal(t, " ::: doc  ", pre)
+	assert.Equal(t, []string{"fmt"}, cands)
 	assert.Equal(t, post, "")
 }
