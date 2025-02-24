@@ -74,7 +74,9 @@ func (g *Gore) Run() error {
 		}
 	}
 
-	rl.SetWordCompleter(s.completeWord)
+	rl.SetWordCompleter(func(str string, pos int) (string, []string, string) {
+		return s.completeWord(str, len(string([]rune(str)[:pos])))
+	})
 
 	for {
 		in, err := rl.Prompt()

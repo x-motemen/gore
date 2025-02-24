@@ -623,7 +623,9 @@ func (s *Session) includePackage(path string) error {
 		var err2 error
 		pkg, err2 = build.ImportDir(path, 0)
 		if err2 != nil {
-			return err // return package path import error, not directory import error as build.Import can also import directories if "./foo" is specified
+			// return package path import error, not directory import error
+			// as build.Import can also import directories if "./foo" is specified
+			return err
 		}
 	}
 

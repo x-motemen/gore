@@ -3,32 +3,116 @@ name: CI
 on:
   push:
     branches:
-    - main
+      - main
+    tags:
+      - v*
   pull_request:
 
 permissions:
   contents: read
 
 jobs:
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: 1.24.x
+      - name: Build
+        run: make build
+      - name: Run command
+        run: echo 'fmt.Sprint(42)' | ./gore --autoimport
+      - name: Cross build
+        run: make cross
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: goxz
+          path: goxz
+      - name: Clean
+        run: make clean
+
   test:
     name: Test
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        go: [1.21.x, 1.20.x, 1.19.x]
+        go: [1.24.x, 1.23.x, 1.22.x]
       fail-fast: false
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
-    - name: Setup Go
-      uses: actions/setup-go@v4
-      with:
-        go-version: ${{ matrix.go }}
-    - name: Install gocode
-      run: go install github.com/mdempsky/gocode@latest
-    - name: Build
-      run: make build
-    - name: Test
-      run: make test
-    - name: Lint
-      run: make lint
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: ${{ matrix.go }}
+      - name: Install gocode
+        run: go install github.com/mdempsky/gocode@latest
+      - name: Build
+        run: make build
+      - name: Test
+        run: make test
+      - name: Lint
+        run: make lint
+
+  docker:
+    name: Docker
+    permissions:
+      packages: write
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Docker metadata
+        uses: docker/metadata-action@v5
+        id: metadata
+        with:
+          images: ghcr.io/${{ github.repository }}
+          tags: |
+            type=semver,pattern={{version}},enable=${{ startsWith(github.ref, 'refs/tags/v') }}
+            type=semver,pattern={{major}}.{{minor}},enable=${{ startsWith(github.ref, 'refs/tags/v') }}
+            type=semver,pattern={{major}},enable=${{ startsWith(github.ref, 'refs/tags/v') }}
+            type=sha,format=long,enable=${{ !startsWith(github.ref, 'refs/tags/v') }}
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+      - name: Login to GitHub Container Registry
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.repository_owner }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Build and release Docker image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: ${{ startsWith(github.ref, 'refs/tags/v') }}
+          provenance: false
+          platforms: linux/amd64, linux/arm64
+          tags: ${{ steps.metadata.outputs.tags }}
+          labels: ${{ steps.metadata.outputs.labels }}
+
+  release:
+    name: Release
+    needs: [build, test, docker]
+    if: startsWith(github.ref, 'refs/tags/v')
+    permissions:
+      contents: write
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: goxz
+          path: goxz
+      - name: Create release
+        uses: ncipollo/release-action@v1
+        with:
+          name: Release ${{ github.ref_name }}
+          artifacts: goxz/*
