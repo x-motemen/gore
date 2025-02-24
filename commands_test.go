@@ -1,6 +1,8 @@
 package gore
 
 import (
+	"go/version"
+	"runtime"
 	"strings"
 	"testing"
 
@@ -9,6 +11,10 @@ import (
 )
 
 func TestAction_Type(t *testing.T) {
+	if version.Compare(runtime.Version(), "go1.24") < 0 {
+		t.Skipf("Skip on %s", runtime.Version())
+	}
+
 	var stdout, stderr strings.Builder
 	s, err := NewSession(&stdout, &stderr)
 	t.Cleanup(func() { s.Clear() })
@@ -33,14 +39,14 @@ func TestAction_Type(t *testing.T) {
 		_ = s.Eval(code)
 	}
 
-	assert.Regexp(t, `string
+	assert.Equal(t, `string
 int
 float64
-func\(\) \[\]int
-\[\]int
-func\(a \.\.\.(?:interface\{\}|any)\) string
-func\(a \.\.\.(?:interface\{\}|any)\) \(n int, err error\)
-func\(w io\.Writer\) \*encoding/json\.Encoder
+func() []int
+[]int
+func(a ...any) string
+func(a ...any) (n int, err error)
+func(w io.Writer) *encoding/json.Encoder
 `, stdout.String())
 	assert.Equal(t, `type: cannot get type: x
 type: cannot get type: fmt
@@ -48,6 +54,10 @@ type: cannot get type: fmt
 }
 
 func TestAction_Doc(t *testing.T) {
+	if version.Compare(runtime.Version(), "go1.24") < 0 {
+		t.Skipf("Skip on %s", runtime.Version())
+	}
+
 	var stdout, stderr strings.Builder
 	s, err := NewSession(&stdout, &stderr)
 	t.Cleanup(func() { s.Clear() })

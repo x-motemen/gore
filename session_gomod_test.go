@@ -2,8 +2,10 @@ package gore
 
 import (
 	"fmt"
+	"go/version"
 	"os"
 	"path/filepath"
+	"runtime"
 	"strconv"
 	"strings"
 	"testing"
@@ -88,6 +90,10 @@ func TestSessionEval_Gomod(t *testing.T) {
 }
 
 func TestSessionEval_Gomod_AutoImport(t *testing.T) {
+	if version.Compare(runtime.Version(), "go1.24") < 0 {
+		t.Skipf("Skip on %s", runtime.Version())
+	}
+
 	var stdout, stderr strings.Builder
 	gomodSetup(t)
 	s, err := NewSession(&stdout, &stderr)

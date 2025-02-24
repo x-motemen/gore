@@ -1,8 +1,10 @@
 package gore
 
 import (
+	"go/version"
 	"os"
 	"regexp"
+	"runtime"
 	"strings"
 	"testing"
 
@@ -379,10 +381,10 @@ func TestSessionEval_Func(t *testing.T) {
 	}
 
 	assert.Equal(t, "112\n2400\n204\n", stdout.String())
-	assert.Regexp(t, `cannot use s \((?:variable of )?type string\) as (?:type int|int value) in return (?:argument|statement)
-invalid operation: f\(\) \+ len\(g\(\)\) \(mismatched types string and int\)
-invalid operation: f\(\) \* len\(g\(\)\) \(mismatched types string and int\)
-cannot use i \((?:variable of )?type int\) as (?:type string|string value) in return (?:argument|statement)
+	assert.Equal(t, `cannot use s (variable of type string) as int value in return statement
+invalid operation: f() + len(g()) (mismatched types string and int)
+invalid operation: f() * len(g()) (mismatched types string and int)
+cannot use i (variable of type int) as string value in return statement
 `, stderr.String())
 }
 
@@ -433,12 +435,16 @@ func TestSessionEval_CompileError(t *testing.T) {
 
 	assert.Equal(t, "5\n105\n", stdout.String())
 	assert.Regexp(t, `undefined: foo
-invalid argument:? f\(\) \((?:value of )?type int\) for len
+invalid argument: f\(\) \(value of type int\) for (?:built-in )?len
 invalid operation: f\(\) \+ g\(\) \(mismatched types int and string\)
 `, stderr.String())
 }
 
 func TestSession_ExtraFiles(t *testing.T) {
+	if version.Compare(runtime.Version(), "go1.24") < 0 {
+		t.Skipf("Skip on %s", runtime.Version())
+	}
+
 	var stdout, stderr strings.Builder
 	_ = newTempDir(t)
 	require.NoError(t, os.WriteFile("test.go", []byte(`package test
