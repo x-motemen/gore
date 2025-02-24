@@ -1,4 +1,8 @@
-# gore [![CI Status](https://github.com/x-motemen/gore/workflows/CI/badge.svg)](https://github.com/x-motemen/gore/actions)
+# gore
+[![CI Status](https://github.com/x-motemen/gore/actions/workflows/ci.yaml/badge.svg?branch=main)](https://github.com/x-motemen/gore/actions?query=branch:main)
+[![MIT License](https://img.shields.io/badge/license-MIT-blue.svg)](https://github.com/x-motemen/gore/blob/main/LICENSE)
+[![release](https://img.shields.io/github/release/x-motemen/gore/all.svg)](https://github.com/x-motemen/gore/releases)
+
 ### Yet another Go REPL that works nicely. Featured with line editing, code completion, and more.
 
 ![Screencast](doc/screencast.gif)
@@ -58,18 +62,21 @@ go install github.com/mdempsky/gocode@latest   # for code completion
 Or you can use Docker:
 
 ```sh
-git clone https://github.com/x-motemen/gore.git
-cd gore
-docker build -t gore .
-docker run -it --rm gore
+docker run -it --rm ghcr.io/x-motemen/gore
 ```
 
 ## FAQ/Caveats
 
-- gore runs code using `go run` for each input. All the inputted lines are
-  evaluated again and again so you can't bind the evaluated time by
-  `time.Now()`, for example. If you don't like this behavior, you may want to use
-  [yaegi](https://github.com/containous/yaegi).
+- gore runs code using `go run` for each input. Every line entered is evaluated
+  repeatedly ([#67](https://github.com/x-motemen/gore/issues/67)),
+  so you can't bind the evaluated time by `time.Now()`, for example.
+  This implementation also makes the execution fairly slow
+  ([#182](https://github.com/x-motemen/gore/issues/182)).
+  This project started from a simple idea to use `go run` for all REPL input.
+  I think this project has provided some value for Go users, but these days
+  there are other REPL implementations that are more actively maintained
+  and run faster. I recommend using [gomacro](https://github.com/cosmos72/gomacro)
+  or [yaegi](https://github.com/containous/yaegi).
 - gore support Go modules. You can load local modules when you start gore at
   the project directory. You don't need to `go get` to check the usage of a
   remote repository, `:import github.com/...` will automatically download that
@@ -84,3 +91,4 @@ docker run -it --rm gore
 ## Author
 
 motemen &lt;<motemen@gmail.com>&gt;
+itchyny &lt;<itchyny@cybozu.co.jp>&gt;
