@@ -25,7 +25,7 @@ To quit the session, type `Ctrl-D` or use `:q` command.
 - Package importing with completion
 - Evaluates any expressions, statements and function declarations
 - No "evaluated but not used" errors
-- Code completion (requires [gocode](https://github.com/mdempsky/gocode))
+- Code completion (requires [gopls](https://github.com/golang/tools/blob/master/gopls/README.md))
 - Showing documents
 - Auto-importing (`gore -autoimport`)
 
@@ -56,7 +56,7 @@ Make sure `$GOPATH/bin` is in your `$PATH`.
 Also recommended:
 
 ```sh
-go install github.com/mdempsky/gocode@latest   # for code completion
+go install golang.org/x/tools/gopls@latest   # for code completion
 ```
 
 Or you can use Docker:

@@ -4,8 +4,6 @@ import (
 	"fmt"
 	"strings"
 	"unicode"
-
-	"github.com/x-motemen/gore/gocode"
 )
 
 func (s *Session) completeWord(line string, pos int) (string, []string, string) {
@@ -63,12 +61,12 @@ func (s *Session) completeCommand(prefix, suffix string) (string, []string, stri
 	return "", nil, ""
 }
 
-// completeCode does code completion within the session using gocode.
+// completeCode does code completion within the session using gopls.
 // in and pos specifies the current input and the cursor position (0 <= pos <= len(in)) respectively.
 // If exprMode is set to true, the completion is done as an expression (e.g. appends "(" to functions).
 // Return value keep specifies how many characters of in should be kept and candidates are what follow in[0:keep].
 func (s *Session) completeCode(in string, pos int, exprMode bool) (keep int, candidates []string, err error) {
-	if !gocode.Available() {
+	if s.completer == nil {
 		return
 	}
 
@@ -79,29 +77,22 @@ func (s *Session) completeCode(in string, pos int, exprMode bool) (keep int, can
 		return
 	}
 
-	// Kind of dirty hack :/
-	p := strings.LastIndex(source, "}")
-	editingSource := source[0:p] + in + source[p:]
-	cursor := len(source[0:p]) + pos
-
-	result, err := gocode.Query([]byte(editingSource), cursor)
-	if err != nil {
+	if err = s.completer.update(source); err != nil {
 		return
 	}
 
-	keep = pos - result.Cursor
-	candidates = make([]string, 0, len(result.Candidates))
-	for _, e := range result.Candidates {
-		cand := e.Name
-		if cand == printerName && e.Class == "func" {
-			continue
-		}
-		if exprMode && e.Class == "func" {
-			cand += "("
-		}
-		candidates = append(candidates, cand)
-	}
+	// Kind of dirty hack :/
+	p := strings.LastIndex(source, "}")
+	editingSource := source[:p] + "; " + in + source[p:]
+	cursor := p + pos + 2
 
+	debugf("complete code: %q, %d, %v", in, pos, exprMode)
+	if candidates, keep, err = s.completer.complete(
+		editingSource, cursor, exprMode); err != nil {
+		return
+	}
+	keep -= p + 2
+	debugf("complete results: %q, %d", candidates, keep)
 	return
 }
 

@@ -50,8 +50,8 @@ jobs:
         uses: actions/setup-go@v5
         with:
           go-version: ${{ matrix.go }}
-      - name: Install gocode
-        run: go install github.com/mdempsky/gocode@latest
+      - name: Install gopls
+        run: go install golang.org/x/tools/gopls@latest
       - name: Build
         run: make build
       - name: Test

@@ -39,6 +39,7 @@ type Session struct {
 	mainBody        *ast.BlockStmt
 	lastStmts       []ast.Stmt
 	lastDecls       []ast.Decl
+	completer       *goplsCompleter
 	stdout          io.Writer
 	stderr          io.Writer
 }
@@ -158,6 +159,22 @@ func (s *Session) init() (err error) {
 
 	s.lastStmts = nil
 	s.lastDecls = nil
+
+	return nil
+}
+
+func (s *Session) initCompleter() error {
+	source, err := s.source(false)
+	if err != nil {
+		return err
+	}
+
+	completer := &goplsCompleter{}
+	if err = completer.init(s.tempDir, s.tempFilePath, source, s.autoImport); err != nil {
+		return err
+	}
+
+	s.completer = completer
 	return nil
 }
 
@@ -439,7 +456,20 @@ func (s *Session) Eval(in string) error {
 		err = ErrCmdRun
 	}
 
+	s.updateCompleter()
 	return err
+}
+
+func (s *Session) updateCompleter() {
+	if s.completer != nil {
+		source, err := s.source(false)
+		if err != nil {
+			return
+		}
+		if err = s.completer.update(source); err != nil {
+			debugf("failed to update completer: %s", err)
+		}
+	}
 }
 
 func (s *Session) invokeCommand(in string) (err error) {
@@ -463,6 +493,7 @@ func (s *Session) invokeCommand(in string) (err error) {
 			}
 			err = fmt.Errorf("%s: %s", command.name, err)
 		}
+		s.updateCompleter()
 		return
 	}
 	return fmt.Errorf("command not found: %s", cmd)
@@ -567,14 +598,20 @@ func (s *Session) importFile(src []byte) error {
 		}
 	}
 
+	source := showNode(s.fset, f)
+	if s.completer != nil {
+		if err := s.completer.open(tmp.Name(), source); err != nil {
+			debugf("failed to open in completer: %s", err)
+		}
+	}
+
 	out, err := os.Create(tmp.Name())
 	if err != nil {
 		return err
 	}
 	defer out.Close()
 
-	err = printer.Fprint(out, s.fset, f)
-	if err != nil {
+	if _, err = out.WriteString(source); err != nil {
 		return err
 	}
 
@@ -640,5 +677,8 @@ func (s *Session) includePackage(path string) error {
 
 // Clear the temporary directory.
 func (s *Session) Clear() error {
+	if s.completer != nil {
+		_ = s.completer.close()
+	}
 	return os.RemoveAll(s.tempDir)
 }
