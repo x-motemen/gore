@@ -20,7 +20,7 @@ func (s *Session) doQuickFix() {
 	}
 
 L:
-	for i := 0; i < maxAttempts; i++ {
+	for range maxAttempts {
 		s.typeInfo = types.Info{
 			Types: make(map[ast.Expr]types.TypeAndValue),
 		}
@@ -129,7 +129,7 @@ func (s *Session) clearQuickFix() {
 					var lhs []ast.Expr
 					if t, ok := t.(*types.Tuple); ok {
 						lhs = make([]ast.Expr, t.Len())
-						for i := 0; i < t.Len(); i++ {
+						for i := range t.Len() {
 							lhs[i] = ast.NewIdent("_")
 						}
 					} else {
