@@ -1,7 +1,7 @@
 FROM golang:1.24.0-alpine3.21
 
 RUN apk add --no-cache git make \
- && go install github.com/mdempsky/gocode@latest
+ && go install golang.org/x/tools/gopls@latest
 
 WORKDIR /go/src/github.com/x-motemen/gore/
 COPY go.* ./

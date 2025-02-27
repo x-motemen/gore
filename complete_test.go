@@ -6,19 +6,18 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-
-	"github.com/x-motemen/gore/gocode"
 )
 
 func TestSession_completeWord(t *testing.T) {
-	if !gocode.Available() {
-		t.Skipf("gocode unavailable")
-	}
-
 	var stdout, stderr strings.Builder
 	s, err := NewSession(&stdout, &stderr)
 	t.Cleanup(func() { s.Clear() })
 	require.NoError(t, err)
+
+	err = s.initCompleter()
+	if err != nil {
+		t.Skipf("Skip test: %s", err)
+	}
 
 	pre, cands, post := s.completeWord("", 0)
 	assert.Equal(t, "", pre)
@@ -113,13 +112,21 @@ func TestSession_completeWord(t *testing.T) {
 	err = actionImport(s, "fmt")
 	require.NoError(t, err)
 
-	pre, cands, post = s.completeWord("fmt.p", 5)
+	pre, cands, post = s.completeWord("fmt.f", 5)
 	assert.Equal(t, "fmt.", pre)
-	assert.Contains(t, cands, "Println(")
+	assert.Contains(t, cands, "Fprintf(")
+	assert.Contains(t, cands, "Formatter")
 	assert.Equal(t, post, "")
 
 	pre, cands, post = s.completeWord(" ::: doc  f", 11)
 	assert.Equal(t, " ::: doc  ", pre)
-	assert.Equal(t, []string{"fmt"}, cands)
+	assert.Contains(t, cands, "fmt")
+	assert.Contains(t, cands, "fmt.Append")
+	assert.Equal(t, post, "")
+
+	pre, cands, post = s.completeWord(" ::: doc  fmt.", 14)
+	assert.Equal(t, " ::: doc  ", pre)
+	assert.Contains(t, cands, "fmt.Fprintf")
+	assert.Contains(t, cands, "fmt.Formatter")
 	assert.Equal(t, post, "")
 }

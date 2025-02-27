@@ -37,6 +37,10 @@ func (g *Gore) Run() error {
 	}
 	s.autoImport = g.autoImport
 
+	if err := s.initCompleter(); err != nil {
+		debugf("failed to initialize gopls completer: %s", err)
+	}
+
 	fmt.Fprintf(g.errWriter, "gore version %s  :help for help\n", Version)
 
 	if g.extFiles != "" {

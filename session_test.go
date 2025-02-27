@@ -172,10 +172,10 @@ func TestSession_IncludePackage(t *testing.T) {
 	t.Cleanup(func() { s.Clear() })
 	require.NoError(t, err)
 
-	err = s.includePackage("github.com/x-motemen/gore/gocode")
+	err = s.includePackage("github.com/mattn/go-runewidth")
 	require.NoError(t, err)
 
-	err = s.Eval("Completer{}")
+	err = s.Eval("RuneWidth('0')")
 	require.NoError(t, err)
 }
 
