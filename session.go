@@ -15,6 +15,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"slices"
 	"strings"
 	"unicode"
 
@@ -255,7 +256,12 @@ func (s *Session) evalStmt(in string) error {
 		case *ast.DeclStmt:
 			if decl, ok := stmt.Decl.(*ast.GenDecl); ok {
 				if decl.Tok == token.TYPE {
-					s.file.Decls = append(s.file.Decls, decl)
+					for i, d := range s.file.Decls {
+						if d, ok := d.(*ast.FuncDecl); ok && d.Name.String() == "main" {
+							s.file.Decls = slices.Insert(s.file.Decls, i, stmt.Decl)
+							break
+						}
+					}
 					continue
 				} else if stmt := buildPrintStmtOfDecl(decl); stmt != nil {
 					stmts = append(stmts, stmt)
@@ -317,17 +323,23 @@ func (s *Session) evalFunc(in string) error {
 	if len(f.Decls) != 1 {
 		return errors.New("eval func error")
 	}
-	newDecl, ok := f.Decls[0].(*ast.FuncDecl)
-	if !ok {
+	decl, name := f.Decls[0], ""
+	if d, ok := decl.(*ast.FuncDecl); !ok {
 		return errors.New("eval func error")
+	} else {
+		name = d.Name.String()
 	}
 	for i, d := range s.file.Decls {
-		if d, ok := d.(*ast.FuncDecl); ok && d.Name.String() == newDecl.Name.String() {
-			s.file.Decls = append(s.file.Decls[:i], s.file.Decls[i+1:]...)
-			break
+		if d, ok := d.(*ast.FuncDecl); ok {
+			if d.Name.String() == name {
+				s.file.Decls[i] = decl
+				break
+			} else if d.Name.String() == "main" {
+				s.file.Decls = slices.Insert(s.file.Decls, i, decl)
+				break
+			}
 		}
 	}
-	s.file.Decls = append(s.file.Decls, newDecl)
 	return nil
 }
 
@@ -502,10 +514,7 @@ func (s *Session) invokeCommand(in string) (err error) {
 // storeCode stores current state of code so that it can be restored
 func (s *Session) storeCode() {
 	s.lastStmts = s.mainBody.List
-	if len(s.lastDecls) != len(s.file.Decls) {
-		s.lastDecls = make([]ast.Decl, len(s.file.Decls))
-	}
-	copy(s.lastDecls, s.file.Decls)
+	s.lastDecls = slices.Clone(s.file.Decls)
 }
 
 // restoreCode restores the previous code

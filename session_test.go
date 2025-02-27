@@ -382,9 +382,9 @@ func TestSessionEval_Func(t *testing.T) {
 
 	assert.Equal(t, "112\n2400\n204\n", stdout.String())
 	assert.Equal(t, `cannot use s (variable of type string) as int value in return statement
+cannot use i (variable of type int) as string value in return statement
 invalid operation: f() + len(g()) (mismatched types string and int)
 invalid operation: f() * len(g()) (mismatched types string and int)
-cannot use i (variable of type int) as string value in return statement
 `, stderr.String())
 }
 
