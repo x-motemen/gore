@@ -9,7 +9,6 @@ import (
 	"os/exec"
 	"path"
 	"path/filepath"
-	"runtime"
 	"strings"
 	"text/tabwriter"
 	"time"
@@ -133,7 +132,7 @@ func actionImport(s *Session, arg string) error {
 	return nil
 }
 
-var gorootSrc = filepath.Join(filepath.Clean(runtime.GOROOT()), "src")
+var gorootSrc = filepath.Join(filepath.Clean(build.Default.GOROOT), "src")
 
 func completeImport(_ *Session, prefix string) []string {
 	result := []string{}
@@ -151,7 +150,7 @@ func completeImport(_ *Session, prefix string) []string {
 				if len(fn) < 2 {
 					return false
 				}
-				for _, s := range strings.Split(m.Path, "/") {
+				for s := range strings.SplitSeq(m.Path, "/") {
 					if strings.HasPrefix(s, fn) || strings.HasPrefix(strings.TrimPrefix(s, "go-"), fn) {
 						return true
 					}
