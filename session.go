@@ -324,11 +324,11 @@ func (s *Session) evalFunc(in string) error {
 		return errors.New("eval func error")
 	}
 	decl, name := f.Decls[0], ""
-	if d, ok := decl.(*ast.FuncDecl); !ok {
+	d, ok := decl.(*ast.FuncDecl)
+	if !ok {
 		return errors.New("eval func error")
-	} else {
-		name = d.Name.String()
 	}
+	name = d.Name.String()
 	for i, d := range s.file.Decls {
 		if d, ok := d.(*ast.FuncDecl); ok {
 			if d.Name.String() == name {

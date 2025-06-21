@@ -51,8 +51,7 @@ func (c *goplsCompleter) init(dir, path, source string, autoImport bool) error {
 	}
 
 	c.conn = jsonrpc2.NewConn(jsonrpc2.NewStream(rw{stdout, stdin}))
-	c.conn.Go(ctx, func(ctx context.Context,
-		rep jsonrpc2.Replier, req jsonrpc2.Request) error {
+	c.conn.Go(ctx, func(context.Context, jsonrpc2.Replier, jsonrpc2.Request) error {
 		return nil
 	})
 
