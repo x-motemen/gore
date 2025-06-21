@@ -142,11 +142,20 @@ func homeDir() (home string, err error) {
 		return
 	}
 
-	home, err = os.UserHomeDir()
+	var baseDir string
+
+	baseDir = os.Getenv("XDG_DATA_HOME")
+	if baseDir != "" {
+		home = filepath.Join(baseDir, "gore")
+
+		return
+	}
+
+	baseDir, err = os.UserHomeDir()
 	if err != nil {
 		return
 	}
 
-	home = filepath.Join(home, ".gore")
+	home = filepath.Join(baseDir, ".gore")
 	return
 }
