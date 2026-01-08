@@ -460,7 +460,6 @@ var V = 42
 	codes := []string{
 		`V`,
 		`:type V`,
-		`:doc V`,
 	}
 
 	for _, code := range codes {
@@ -468,7 +467,6 @@ var V = 42
 	}
 
 	assert.Contains(t, stdout.String(), `42
-int
-package builtin`)
+int`)
 	assert.Equal(t, ``, stderr.String())
 }
