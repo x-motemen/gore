@@ -1,6 +1,7 @@
 package gore
 
 import (
+	"errors"
 	"fmt"
 	"go/ast"
 	"go/build"
@@ -83,7 +84,7 @@ func init() {
 
 func actionImport(s *Session, arg string) error {
 	if arg == "" {
-		return fmt.Errorf("argument is required")
+		return errors.New("argument is required")
 	}
 
 	if strings.Contains(arg, " ") {
@@ -145,7 +146,6 @@ func completeImport(_ *Session, prefix string) []string {
 	// complete candidates from the current module
 	if modules, err := goListAll(); err == nil {
 		for _, m := range modules {
-
 			matchPath := func(fn string) bool {
 				if len(fn) < 2 {
 					return false
@@ -189,7 +189,6 @@ func completeImport(_ *Session, prefix string) []string {
 					}
 				}
 			}
-
 		}
 	}
 
@@ -281,7 +280,7 @@ func actionPrint(s *Session, _ string) error {
 
 func actionType(s *Session, in string) error {
 	if in == "" {
-		return fmt.Errorf("argument is required")
+		return errors.New("argument is required")
 	}
 
 	s.clearQuickFix()
@@ -342,7 +341,7 @@ func actionClear(s *Session, _ string) error {
 
 func actionDoc(s *Session, in string) error {
 	if in == "" {
-		return fmt.Errorf("argument is required")
+		return errors.New("argument is required")
 	}
 
 	s.clearQuickFix()
@@ -396,7 +395,7 @@ func actionDoc(s *Session, in string) error {
 	}
 
 	if docObj == nil {
-		return fmt.Errorf("cannot determine the document location")
+		return errors.New("cannot determine the document location")
 	}
 
 	debugf("doc :: obj=%#v", docObj)

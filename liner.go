@@ -2,6 +2,7 @@ package gore
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
 	"io"
 	"strings"
@@ -73,7 +74,7 @@ func (cl *contLiner) Clear() {
 	cl.depth = 0
 }
 
-var errUnmatchedBraces = fmt.Errorf("unmatched braces")
+var errUnmatchedBraces = errors.New("unmatched braces")
 
 func (cl *contLiner) Reindent() error {
 	oldDepth := cl.depth
