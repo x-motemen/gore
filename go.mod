@@ -1,6 +1,6 @@
 module github.com/x-motemen/gore
 
-go 1.24
+go 1.25
 
 require (
 	github.com/motemen/go-quickfix v0.0.0-20250224075427-39bb724d71b7

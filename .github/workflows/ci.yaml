@@ -21,7 +21,7 @@ jobs:
       - name: Setup Go
         uses: actions/setup-go@v6
         with:
-          go-version: 1.24.x
+          go-version: 1.25.x
       - name: Build
         run: make build
       - name: Run command
@@ -41,7 +41,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        go: [1.24.x]
+        go: [1.25.x]
       fail-fast: false
     steps:
       - name: Checkout code

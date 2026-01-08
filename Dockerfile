@@ -1,4 +1,4 @@
-FROM golang:1.24.4-alpine3.22
+FROM golang:1.25.5-alpine3.23
 
 RUN apk add --no-cache git make \
  && go install golang.org/x/tools/gopls@latest
