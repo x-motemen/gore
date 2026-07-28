@@ -90,6 +90,9 @@ func NewSession(stdout, stderr io.Writer) (*Session, error) {
 	if err != nil {
 		return s, err
 	}
+	if resolved, err := filepath.EvalSymlinks(s.tempDir); err == nil {
+		s.tempDir = resolved
+	}
 	s.tempFilePath = filepath.Join(s.tempDir, "gore_session.go")
 
 	if err = s.init(); err != nil {
