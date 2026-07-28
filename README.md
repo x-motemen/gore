@@ -1,5 +1,5 @@
 # gore
-[![CI Status](https://github.com/x-motemen/gore/actions/workflows/ci.yaml/badge.svg?branch=main)](https://github.com/x-motemen/gore/actions?query=branch:main)
+[![CI Status](https://github.com/x-motemen/gore/actions/workflows/ci.yaml/badge.svg?branch=main)](https://github.com/x-motemen/gore/actions/workflows/ci.yaml?query=branch:main)
 [![MIT License](https://img.shields.io/badge/license-MIT-blue.svg)](https://github.com/x-motemen/gore/blob/main/LICENSE)
 [![release](https://img.shields.io/github/release/x-motemen/gore/all.svg)](https://github.com/x-motemen/gore/releases)
 
