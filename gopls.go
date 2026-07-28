@@ -5,11 +5,11 @@ import (
 	"context"
 	"io"
 	"os/exec"
-	"path/filepath"
 	"strings"
 
 	"go.lsp.dev/jsonrpc2"
 	"go.lsp.dev/protocol"
+	"go.lsp.dev/uri"
 )
 
 type goplsCompleter struct {
@@ -55,9 +55,8 @@ func (c *goplsCompleter) init(dir, path, source string, autoImport bool) error {
 		return nil
 	})
 
-	rootURI := protocol.DocumentURI("file://" + filepath.ToSlash(dir))
 	initializeParams := protocol.InitializeParams{
-		RootURI:               rootURI,
+		RootURI:               uri.File(dir),
 		Capabilities:          protocol.ClientCapabilities{},
 		InitializationOptions: map[string]any{"completeUnimported": autoImport},
 	}
@@ -85,10 +84,9 @@ func (c *goplsCompleter) open(path, source string) error {
 	ctx := context.Background()
 
 	debugf("open: %q: %q", path, source)
-	fileURI := protocol.DocumentURI("file://" + filepath.ToSlash(path))
 	didOpenTextDocumentParams := protocol.DidOpenTextDocumentParams{
 		TextDocument: protocol.TextDocumentItem{
-			URI:  fileURI,
+			URI:  uri.File(path),
 			Text: source,
 		},
 	}
@@ -137,11 +135,10 @@ func (c *goplsCompleter) update(source string) error {
 		i, j, k := diffString(c.source, source)
 		debugf("update: %q", c.source[i:j])
 		debugf("    --> %q", source[i:k])
-		fileURI := protocol.DocumentURI("file://" + filepath.ToSlash(c.path))
 		didChangeTextDocumentParams := protocol.DidChangeTextDocumentParams{
 			TextDocument: protocol.VersionedTextDocumentIdentifier{
 				TextDocumentIdentifier: protocol.TextDocumentIdentifier{
-					URI: fileURI,
+					URI: uri.File(c.path),
 				},
 			},
 			ContentChanges: []protocol.TextDocumentContentChangeEvent{
@@ -171,10 +168,9 @@ func (c *goplsCompleter) complete(source string, pos int, exprMode bool) ([]stri
 		return nil, 0, err
 	}
 
-	fileURI := protocol.DocumentURI("file://" + filepath.ToSlash(c.path))
 	completionParams := protocol.CompletionParams{
 		TextDocumentPositionParams: protocol.TextDocumentPositionParams{
-			TextDocument: protocol.TextDocumentIdentifier{URI: fileURI},
+			TextDocument: protocol.TextDocumentIdentifier{URI: uri.File(c.path)},
 			Position:     getPos(source, pos),
 		},
 		Context: &protocol.CompletionContext{
