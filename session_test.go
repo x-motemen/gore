@@ -152,7 +152,7 @@ func TestSessionEval_AutoImport(t *testing.T) {
 	s.autoImport = true
 
 	codes := []string{
-		`filepath.Join("a", "b")`,
+		`strconv.Itoa(42)`,
 	}
 
 	for _, code := range codes {
@@ -160,7 +160,7 @@ func TestSessionEval_AutoImport(t *testing.T) {
 		require.NoError(t, err)
 	}
 
-	assert.Equal(t, "\"a/b\"\n", stdout.String())
+	assert.Equal(t, "\"42\"\n", stdout.String())
 	assert.Equal(t, "", stderr.String())
 }
 
