@@ -113,6 +113,25 @@ func TestAction_Import(t *testing.T) {
 	assert.Equal(t, "import: could not import \"invalid\"\n", stderr.String())
 }
 
+func TestAction_Print(t *testing.T) {
+	var stdout, stderr strings.Builder
+	s, err := NewSession(&stdout, &stderr)
+	t.Cleanup(func() { s.Clear() })
+	require.NoError(t, err)
+
+	err = s.Eval("x := 1")
+	require.NoError(t, err)
+
+	err = s.Eval(":print")
+	require.NoError(t, err)
+
+	out := stdout.String()
+	assert.Contains(t, out, "package main")
+	assert.Contains(t, out, "func main()")
+	assert.Contains(t, out, "x := 1")
+	assert.Equal(t, "", stderr.String())
+}
+
 func TestAction_Clear(t *testing.T) {
 	var stdout, stderr strings.Builder
 	s, err := NewSession(&stdout, &stderr)

@@ -273,7 +273,7 @@ func actionPrint(s *Session, _ string) error {
 		return err
 	}
 
-	fmt.Println(source)
+	fmt.Fprintln(s.stdout, source)
 
 	return nil
 }
