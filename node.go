@@ -18,7 +18,7 @@ func normalizeNodePos(node ast.Node) {
 		}
 
 		pv := reflect.ValueOf(node)
-		if pv.Kind() != reflect.Ptr {
+		if pv.Kind() != reflect.Pointer {
 			return true
 		}
 

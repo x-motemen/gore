@@ -375,11 +375,11 @@ func actionDoc(s *Session, in string) error {
 		docObj = s.typeInfo.ObjectOf(sel.Sel)
 	} else if t := s.typeInfo.TypeOf(expr); t != nil && t != types.Typ[types.Invalid] {
 		for {
-			if pt, ok := t.(*types.Pointer); ok {
-				t = pt.Elem()
-			} else {
+			pt, ok := t.(*types.Pointer)
+			if !ok {
 				break
 			}
+			t = pt.Elem()
 		}
 		switch t := t.(type) {
 		case *types.Named:
