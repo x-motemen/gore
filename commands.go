@@ -421,7 +421,7 @@ func actionDoc(s *Session, in string) error {
 
 	godoc := exec.Command("go", args...)
 	godoc.Dir = s.tempDir
-	godoc.Env = append(os.Environ(), "GO111MODULE=on")
+	godoc.Env = append(os.Environ(), "GOFLAGS=-mod=mod")
 	ef := newErrFilter(s.stderr)
 	godoc.Stderr = ef
 	defer ef.Close()
@@ -443,8 +443,8 @@ func actionDoc(s *Session, in string) error {
 			return err
 		}
 
-		err = godoc.Run()
-		if err != nil {
+		if err = godoc.Run(); err != nil {
+			_ = pager.Wait()
 			return err
 		}
 
