@@ -1,10 +1,8 @@
 package gore
 
 import (
-	"go/version"
 	"os"
 	"regexp"
-	"runtime"
 	"strings"
 	"testing"
 
@@ -441,10 +439,6 @@ invalid operation: f\(\) \+ g\(\) \(mismatched types int and string\)
 }
 
 func TestSession_ExtraFiles(t *testing.T) {
-	if version.Compare(runtime.Version(), "go1.24") < 0 {
-		t.Skipf("Skip on %s", runtime.Version())
-	}
-
 	var stdout, stderr strings.Builder
 	_ = newTempDir(t)
 	require.NoError(t, os.WriteFile("test.go", []byte(`package test

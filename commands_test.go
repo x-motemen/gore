@@ -1,8 +1,6 @@
 package gore
 
 import (
-	"go/version"
-	"runtime"
 	"strings"
 	"testing"
 
@@ -11,10 +9,6 @@ import (
 )
 
 func TestAction_Type(t *testing.T) {
-	if version.Compare(runtime.Version(), "go1.24") < 0 {
-		t.Skipf("Skip on %s", runtime.Version())
-	}
-
 	var stdout, stderr strings.Builder
 	s, err := NewSession(&stdout, &stderr)
 	t.Cleanup(func() { s.Clear() })
@@ -54,10 +48,6 @@ type: cannot get type: fmt
 }
 
 func TestAction_Doc(t *testing.T) {
-	if version.Compare(runtime.Version(), "go1.24") < 0 {
-		t.Skipf("Skip on %s", runtime.Version())
-	}
-
 	var stdout, stderr strings.Builder
 	s, err := NewSession(&stdout, &stderr)
 	t.Cleanup(func() { s.Clear() })
