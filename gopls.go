@@ -14,6 +14,8 @@ import (
 
 type goplsCompleter struct {
 	conn       jsonrpc2.Conn
+	cmd        *exec.Cmd
+	cancel     context.CancelFunc
 	dir        string
 	path       string
 	source     string
@@ -35,20 +37,26 @@ func (rw rw) Close() error {
 }
 
 func (c *goplsCompleter) init(dir, path, source string, autoImport bool) error {
-	ctx := context.Background()
+	c.stop() // Shut down any previous gopls process (e.g. when reconnecting).
+
+	ctx, cancel := context.WithCancel(context.Background())
 
 	cmd := exec.CommandContext(ctx, "gopls")
 	stdout, err := cmd.StdoutPipe()
 	if err != nil {
+		cancel()
 		return err
 	}
 	stdin, err := cmd.StdinPipe()
 	if err != nil {
+		cancel()
 		return err
 	}
 	if err := cmd.Start(); err != nil {
+		cancel()
 		return err
 	}
+	c.cmd, c.cancel = cmd, cancel
 
 	c.conn = jsonrpc2.NewConn(jsonrpc2.NewStream(rw{stdout, stdin}))
 	c.conn.Go(ctx, func(context.Context, jsonrpc2.Replier, jsonrpc2.Request) error {
@@ -198,17 +206,29 @@ func (c *goplsCompleter) complete(source string, pos int, exprMode bool) ([]stri
 			label += "("
 		}
 		candidates = append(candidates, label)
-		pos = fromPos(source, item.TextEdit.Range.Start)
+		if item.TextEdit != nil {
+			pos = fromPos(source, item.TextEdit.Range.Start)
+		}
 	}
 	return candidates, pos, nil
 }
 
 func (c *goplsCompleter) close() error {
-	if err := c.conn.Close(); err != nil {
-		return err
-	}
+	err := c.conn.Close()
 	<-c.conn.Done()
-	return nil
+	c.stop()
+	return err
+}
+
+func (c *goplsCompleter) stop() {
+	if c.cancel != nil {
+		c.cancel()
+		c.cancel = nil
+	}
+	if c.cmd != nil {
+		_ = c.cmd.Wait()
+		c.cmd = nil
+	}
 }
 
 func diffString(s, t string) (int, int, int) {
