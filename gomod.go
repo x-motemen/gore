@@ -2,6 +2,7 @@ package gore
 
 import (
 	"bytes"
+	"cmp"
 	"encoding/json"
 	"go/build"
 	"io"
@@ -100,13 +101,37 @@ func lookupGoModule(pkg, version string) bool {
 }
 
 func canAccessGoproxy() bool {
-	var host string
-	if u, err := url.Parse(getGoproxy()); err != nil {
-		host = "proxy.golang.org"
-	} else {
-		host = u.Hostname()
+	entries := strings.FieldsFunc(
+		cmp.Or(os.Getenv("GOPROXY"), "https://proxy.golang.org,direct"),
+		func(r rune) bool { return r == ',' || r == '|' })
+	if len(entries) == 0 {
+		return false
 	}
-	addr := net.JoinHostPort(host, "80")
+	entry := strings.TrimSpace(entries[0])
+	switch entry {
+	case "", "off", "direct":
+		return false
+	}
+	u, err := url.Parse(entry)
+	if err != nil {
+		return false
+	}
+	if u.Scheme == "file" {
+		return true
+	}
+	host := u.Hostname()
+	if host == "" {
+		return false
+	}
+	port := u.Port()
+	if port == "" {
+		if u.Scheme == "http" {
+			port = "80"
+		} else {
+			port = "443"
+		}
+	}
+	addr := net.JoinHostPort(host, port)
 	dialer := net.Dialer{Timeout: 5 * time.Second}
 	conn, err := dialer.Dial("tcp", addr)
 	if err != nil {
@@ -114,11 +139,4 @@ func canAccessGoproxy() bool {
 	}
 	defer conn.Close()
 	return true
-}
-
-func getGoproxy() string {
-	if goproxy := os.Getenv("GOPROXY"); goproxy != "" {
-		return goproxy
-	}
-	return "https://proxy.golang.org/"
 }
