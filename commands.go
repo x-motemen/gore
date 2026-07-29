@@ -103,7 +103,7 @@ func actionImport(s *Session, arg string) error {
 	arg = strings.Trim(arg, `"`)
 
 	// check if the package specified by path is importable
-	_, err := packages.Load(
+	pkgs, err := packages.Load(
 		&packages.Config{
 			Dir:        s.tempDir,
 			BuildFlags: []string{"-mod=mod"},
@@ -112,6 +112,17 @@ func actionImport(s *Session, arg string) error {
 	)
 	if err != nil {
 		return err
+	}
+
+	// packages.Load reports a missing or broken package in pkgs[i].Errors
+	// rather than the returned err, so inspect those before importing.
+	if len(pkgs) == 0 {
+		return fmt.Errorf("could not import %q", arg)
+	}
+	for _, pkg := range pkgs {
+		if len(pkg.Errors) > 0 {
+			return fmt.Errorf("could not import %q", arg)
+		}
 	}
 
 	var found bool

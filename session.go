@@ -136,18 +136,29 @@ func (s *Session) init() (err error) {
 
 	var initialSource string
 	for _, pp := range printerPkgs {
-		_, err = packages.Load(
+		var pkgs []*packages.Package
+		if pkgs, err = packages.Load(
 			&packages.Config{
 				Dir:        s.tempDir,
 				BuildFlags: []string{"-mod=mod"},
 			},
 			pp.path,
-		)
-		if err == nil {
+		); err != nil {
+			debugf("could not load %q: %s", pp.path, err)
+			continue
+		}
+		// packages.Load only reports driver failures via err; a package that
+		// fails to load (e.g. missing module when offline) is reported in
+		// pkgs[0].Errors, so check that too before selecting this printer.
+		if len(pkgs) == 0 {
+			err = fmt.Errorf("package %s not found", pp.path)
+		} else if len(pkgs[0].Errors) > 0 {
+			err = pkgs[0].Errors[0]
+		} else {
 			initialSource = fmt.Sprintf(initialSourceTemplate, pp.path, pp.code)
 			break
 		}
-		debugf("could not import %q: %s", pp.path, err)
+		debugf("could not load %q: %s", pp.path, err)
 	}
 
 	if initialSource == "" {
@@ -588,6 +599,9 @@ func (s *Session) importFile(src []byte) error {
 	if err != nil {
 		return err
 	}
+	// We only need the reserved unique name; the file is reopened for writing
+	// below, so close this descriptor immediately to avoid leaking it.
+	tmp.Close()
 
 	f, err := parser.ParseFile(s.fset, tmp.Name(), src, parser.Mode(0))
 	if err != nil {
