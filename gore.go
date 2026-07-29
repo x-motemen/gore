@@ -97,21 +97,18 @@ func (g *Gore) Run() error {
 
 		if err := rl.Reindent(); err != nil {
 			fmt.Fprintf(g.errWriter, "error: %s\n", err)
-			rl.Clear()
+			rl.Accepted()
 			continue
 		}
 
-		err = s.Eval(in)
-		if err != nil {
+		if err := s.Eval(in); err != nil {
 			if err == ErrContinue {
 				continue
 			} else if err == ErrQuit {
 				break
-			} else if err != ErrCmdRun {
-				rl.Clear()
-				continue
 			}
 		}
+
 		rl.Accepted()
 	}
 

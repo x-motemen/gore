@@ -67,10 +67,6 @@ func (cl *contLiner) Prompt() (string, error) {
 func (cl *contLiner) Accepted() {
 	cl.State.AppendHistory(cl.buffer)
 	cl.buffer = ""
-}
-
-func (cl *contLiner) Clear() {
-	cl.buffer = ""
 	cl.depth = 0
 }
 
