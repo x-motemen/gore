@@ -1,6 +1,7 @@
 package gore
 
 import (
+	"bytes"
 	"errors"
 	"fmt"
 	"go/ast"
@@ -464,29 +465,18 @@ func actionDoc(s *Session, in string) error {
 	godoc.Stderr = ef
 	defer ef.Close()
 
-	// TODO just use PAGER?
 	if pagerCmd := os.Getenv("GORE_PAGER"); pagerCmd != "" {
-		r, err := godoc.StdoutPipe()
-		if err != nil {
+		var buf bytes.Buffer
+		godoc.Stdout = &buf
+		if err := godoc.Run(); err != nil {
 			return err
 		}
 
 		pager := exec.Command(pagerCmd)
-		pager.Stdin = r
+		pager.Stdin = &buf
 		pager.Stdout = s.stdout
 		pager.Stderr = s.stderr
-
-		err = pager.Start()
-		if err != nil {
-			return err
-		}
-
-		if err = godoc.Run(); err != nil {
-			_ = pager.Wait()
-			return err
-		}
-
-		return pager.Wait()
+		return pager.Run()
 	}
 	godoc.Stdout = s.stdout
 	return godoc.Run()
