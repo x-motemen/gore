@@ -37,6 +37,7 @@ type Session struct {
 	extraFiles      []*ast.File
 	importAliases   map[string]string
 	autoImport      bool
+	verbose         bool
 	requiredModules []string
 	mainBody        *ast.BlockStmt
 	lastStmts       []ast.Stmt
@@ -85,7 +86,7 @@ type pathVersion struct {
 func NewSession(stdout, stderr io.Writer) (*Session, error) {
 	var err error
 
-	s := &Session{stdout: stdout, stderr: stderr}
+	s := &Session{stdout: stdout, stderr: stderr, verbose: true}
 
 	s.tempDir, err = os.MkdirTemp("", "gore-")
 	if err != nil {
@@ -266,8 +267,10 @@ func (s *Session) evalStmt(in string) error {
 	for _, stmt := range enclosingFunc.Body.List {
 		switch stmt := stmt.(type) {
 		case *ast.AssignStmt:
-			if stmt := buildPrintStmt(stmt.Lhs); stmt != nil {
-				stmts = append(stmts, stmt)
+			if s.verbose {
+				if stmt := buildPrintStmt(stmt.Lhs); stmt != nil {
+					stmts = append(stmts, stmt)
+				}
 			}
 		case *ast.DeclStmt:
 			if decl, ok := stmt.Decl.(*ast.GenDecl); ok {
@@ -279,8 +282,10 @@ func (s *Session) evalStmt(in string) error {
 						}
 					}
 					continue
-				} else if stmt := buildPrintStmtOfDecl(decl); stmt != nil {
-					stmts = append(stmts, stmt)
+				} else if s.verbose {
+					if stmt := buildPrintStmtOfDecl(decl); stmt != nil {
+						stmts = append(stmts, stmt)
+					}
 				}
 			}
 		}

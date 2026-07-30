@@ -38,6 +38,7 @@ func TestSession_completeWord(t *testing.T) {
 		"write ",
 		"clear",
 		"doc ",
+		"verbose ",
 		"help",
 		"quit",
 	}, cands)

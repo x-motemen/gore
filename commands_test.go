@@ -150,6 +150,47 @@ func TestAction_ImportAlias(t *testing.T) {
 	assert.Equal(t, "", stderr.String())
 }
 
+func TestAction_Verbose(t *testing.T) {
+	var stdout, stderr strings.Builder
+	s, err := NewSession(&stdout, &stderr)
+	t.Cleanup(func() { s.Clear() })
+	require.NoError(t, err)
+
+	// By default an assignment prints its value.
+	require.NoError(t, s.Eval("x := 1"))
+	assert.Equal(t, "1\n", stdout.String())
+
+	// After ":verbose off", assignments no longer print automatically.
+	require.NoError(t, s.Eval(":verbose off"))
+	stdout.Reset()
+	require.NoError(t, s.Eval("y := 2"))
+	assert.Equal(t, "", stdout.String())
+
+	// But evaluating a bare expression still prints.
+	require.NoError(t, s.Eval("y"))
+	assert.Equal(t, "2\n", stdout.String())
+
+	// ":verbose" with no argument toggles it back on.
+	require.NoError(t, s.Eval(":verbose"))
+	stdout.Reset()
+	require.NoError(t, s.Eval("z := 3"))
+	assert.Equal(t, "3\n", stdout.String())
+	require.NoError(t, s.Eval(":verbose"))
+	stdout.Reset()
+	require.NoError(t, s.Eval("w := 3"))
+	assert.Equal(t, "", stdout.String())
+
+	// ":verbose on" enables printing explicitly.
+	require.NoError(t, s.Eval(":verbose on"))
+	stdout.Reset()
+	require.NoError(t, s.Eval("v := 4"))
+	assert.Equal(t, "4\n", stdout.String())
+
+	// An invalid argument is rejected.
+	require.Error(t, s.Eval(":verbose invalid"))
+	assert.Contains(t, stderr.String(), `verbose: invalid argument: "invalid"`)
+}
+
 func TestAction_Print(t *testing.T) {
 	var stdout, stderr strings.Builder
 	s, err := NewSession(&stdout, &stderr)

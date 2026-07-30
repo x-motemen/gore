@@ -40,9 +40,20 @@ Some functionalities are provided as commands in the REPL:
 :write [<filename>]          Write out current source to file
 :clear                       Clear the codes
 :doc <expr or pkg>           Show document
+:verbose [on|off]            Toggle printing of assigned or declared values
 :help                        List commands
 :quit                        Quit the session
 ```
+
+## Environment Variables
+
+- `GORE_HOME`: directory for the command history file.
+   Defaults to `$XDG_DATA_HOME/gore`, or `~/.gore` if `XDG_DATA_HOME` is unset.
+- `GORE_PAGER`: pager command used to display `:doc` output (e.g. `less`).
+   If unset, documents are printed directly.
+- `GORE_VERBOSE`: set to a boolean false value (`0` or `false`) to suppress
+   automatic printing of assigned or declared values at startup.
+   Defaults to on; toggle during a session with `:verbose` command.
 
 ## Installation
 The gore command requires Go tool-chains on runtime, so standalone binary is not distributed.
@@ -50,8 +61,6 @@ The gore command requires Go tool-chains on runtime, so standalone binary is not
 ```sh
 go install github.com/x-motemen/gore/cmd/gore@latest
 ```
-
-Make sure `$GOPATH/bin` is in your `$PATH`.
 
 Also recommended:
 

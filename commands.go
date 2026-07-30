@@ -72,6 +72,12 @@ func init() {
 			document: "show documentation",
 		},
 		{
+			name:     commandName("verb[ose]"),
+			action:   actionVerbose,
+			arg:      "[on|off]",
+			document: "toggle printing of assigned or declared values",
+		},
+		{
 			name:     commandName("h[elp]"),
 			action:   actionHelp,
 			document: "show this help",
@@ -314,6 +320,25 @@ func actionPrint(s *Session, _ string) error {
 
 	fmt.Fprintln(s.stdout, source)
 
+	return nil
+}
+
+func actionVerbose(s *Session, arg string) error {
+	switch strings.ToLower(strings.TrimSpace(arg)) {
+	case "":
+		s.verbose = !s.verbose
+	case "on":
+		s.verbose = true
+	case "off":
+		s.verbose = false
+	default:
+		return fmt.Errorf(`invalid argument: %q (want "on" or "off")`, arg)
+	}
+	if s.verbose {
+		fmt.Fprintln(s.stdout, "verbose mode is on")
+	} else {
+		fmt.Fprintln(s.stdout, "verbose mode is off")
+	}
 	return nil
 }
 

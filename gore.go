@@ -5,6 +5,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 )
 
@@ -36,6 +37,13 @@ func (g *Gore) Run() error {
 		return err
 	}
 	s.autoImport = g.autoImport
+	if v := os.Getenv("GORE_VERBOSE"); v != "" {
+		verbose, err := strconv.ParseBool(v)
+		if err != nil {
+			return fmt.Errorf("invalid GORE_VERBOSE value: %q", v)
+		}
+		s.verbose = verbose
+	}
 
 	if err := s.initCompleter(); err != nil {
 		debugf("failed to initialize gopls completer: %s", err)
