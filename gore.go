@@ -141,26 +141,19 @@ func (g *Gore) Run() error {
 	return nil
 }
 
-func homeDir() (home string, err error) {
-	home = os.Getenv("GORE_HOME")
-	if home != "" {
-		return
+func homeDir() (string, error) {
+	if home := os.Getenv("GORE_HOME"); home != "" {
+		return home, nil
 	}
 
-	var baseDir string
-
-	baseDir = os.Getenv("XDG_DATA_HOME")
-	if baseDir != "" {
-		home = filepath.Join(baseDir, "gore")
-
-		return
+	if base := os.Getenv("XDG_DATA_HOME"); base != "" {
+		return filepath.Join(base, "gore"), nil
 	}
 
-	baseDir, err = os.UserHomeDir()
+	base, err := os.UserHomeDir()
 	if err != nil {
-		return
+		return "", err
 	}
 
-	home = filepath.Join(baseDir, ".gore")
-	return
+	return filepath.Join(base, ".gore"), nil
 }
