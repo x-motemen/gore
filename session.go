@@ -197,7 +197,16 @@ func (s *Session) initCompleter() error {
 }
 
 func (s *Session) mainFunc() *ast.FuncDecl {
-	return s.file.Scope.Lookup("main").Decl.(*ast.FuncDecl)
+	return findFuncDecl(s.file, "main")
+}
+
+func findFuncDecl(file *ast.File, name string) *ast.FuncDecl {
+	for _, decl := range file.Decls {
+		if decl, ok := decl.(*ast.FuncDecl); ok && decl.Name.Name == name {
+			return decl
+		}
+	}
+	return nil
 }
 
 // Run the session.
@@ -259,7 +268,10 @@ func (s *Session) evalStmt(in string) error {
 		return err
 	}
 
-	enclosingFunc := f.Scope.Lookup("F").Decl.(*ast.FuncDecl)
+	enclosingFunc := findFuncDecl(f, "F")
+	if enclosingFunc == nil {
+		return errors.New("could not find function body")
+	}
 
 	debugf("evalStmt :: %s", showNode(s.fset, enclosingFunc.Body.List))
 	var stmts []ast.Stmt
