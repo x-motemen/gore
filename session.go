@@ -64,22 +64,12 @@ func main() {
 }
 `
 
-// printerPkgs is a list of packages that provides pretty printing function
-// when changing this, read listModuleDirectives carefully
 var printerPkgs = []struct {
 	path, version string
-	requires      []pathVersion
 	code          string
 }{
-	{
-		path: "github.com/k0kubun/pp/v3", version: "v3.1.0", code: `pp.Println(x)`,
-		requires: []pathVersion{{"github.com/mattn/go-colorable", "v0.1.12"}},
-	},
+	{path: "github.com/k0kubun/pp/v3", version: "v3.5.2", code: `pp.Println(x)`},
 	{path: "fmt", code: `fmt.Printf("%#v\n", x)`},
-}
-
-type pathVersion struct {
-	path, version string
 }
 
 // NewSession creates a new Session.

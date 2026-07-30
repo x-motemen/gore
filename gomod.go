@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"cmp"
 	"encoding/json"
-	"go/build"
 	"io"
 	"net"
 	"net/url"
@@ -30,24 +29,13 @@ func (s *Session) listModuleDirectives() []string {
 		if pp.path == "fmt" {
 			continue
 		}
-		// Check local module caches.
-		found := lookupGoModule(pp.path, pp.version)
-		if found {
-			for _, r := range pp.requires {
-				if !lookupGoModule(r.path, r.version) {
-					found = false
-					break
-				}
-			}
-		}
-		if found || canAccessGoproxy() {
+		// Check whether the printer package and its entire build closure are
+		// available in the local module cache, or can be fetched from the proxy.
+		if s.canBuildOffline(pp.path, pp.version) || canAccessGoproxy() {
 			// Specifying the version of the printer package improves startup
 			// performance by skipping module version fetching. Also allows to
 			// use gore in offline environment.
 			directives = append(directives, "require "+pp.path+" "+pp.version)
-			for _, r := range pp.requires {
-				directives = append(directives, "require "+r.path+" "+r.version)
-			}
 		} else {
 			// If there is no module cache and no network connection, use fmt package.
 			printerPkgs = printerPkgs[i+1:]
@@ -94,10 +82,20 @@ func goListAll() ([]*goModule, error) {
 	}
 }
 
-func lookupGoModule(pkg, version string) bool {
-	modDir := filepath.Join(build.Default.GOPATH, "pkg/mod", pkg+"@"+version)
-	fi, err := os.Stat(modDir)
-	return err == nil && fi.IsDir()
+// canBuildOffline reports whether path@version and its entire build closure
+// are already in the local module cache, by asking the go toolchain to resolve
+// them with the network disabled. This resolves the real transitive closure, so
+// it does not rely on a hand-maintained list of dependencies.
+func (s *Session) canBuildOffline(path, version string) bool {
+	defer os.Remove(filepath.Join(s.tempDir, "go.sum"))
+	mod := "module " + filepath.Base(s.tempDir) + "\nrequire " + path + " " + version + "\n"
+	if err := os.WriteFile(filepath.Join(s.tempDir, "go.mod"), []byte(mod), 0o644); err != nil {
+		return false
+	}
+	cmd := exec.Command("go", "list", "-deps", path)
+	cmd.Dir = s.tempDir
+	cmd.Env = append(os.Environ(), "GOPROXY=off", "GOFLAGS=-mod=mod")
+	return cmd.Run() == nil
 }
 
 func canAccessGoproxy() bool {
