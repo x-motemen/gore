@@ -59,6 +59,6 @@ bump: $(GOBIN)/gobump
 	test -z "$$(git status --porcelain || echo .)"
 	test "$$(git branch --show-current)" = "main"
 	@gobump up -w "$(VERSION_PATH)"
-	git commit -am "bump up version to $(VERSION)"
+	git commit -am "Bump up version to $(VERSION)"
 	git tag "v$(VERSION)"
 	git push --atomic origin main tag "v$(VERSION)"
