@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"go/ast"
 	"go/build"
+	"go/token"
 	"go/types"
 	"os"
 	"os/exec"
@@ -35,7 +36,7 @@ func init() {
 			name:     commandName("i[mport]"),
 			action:   actionImport,
 			complete: completeImport,
-			arg:      "<package>",
+			arg:      "[<alias>] <package>",
 			document: "import a package",
 		},
 		{
@@ -83,24 +84,41 @@ func init() {
 }
 
 func actionImport(s *Session, arg string) error {
-	if arg == "" {
+	if strings.TrimSpace(arg) == "" {
 		return errors.New("argument is required")
 	}
 
-	if strings.Contains(arg, " ") {
-		for _, v := range strings.Fields(arg) {
-			if v == "" {
-				continue
-			}
-			if err := actionImport(s, v); err != nil {
-				return err
-			}
+	// Each field is a package path. A package may be aliased by preceding it
+	// with an alias name, as in "corev1 k8s.io/api/core/v1", so packages sharing
+	// a name can be imported together while ":import fmt strconv" still imports
+	// two packages.
+	fields := strings.Fields(arg)
+	for i := 0; i < len(fields); i++ {
+		alias, path := "", fields[i]
+		// A bare identifier that is not a standard package cannot be a valid
+		// import path on its own, so read it as an alias for the next field.
+		if i+1 < len(fields) && token.IsIdentifier(path) && !isStdPackage(path) {
+			alias, path, i = path, fields[i+1], i+1
 		}
-
-		return nil
+		if err := s.importPackage(alias, path); err != nil {
+			return err
+		}
 	}
 
-	arg = strings.Trim(arg, `"`)
+	return nil
+}
+
+// isStdPackage reports whether path is a standard library package.
+func isStdPackage(path string) bool {
+	pkg, err := build.Default.Import(path, "", build.FindOnly)
+	return err == nil && pkg.Goroot
+}
+
+func (s *Session) importPackage(alias, path string) error {
+	path = strings.Trim(path, `"`)
+	if path == "" {
+		return errors.New("argument is required")
+	}
 
 	// check if the package specified by path is importable
 	pkgs, err := packages.Load(
@@ -108,7 +126,7 @@ func actionImport(s *Session, arg string) error {
 			Dir:        s.tempDir,
 			BuildFlags: []string{"-mod=mod"},
 		},
-		arg,
+		path,
 	)
 	if err != nil {
 		return err
@@ -117,28 +135,37 @@ func actionImport(s *Session, arg string) error {
 	// packages.Load reports a missing or broken package in pkgs[i].Errors
 	// rather than the returned err, so inspect those before importing.
 	if len(pkgs) == 0 {
-		return fmt.Errorf("could not import %q", arg)
+		return fmt.Errorf("could not import %q", path)
 	}
 	for _, pkg := range pkgs {
 		if len(pkg.Errors) > 0 {
-			return fmt.Errorf("could not import %q", arg)
+			return fmt.Errorf("could not import %q", path)
 		}
 	}
 
-	var found bool
+	// Remember the alias; clearQuickFix reapplies it to the import spec on each
+	// evaluation, so an aliased import keeps its name even after go-quickfix
+	// blanks it while unused.
+	if alias != "" {
+		s.importAliases[path] = alias
+	} else {
+		delete(s.importAliases, path)
+	}
+
 	for _, i := range s.file.Imports {
-		if strings.Trim(i.Path.Value, `"`) == arg {
-			found = true
-			break
+		if strings.Trim(i.Path.Value, `"`) == path {
+			return nil // already imported; alias (if any) updated above
 		}
 	}
-	if !found {
-		astutil.AddNamedImport(s.fset, s.file, "_", arg)
-		_, err = s.types.Check("_tmp", s.fset, append(s.extraFiles, s.file), nil)
-		if err != nil && strings.Contains(err.Error(), "could not import "+arg) {
-			astutil.DeleteNamedImport(s.fset, s.file, "_", arg)
-			return fmt.Errorf("could not import %q", arg)
-		}
+
+	// Import as a blank import so it survives until it is referenced; the alias
+	// (if any) is applied by clearQuickFix.
+	astutil.AddNamedImport(s.fset, s.file, "_", path)
+	if _, err = s.types.Check("_tmp", s.fset, append(s.extraFiles, s.file), nil); err != nil &&
+		strings.Contains(err.Error(), "could not import "+path) {
+		astutil.DeleteNamedImport(s.fset, s.file, "_", path)
+		delete(s.importAliases, path)
+		return fmt.Errorf("could not import %q", path)
 	}
 
 	return nil

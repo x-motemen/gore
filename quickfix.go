@@ -90,9 +90,15 @@ L:
 }
 
 func (s *Session) clearQuickFix() {
-	// make all import specs explicit (i.e. no "_").
+	// Reapply recorded import aliases and drop the "_" placeholder on the rest,
+	// so blank imports become implicit while aliased imports keep their name
+	// (go-quickfix blanks unused imports, which would otherwise lose the alias).
 	for _, imp := range s.file.Imports {
-		imp.Name = nil
+		if alias, ok := s.importAliases[strings.Trim(imp.Path.Value, `"`)]; ok {
+			imp.Name = ast.NewIdent(alias)
+		} else {
+			imp.Name = nil
+		}
 	}
 
 	for i := 0; i < len(s.mainBody.List); {

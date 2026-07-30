@@ -35,6 +35,7 @@ type Session struct {
 	typeInfo        types.Info
 	extraFilePaths  []string
 	extraFiles      []*ast.File
+	importAliases   map[string]string
 	autoImport      bool
 	requiredModules []string
 	mainBody        *ast.BlockStmt
@@ -129,6 +130,7 @@ func (s *Session) init() (err error) {
 	s.typeInfo = types.Info{}
 	s.extraFilePaths = nil
 	s.extraFiles = nil
+	s.importAliases = map[string]string{}
 
 	if err = s.initGoMod(); err != nil { // this should be before printer load for printer package requirements
 		return err
